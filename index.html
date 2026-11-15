@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Delay Booth</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky score bar with delay dial, then a drive log (newest first) and a stats tab. Phone-first, one column. */
+:root{
+  --bg:#f3f4f2; --surface:#ffffff; --line:#dfe2dc; --fg:#17201b; --muted:#5f6b63;
+  --accent:#b8860b; --accent-ink:#ffffff; --score:#1d6b3f; --warn:#a4421d;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1512; --surface:#18201c; --line:#2a352f; --fg:#e8ede9; --muted:#93a198;
+  --accent:#e0b33f; --accent-ink:#171204; --score:#5fc58b; --warn:#ef8a62; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
+  padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
+button,select,input{font:inherit;color:inherit}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:8px;border-bottom:1px solid var(--line);margin:0 calc(-1 * max(14px,env(safe-area-inset-left,0px)));padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+.wrap{max-width:640px;margin:0 auto}
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.tm{display:flex;flex-direction:column;align-items:center;gap:0}
+.tm .ab{font:600 15px var(--display);letter-spacing:.06em;color:var(--muted)}
+.tm .pts{font:700 44px/1 var(--display);font-variant-numeric:tabular-nums}
+.tm.pos .ab::after{content:" ●";color:var(--accent)}
+.mid{text-align:center;font:600 18px/1.15 var(--display);letter-spacing:.03em}
+.mid small{display:block;font:500 12px var(--body);color:var(--muted);letter-spacing:0}
+.sit{margin-top:6px;text-align:center;font-size:13px;color:var(--muted);min-height:1.2em}
+.dial{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.dial .lbl{font-size:12px;color:var(--muted);line-height:1.2}
+.dial .val{font:700 22px/1 var(--display);font-variant-numeric:tabular-nums;min-width:4.2ch;text-align:center}
+.dial .btns{display:flex;gap:4px}
+.dial button{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 9px;min-width:42px;font:600 15px var(--display);cursor:pointer}
+.dial button:active{background:var(--accent);color:var(--accent-ink)}
+.status{font-size:12px;color:var(--muted);margin-top:6px;text-align:center}
+.status.err{color:var(--warn)}
+.tabs{display:flex;gap:6px;margin:14px 0 10px}
+.tabs button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px;font-weight:600;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+details.drive{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+details.drive.sc{border-left:4px solid var(--score)}
+details.drive>summary{list-style:none;cursor:pointer;padding:10px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+details.drive>summary::-webkit-details-marker{display:none}
+.dt{font:700 16px var(--display);letter-spacing:.05em}
+.dd{font-size:13px;color:var(--muted);min-width:0}
+.dr{font:600 15px var(--display);letter-spacing:.04em;text-align:right}
+.dr.live{color:var(--accent)}
+.dr.sc{color:var(--score)}
+ol.plays{list-style:none;margin:0;padding:0 12px 10px;border-top:1px solid var(--line)}
+ol.plays li{padding:8px 0;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:5.2em 1fr;gap:8px;font-size:14px}
+ol.plays li:last-child{border-bottom:0}
+.pc{font:500 13px var(--display);color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.25}
+.pc b{display:block;color:var(--fg);font-weight:600}
+li.spt .tx{font-weight:600;color:var(--score)}
+.tx{min-width:0;overflow-wrap:anywhere}
+.empty{padding:28px 12px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 12px;margin-bottom:10px}
+.card h3{font:700 15px var(--display);letter-spacing:.08em;text-transform:uppercase;margin:10px 0 4px;color:var(--muted)}
+.ts td{padding:6px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.ts tr:last-child td{border-bottom:0}
+.ts td:first-child,.ts td:last-child{width:28%;font-weight:600}
+.ts td:last-child{text-align:right}
+.ts td:nth-child(2){text-align:center;color:var(--muted);font-size:13px}
+.scroll{overflow-x:auto}
+.pl th,.pl td{padding:5px 6px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
+.pl th{font:600 12px var(--body);color:var(--muted)}
+.pl th:first-child,.pl td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
+.pl tr:last-child td{border-bottom:0}
+.setup{margin-top:18px;font-size:13px;color:var(--muted);display:grid;gap:10px}
+.setup .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.setup select,.setup input{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;max-width:100%}
+.setup input{width:5.5em;text-transform:uppercase}
+.setup button{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <div class="score">
+    <div class="tm" id="awayBox"><span class="ab" id="awayAb">AWAY</span><span class="pts" id="awayPts">–</span></div>
+    <div class="mid" id="mid">Loading<small>&nbsp;</small></div>
+    <div class="tm" id="homeBox"><span class="ab" id="homeAb">HOME</span><span class="pts" id="homePts">–</span></div>
+  </div>
+  <div class="sit" id="sit"></div>
+  <div class="dial">
+    <div><div class="lbl">Delay</div><div class="val" id="delayVal">45s</div></div>
+    <div class="btns">
+      <button id="m30" aria-label="30 seconds less">−30</button>
+      <button id="m5" aria-label="5 seconds less">−5</button>
+      <button id="p5" aria-label="5 seconds more">+5</button>
+      <button id="p30" aria-label="30 seconds more">+30</button>
+    </div>
+  </div>
+  <div class="status" id="status">Connecting to the live feed…</div>
+</div></div>
+
+<main class="wrap">
+  <div class="tabs" role="tablist">
+    <button id="tabDrives" role="tab" aria-selected="true">Drives</button>
+    <button id="tabStats" role="tab" aria-selected="false">Stats</button>
+  </div>
+  <section id="drives"></section>
+  <section id="stats" hidden></section>
+
+  <div class="setup">
+    <div class="row">
+      <label for="team">Team</label><input id="team" maxlength="4" value="LAR">
+      <label for="game">Game</label><select id="game"><option value="">Auto (live or next)</option></select>
+    </div>
+    <div class="row"><button id="wake">Keep screen on</button><span id="wakeNote"></span></div>
+    <div>How to sync: when a play finishes on DAZN, look here. Shows up early? Tap +5. Lags behind your stream? Tap −5. Your delay is remembered on this phone.</div>
+  </div>
+</main>
+
+<script>
+(function(){
+"use strict";
+var API="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
+function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+var S={
+  team:load("db_team","LAR"), delay:load("db_delay",45), pick:"",
+  eventId:null, sum:null, state:"pre", firstSeen:{}, snaps:[], err:"", lastOk:0, schedule:[], tab:"drives"
+};
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function getJSON(url){return fetch(url,{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})}
+
+/* ---------- finding the game ---------- */
+function loadSchedule(){
+  return getJSON(API+"/teams/"+S.team.toLowerCase()+"/schedule").then(function(j){
+    S.schedule=(j.events||[]).map(function(e){
+      var c=(e.competitions||[])[0]||{}; var st=((c.status||{}).type||{}).state||"";
+      return {id:e.id,date:e.date,name:e.shortName||e.name,state:st};
+    });
+    var sel=$("game"), keep=S.pick; sel.innerHTML='<option value="">Auto (live or next)</option>';
+    S.schedule.forEach(function(e){
+      var o=document.createElement("option"); o.value=e.id;
+      o.textContent=new Date(e.date).toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · "+e.name;
+      sel.appendChild(o);
+    });
+    sel.value=keep;
+  });
+}
+function autoEvent(){
+  var now=Date.now(), ev=S.schedule;
+  var live=ev.filter(function(e){return e.state==="in"})[0]; if(live)return live.id;
+  var near=ev.filter(function(e){var t=Date.parse(e.date);return t<=now+30*60e3&&t>=now-5*3600e3&&e.state!=="post"})[0]; if(near)return near.id;
+  var next=ev.filter(function(e){return Date.parse(e.date)>now})[0]; if(next)return next.id;
+  return ev.length?ev[ev.length-1].id:null;
+}
+
+/* ---------- polling ---------- */
+var timer=null;
+function poll(){
+  clearTimeout(timer);
+  var p=S.schedule.length?Promise.resolve():loadSchedule();
+  p.then(function(){
+    var id=S.pick||autoEvent();
+    if(!id)throw new Error("No games found for "+S.team);
+    if(id!==S.eventId){S.eventId=id;S.sum=null;S.firstSeen={};S.snaps=[]}
+    return getJSON(API+"/summary?event="+id);
+  }).then(function(j){
+    S.sum=j; S.err=""; S.lastOk=Date.now();
+    var comp=((j.header||{}).competitions||[])[0]||{};
+    S.state=(((comp.status||{}).type||{}).state)||"pre";
+    var now=Date.now();
+    allPlays(j).forEach(function(p){if(p.id&&!S.firstSeen[p.id])S.firstSeen[p.id]=now});
+    if(j.boxscore)S.snaps.push({t:now,box:j.boxscore});
+    pruneSnaps();
+    render();
+  }).catch(function(e){
+    S.err=(e&&e.message==="Failed to fetch")?"Can't reach the feed. Check your connection.":(e.message||"Feed error");
+    render();
+  }).then(function(){
+    var wait=S.state==="in"?8000:S.state==="post"?120000:60000;
+    if(S.err)wait=15000;
+    timer=setTimeout(poll,wait);
+  });
+}
+function pruneSnaps(){
+  var cut=Date.now()-S.delay*1000-60000, s=S.snaps, i=0;
+  while(i<s.length-1&&s[i+1].t<cut)i++;
+  if(i>0)S.snaps=s.slice(i);
+}
+
+/* ---------- delayed view ---------- */
+function teamsOf(j){
+  var comp=((j.header||{}).competitions||[])[0]||{}, out={home:null,away:null,byId:{}};
+  (comp.competitors||[]).forEach(function(c){
+    var t={id:String((c.team||{}).id||c.id),ab:(c.team||{}).abbreviation||"?",ha:c.homeAway};
+    out[c.homeAway]=t; out.byId[t.id]=t;
+  });
+  return out;
+}
+function drivesOf(j){
+  var d=j.drives||{}, list=(d.previous||[]).slice(), seen={};
+  if(d.current)list.push(d.current);
+  return list.filter(function(x){var k=x.id||Math.random();if(seen[k])return false;seen[k]=1;return true});
+}
+function allPlays(j){
+  var out=[],seen={};
+  drivesOf(j).forEach(function(d){(d.plays||[]).forEach(function(p){if(p.id&&!seen[p.id]){seen[p.id]=1;out.push(p)}})});
+  out.sort(function(a,b){return (+a.sequenceNumber||0)-(+b.sequenceNumber||0)});
+  return out;
+}
+function playTime(p){var w=Date.parse(p.wallclock);return isNaN(w)?(S.firstSeen[p.id]||Date.now()):w}
+function visibleIds(j){
+  var cut=Date.now()-S.delay*1000, plays=allPlays(j), last=-1;
+  plays.forEach(function(p,i){if(playTime(p)<=cut)last=i});
+  var ids={}; for(var i=0;i<=last;i++)ids[plays[i].id]=1;
+  return {ids:ids,plays:plays,last:last,next:plays[last+1]||null};
+}
+function clockText(p){
+  var per=(p.period||{}).number||0, clk=(p.clock||{}).displayValue||"";
+  var q=per>4?"OT":per?"Q"+per:"";
+  return {q:q,clk:clk};
+}
+
+/* ---------- render ---------- */
+function render(){
+  $("delayVal").textContent=fmtDelay(S.delay);
+  var st=$("status");
+  if(S.err){st.textContent=S.err;st.className="status err"}
+  if(!S.sum){$("drives").innerHTML='<div class="empty">'+(S.err?esc(S.err):"Finding the "+esc(S.team)+" game…")+'</div>';return}
+  var j=S.sum, T=teamsOf(j), V=visibleIds(j), lastP=V.plays[V.last];
+  var allShown=V.plays.length>0&&V.last===V.plays.length-1;
+  $("awayAb").textContent=T.away?T.away.ab:"AWAY"; $("homeAb").textContent=T.home?T.home.ab:"HOME";
+  $("awayPts").textContent=lastP?(lastP.awayScore||0):(V.plays.length||S.state!=="pre"?0:"–");
+  $("homePts").textContent=lastP?(lastP.homeScore||0):(V.plays.length||S.state!=="pre"?0:"–");
+
+  var mid=$("mid"), sit="", posId=null;
+  if(S.state==="pre"&&!V.plays.length){
+    var comp=((j.header||{}).competitions||[])[0]||{}, d=new Date(comp.date||Date.now());
+    mid.innerHTML="Kickoff<small>"+esc(d.toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit"}))+"</small>";
+  }else if(S.state==="post"&&allShown){
+    mid.innerHTML="Final<small>&nbsp;</small>";
+  }else if(lastP){
+    var c=clockText(lastP);
+    mid.innerHTML=esc(c.q+" "+c.clk)+"<small>"+esc(((lastP.type||{}).text)||"")+"</small>";
+    var n=V.next&&V.next.start;
+    if(n&&n.downDistanceText){sit=n.downDistanceText;posId=n.team&&String(n.team.id)}
+  }else{
+    mid.innerHTML="Waiting<small>for the first play</small>";
+  }
+  $("sit").textContent=sit;
+  $("awayBox").classList.toggle("pos",!!(posId&&T.away&&T.away.id===posId));
+  $("homeBox").classList.toggle("pos",!!(posId&&T.home&&T.home.id===posId));
+
+  if(!S.err){
+    var ahead=V.plays.length-1-V.last;
+    st.className="status";
+    st.textContent=S.state==="post"&&allShown?"Game over. Everything is shown."
+      :S.state==="pre"&&!V.plays.length?"Pre-game. This page checks every minute until kickoff."
+      :ahead>0?"Live feed OK · holding back "+ahead+" play"+(ahead>1?"s":"")
+      :"Live feed OK · you're caught up";
+  }
+  renderDrives(j,T,V,allShown);
+  renderStats(j,T,allShown);
+}
+function fmtDelay(s){return s>=60?Math.floor(s/60)+":"+String(s%60).padStart(2,"0"):s+"s"}
+
+function renderDrives(j,T,V,allShown){
+  var drives=drivesOf(j), lastKey=null, html=[];
+  drives.forEach(function(d){
+    var vis=(d.plays||[]).filter(function(p){return V.ids[p.id]});
+    if(!vis.length)return;
+    lastKey=d.id;
+    var done=vis.length===(d.plays||[]).length&&(d!==((j.drives||{}).current)||S.state==="post");
+    var tm=(d.team&&d.team.abbreviation)||(d.team&&T.byId[String(d.team.id)]||{}).ab||"";
+    var res=done?(d.displayResult||d.result||""):"In progress";
+    var desc=done&&d.description?d.description:vis.length+" play"+(vis.length>1?"s":"")+" so far";
+    var start=d.start||{}, sc=done&&d.isScore;
+    var sClock=clockText(start);
+    var startTx=(start.text?"From "+start.text:"")+(sClock.q?" · "+sClock.q+" "+sClock.clk:"");
+    var items=vis.map(function(p){
+      var c=clockText(p), dd=(p.start||{}).shortDownDistanceText||"";
+      return '<li class="'+(p.scoringPlay?"spt":"")+'"><div class="pc"><b>'+esc(c.q+" "+c.clk)+'</b>'+esc(dd)+'</div><div class="tx">'+esc(p.text||((p.type||{}).text)||"")+'</div></li>';
+    }).join("");
+    html.push({key:d.id,h:'<details class="drive'+(sc?" sc":"")+'" data-k="'+esc(d.id)+'"><summary><span class="dt">'+esc(tm)+'</span><span class="dd">'+esc(desc)+(startTx?"<br>"+esc(startTx):"")+'</span><span class="dr'+(done?(sc?" sc":""):" live")+'">'+esc(res)+'</span></summary><ol class="plays">'+items+'</ol></details>'});
+  });
+  var box=$("drives");
+  var open={}; box.querySelectorAll("details[open]").forEach(function(el){open[el.dataset.k]=1});
+  var hadAny=box.querySelector("details");
+  if(!html.length){box.innerHTML='<div class="empty">'+(S.state==="pre"?"Drives appear here once the game starts.":"Holding plays back by "+fmtDelay(S.delay)+". The first one shows up when your stream reaches it.")+'</div>';return}
+  box.innerHTML=html.reverse().map(function(x){return x.h}).join("");
+  box.querySelectorAll("details").forEach(function(el){
+    if(open[el.dataset.k]||(el.dataset.k===String(lastKey)&&(!hadAny||!S._seenLast||S._seenLast!==lastKey)))el.open=true;
+  });
+  S._seenLast=lastKey;
+}
+
+function renderStats(j,T,allShown){
+  var cut=Date.now()-S.delay*1000, snap=null;
+  if(S.state==="post"&&allShown&&j.boxscore)snap={box:j.boxscore};
+  else for(var i=S.snaps.length-1;i>=0;i--){if(S.snaps[i].t<=cut){snap=S.snaps[i];break}}
+  var el=$("stats");
+  if(!snap){
+    var first=S.snaps[0], wait=first?Math.max(0,Math.ceil((first.t+S.delay*1000-Date.now())/1000)):S.delay;
+    el.innerHTML='<div class="empty">'+(S.state==="pre"?"Stats appear once the game starts.":"Stats catch up with your stream in about "+wait+"s.")+'</div>';return;
+  }
+  var box=snap.box, teams=box.teams||[], A=null,H=null;
+  teams.forEach(function(t){var id=String((t.team||{}).id);if(T.away&&id===T.away.id)A=t;else if(T.home&&id===T.home.id)H=t});
+  if(!A||!H){A=teams[0];H=teams[1]}
+  var out=[];
+  if(A&&H){
+    var hs={}; (H.statistics||[]).forEach(function(s){hs[s.name||s.label]=s});
+    var rows=(A.statistics||[]).map(function(s){var h=hs[s.name||s.label]||{};return '<tr><td>'+esc(s.displayValue)+'</td><td>'+esc(s.label||s.name)+'</td><td>'+esc(h.displayValue)+'</td></tr>'}).join("");
+    out.push('<div class="card"><h3>'+esc(T.away?T.away.ab:"")+' · Team stats · '+esc(T.home?T.home.ab:"")+'</h3><table class="ts">'+rows+'</table></div>');
+  }
+  var cats=["passing","rushing","receiving","defensive"];
+  (box.players||[]).forEach(function(tp){
+    var ab=(tp.team||{}).abbreviation||"";
+    cats.forEach(function(cat){
+      var s=(tp.statistics||[]).filter(function(x){return x.name===cat})[0];
+      if(!s||!(s.athletes||[]).length)return;
+      var lab=s.labels||[], ath=s.athletes.slice(0,cat==="defensive"?5:6);
+      var th='<tr><th>'+esc(s.text||cat)+'</th>'+lab.map(function(l){return '<th>'+esc(l)+'</th>'}).join("")+'</tr>';
+      var tr=ath.map(function(a){return '<tr><td>'+esc((a.athlete||{}).shortName||(a.athlete||{}).displayName||"")+'</td>'+(a.stats||[]).map(function(v){return '<td>'+esc(v)+'</td>'}).join("")+'</tr>'}).join("");
+      out.push('<div class="card"><h3>'+esc(ab)+' '+esc(s.text||cat)+'</h3><div class="scroll"><table class="pl">'+th+tr+'</table></div></div>');
+    });
+  });
+  el.innerHTML=out.join("")||'<div class="empty">No stats in the feed yet.</div>';
+}
+
+/* ---------- controls ---------- */
+function setDelay(v){S.delay=Math.max(0,Math.min(900,v));save("db_delay",S.delay);render()}
+$("m30").onclick=function(){setDelay(S.delay-30)};
+$("m5").onclick=function(){setDelay(S.delay-5)};
+$("p5").onclick=function(){setDelay(S.delay+5)};
+$("p30").onclick=function(){setDelay(S.delay+30)};
+function tab(t){S.tab=t;$("drives").hidden=t!=="drives";$("stats").hidden=t!=="stats";
+  $("tabDrives").setAttribute("aria-selected",t==="drives");$("tabStats").setAttribute("aria-selected",t==="stats")}
+$("tabDrives").onclick=function(){tab("drives")};
+$("tabStats").onclick=function(){tab("stats")};
+$("team").value=S.team;
+$("team").onchange=function(){var v=this.value.trim().toUpperCase();if(!v)return;S.team=v;save("db_team",v);S.schedule=[];S.pick="";S.eventId=null;S.sum=null;$("game").value="";render();poll()};
+$("game").onchange=function(){S.pick=this.value;poll()};
+var lock=null;
+$("wake").onclick=function(){
+  if(!("wakeLock" in navigator)){$("wakeNote").textContent="Not supported in this browser.";return}
+  if(lock){lock.release();lock=null;$("wake").textContent="Keep screen on";$("wakeNote").textContent="";return}
+  navigator.wakeLock.request("screen").then(function(l){lock=l;$("wake").textContent="Let screen sleep";$("wakeNote").textContent="Screen stays on while this page is open.";
+    l.addEventListener("release",function(){if(lock===l){lock=null;$("wake").textContent="Keep screen on";$("wakeNote").textContent=""}})})
+  .catch(function(){$("wakeNote").textContent="The browser said no. Try again after tapping the page."});
+};
+document.addEventListener("visibilitychange",function(){if(!document.hidden)poll()});
+setInterval(render,1000);
+render(); poll();
+})();
+</script>
+</body>
+</html>
