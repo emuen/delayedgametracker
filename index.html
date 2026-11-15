@@ -333,7 +333,7 @@ function drivesOf(j){
 }
 function allPlays(j){
   var out=[],seen={};
-  drivesOf(j).forEach(function(d){(d.plays||[]).forEach(function(p){if(p.id&&!seen[p.id]){seen[p.id]=1;out.push(p)}})});
+  drivesOf(j).forEach(function(d){(d.plays||[]).forEach(function(p){if(p.id&&!seen[p.id]&&!isOfficialTO(p)){seen[p.id]=1;out.push(p)}})});
   out.sort(function(a,b){return (+a.sequenceNumber||0)-(+b.sequenceNumber||0)});
   return out;
 }
@@ -363,6 +363,36 @@ function cleanText(t){
 var NOYARD=/timeout|end of|two-minute|kickoff|punt|extra point|field goal|coin toss|end period|official/i;
 /* Timeouts, quarter breaks and warnings: listed, but not plays. */
 function isNonPlay(p){var ty=((p.type||{}).text||""),t=p.text||"";return /timeout|end of|end period|end quarter|end game|two-minute|coin toss/i.test(ty)||/^\s*(official\s+)?timeout\b|^\s*end (of )?(quarter|half|game)|^\s*two-minute warning/i.test(t)}
+function isOfficialTO(p){return /official timeout|tv timeout/i.test(((p.type||{}).text||"")+" "+(p.text||""))}
+/* What ends a drive: score, punt, turnover, missed FG, safety. */
+function endOf(p){
+  var ty=((p.type||{}).text||"").toLowerCase(), t=p.text||"";
+  if(/touchdown/.test(ty)||(p.scoringPlay&&/touchdown/i.test(t))){
+    if(/interception/.test(ty)||(/intercepted/i.test(t)&&!/passing|rushing/.test(ty)))return "Interception TD";
+    if(/fumble/.test(ty)&&!/passing|rushing/.test(ty))return "Fumble TD";
+    return "Touchdown";
+  }
+  if(/field goal good/.test(ty)||(p.scoringPlay&&/field goal is good/i.test(t)))return "Field goal";
+  if(/field goal missed|missed field goal|blocked field goal/.test(ty)||/field goal is no good|field goal is blocked/i.test(t))return "Missed FG";
+  if(/punt/.test(ty)||/\bpunts\b/.test(t))return "Punt";
+  if(/interception/.test(ty)||/\bintercepted\b/i.test(t))return "Interception";
+  if(/fumble recovery \(opponent\)|fumble return/.test(ty))return "Fumble";
+  if(/safety/.test(ty))return "Safety";
+  var a=teamIdOf(p.start), b=teamIdOf(p.end);
+  if((p.start||{}).down===4&&a&&b&&a!==b)return "Downs";
+  return null;
+}
+/* A drive's state as far as your stream has got. ESPN's own result is used only
+   once every play of the drive is showing, so it can't spoil anything. */
+function driveState(d,vis,all,cur){
+  var isCur=cur&&d.id===cur.id&&S.state!=="post";
+  var espnDone=vis.length===all.length&&!isCur, endLabel=null;
+  vis.forEach(function(p){if(!endLabel&&!isNonPlay(p))endLabel=endOf(p)});
+  var ended=espnDone||!!endLabel;
+  var label=espnDone?(d.displayResult||d.result||endLabel||"Done"):endLabel;
+  var scored=espnDone&&d.isScore!=null?!!d.isScore:/^(Touchdown|Field goal)$/.test(label||"");
+  return {ended:ended,label:label,scored:scored};
+}
 /* ESPN's play text sometimes uses the league's older codes. */
 var ALIAS={ARZ:"ARI",LA:"LAR",WAS:"WSH",JAC:"JAX",BLT:"BAL",CLV:"CLE",HST:"HOU",OAK:"LV",SD:"LAC",STL:"LAR"};
 
@@ -416,8 +446,8 @@ function latestDrive(j,T,V){
   drives.forEach(function(d){
     var all=d.plays||[], vis=all.filter(function(p){return V.ids[p.id]});
     if(!vis.length)return;
-    var isCur=cur&&d.id===cur.id&&S.state!=="post";
-    out={d:d,vis:vis,done:vis.length===all.length&&!isCur};
+    var st=driveState(d,vis,all,cur);
+    out={d:d,vis:vis,done:st.ended,label:st.label};
   });
   if(!out)return null;
   var d=out.d, off=String((d.team||{}).id||"");
@@ -438,7 +468,7 @@ function latestDrive(j,T,V){
   out.real=out.vis.filter(function(p){return !isNonPlay(p)});
   var yds=own.length?Math.round(own[own.length-1].e-own[0].s):0;
   out.off=off; out.offAb=offAb; out.defAb=defAb; out.A=A; out.rows=rows;
-  out.summary=out.done?offAb+" "+String(d.displayResult||d.result||"drive over").toLowerCase()
+  out.summary=out.done?offAb+" "+String(out.label||"drive over").toLowerCase()
     :offAb+" drive · "+nPlays+" play"+(nPlays===1?"":"s")+", "+yds+" yds";
   return out;
 }
@@ -505,18 +535,20 @@ function renderDrives(j,T,V,L){
   var newest=null, syncId=null;
   for(var k=V.last;k>=0;k--){if(!isNonPlay(V.plays[k])){newest=V.plays[k];break}}
   if(newest&&S.shownAt[newest.id]&&now-S.shownAt[newest.id]<120000&&!S.synced[newest.id]&&S.state!=="post")syncId=newest.id;
+  var latestId=null;
+  drives.forEach(function(d){if((d.plays||[]).some(function(p){return V.ids[p.id]}))latestId=d.id});
   drives.forEach(function(d){
-    var all=d.plays||[], vis=all.filter(function(p){return V.ids[p.id]});
+    var all=(d.plays||[]).filter(function(p){return !isOfficialTO(p)}), vis=all.filter(function(p){return V.ids[p.id]});
     if(!vis.length)return;
-    var isCur=cur&&d.id===cur.id&&S.state!=="post";
-    var done=vis.length===all.length&&!isCur;
+    var dst=driveState(d,vis,all,cur), done=dst.ended;
     var tm=(d.team&&d.team.abbreviation)||(T.byId[String((d.team||{}).id)]||{}).ab||"";
-    var res=done?(d.displayResult||d.result||"Done"):"In progress";
+    var res=done?dst.label:"In progress";
     var nReal=vis.filter(function(p){return !isNonPlay(p)}).length;
-    var desc=done?(d.description||nReal+" play"+(nReal===1?"":"s")):nReal+" play"+(nReal===1?"":"s")+" so far";
-    var start=d.start||{}, sc=done&&d.isScore, sClock=clockText(start);
+    var allShown=vis.length===all.length&&!(cur&&d.id===cur.id&&S.state!=="post");
+    var desc=done?((allShown&&d.description)||nReal+" play"+(nReal===1?"":"s")):nReal+" play"+(nReal===1?"":"s")+" so far";
+    var start=d.start||{}, sc=done&&dst.scored, sClock=clockText(start);
     var startTx=(start.text?"From "+start.text:"")+(sClock.q?" · "+sClock.q+" "+sClock.clk:"");
-    var userOpen=S.openState[d.id], open=userOpen===undefined?!done:userOpen;
+    var userOpen=S.openState[d.id], open=userOpen===undefined?d.id===latestId:userOpen;
     var tc=TC[String((d.team||{}).id)], style=tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'';
     var q=((d.start||{}).period||{}).number||((vis[0]||{}).period||{}).number||0;
     var items=vis.slice().reverse().map(function(p){
@@ -567,7 +599,8 @@ function fieldChart(L){
     var lab=r.score?'<text x="'+(ex+(right?2.8:-2.8))+'" y="'+(yy+2.9)+'" font-size="4" font-weight="700" text-anchor="'+(right?"start":"end")+'" fill="var(--fg)" '+F+'>'+esc(r.score)+'</text>':'';
     g.push('<g><title>'+esc(r.text)+'</title>'+(b-a>0.8?'<rect x="'+a+'" y="'+yy+'" width="'+(b-a)+'" height="3.6" rx="1.8" fill="'+col+'"/>':'')+'<circle cx="'+ex+'" cy="'+(yy+1.8)+'" r="1.9" fill="'+col+'" stroke="var(--surface)" stroke-width="0.5"/>'+lab+'</g>');
   });
-  var d=L.d, cap=L.done?(d.description||""):L.summary.replace(L.offAb+" drive · ","");
+  var d=L.d, nOwn=L.real.filter(function(p){return !isKick(p)}).length;
+  var cap=L.done?(L.label||"")+" · "+nOwn+" play"+(nOwn===1?"":"s"):L.summary.replace(L.offAb+" drive · ","");
   return '<div class="chart"><div class="cap"><b>'+(L.done?"Last drive · ":"Current drive · ")+esc(L.offAb)+'</b><span>'+esc(cap)+'</span></div>'+
     '<svg viewBox="0 0 120 '+H+'" role="img" aria-label="'+esc(L.offAb)+' drive chart">'+g.join("")+'</svg>'+
     '<div class="legend"><span><i style="background:var(--score)"></i>Gain</span><span><i style="background:var(--warn)"></i>Loss</span><span><i style="background:var(--kick)"></i>Kick</span><span><i style="background:var(--ret)"></i>Return</span></div></div>';
