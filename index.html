@@ -12,7 +12,7 @@
 :root{
   --bg:#f3f4f2; --surface:#ffffff; --line:#dfe2dc; --fg:#17201b; --muted:#5f6b63;
   --accent:#b8860b; --accent-ink:#ffffff; --score:#1d6b3f; --warn:#a4421d;
-  --field:#dcebd9; --ez:#c7dcc3; --yard:#a9c4a4; --kick:#9aa59d;
+  --field:#dcebd9; --ez:#c7dcc3; --yard:#a9c4a4; --kick:#9aa59d; --ret:#3f6fa3;
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:light;
@@ -20,7 +20,7 @@
 @media (prefers-color-scheme:dark){:root{
   --bg:#0f1512; --surface:#18201c; --line:#2a352f; --fg:#e8ede9; --muted:#93a198;
   --accent:#e0b33f; --accent-ink:#171204; --score:#5fc58b; --warn:#ef8a62;
-  --field:#1c2e22; --ez:#243a2b; --yard:#35503e; --kick:#6c7a71; color-scheme:dark}}
+  --field:#1c2e22; --ez:#243a2b; --yard:#35503e; --kick:#6c7a71; --ret:#7fb0e6; color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);
@@ -365,22 +365,59 @@ function renderDrives(j,T,V){
 }
 
 /* Field chart: the offense always drives left to right. One row per play, oldest at the top. */
-function toPos(sit,off){
-  if(!sit||sit.yardsToEndzone==null)return null;
+function toPos(sit,off,A){
+  if(!sit)return null;
+  var txt=sit.possessionText||((sit.downDistanceText||"").split(" at ")[1]);
+  var x=A?parseSpot(txt,A):null;
+  if(x!=null)return x;
+  if(sit.yardsToEndzone==null)return null;
   var y=+sit.yardsToEndzone, t=teamIdOf(sit);
   return (!t||t===off)?100-y:y;
+}
+/* Turn "SEA 30", "50" or "SEA End Zone" into yards from the offense's own goal line. */
+function sideOf(a,A){
+  if(a===A.off)return "o"; if(a===A.def)return "d";
+  var o=A.off.indexOf(a)===0||a.indexOf(A.off)===0, d=A.def.indexOf(a)===0||a.indexOf(A.def)===0;
+  return o&&!d?"o":d&&!o?"d":null;
+}
+function parseSpot(s,A){
+  if(!s)return null;
+  if(/^\s*(the\s+)?50\b/i.test(s))return 50;
+  var m=String(s).match(/\b([A-Z]{2,4})\s+(End Zone|-?\d{1,2})\b/);
+  if(!m)return null;
+  var side=sideOf(m[1],A); if(!side)return null;
+  if(m[2]==="End Zone")return side==="o"?-4:104;
+  var n=+m[2]; return side==="o"?n:100-n;
+}
+/* Split a punt or kickoff into the kick and the return. */
+function kickRows(p,off,A,s,e){
+  var t=p.text||"", type=((p.type||{}).text||"").toLowerCase();
+  var isPunt=/punt/.test(type)||/\bpunts\b/.test(t), isKO=/kickoff/.test(type)||/\bkicks\b.*\bfrom\b/.test(t);
+  if(!isPunt&&!isKO)return null;
+  var los=s, land=null, m;
+  if(isKO&&(m=t.match(/\bfrom\s+([A-Z]{2,4}\s+-?\d{1,2}|50)/)))los=parseSpot(m[1],A);
+  if(los==null)return null;
+  var kickerOff=isPunt?(teamIdOf(p.start)?teamIdOf(p.start)===off:true):(teamIdOf(p.start)?teamIdOf(p.start)===off:los<50);
+  if((m=t.match(/\b(?:punts|kicks)\s+(-?\d+)\s+yards?\s+(?:from\s+\S+\s+\S+\s+)?to\s+(?:the\s+)?([A-Z]{2,4}\s+(?:End Zone|-?\d{1,2})|50)/)))land=parseSpot(m[2],A);
+  if(land==null&&(m=t.match(/\b(?:punts|kicks)\s+(-?\d+)\s+yards?/)))land=los+(kickerOff?1:-1)*(+m[1]);
+  if(land==null)return null;
+  var rows=[{s:los,e:land,kind:"kick",text:t}];
+  var noReturn=/touchback|fair catch|downed|out of bounds/i.test(t);
+  if(!noReturn&&e!=null&&Math.abs(e-land)>0.8)rows.push({s:land,e:e,kind:"ret",text:t});
+  return rows;
 }
 function fieldChart(d,vis,done,T){
   var off=String((d.team||{}).id||""); if(!off)return "";
   var offAb=(d.team&&d.team.abbreviation)||(T.byId[off]||{}).ab||"";
   var defT=(T.home&&T.home.id===off)?T.away:T.home, defAb=defT?defT.ab:"";
-  var rows=[];
+  var A={off:offAb,def:defAb}, rows=[];
   vis.forEach(function(p){
-    var s=toPos(p.start,off), e=toPos(p.end,off);
+    var s=toPos(p.start,off,A), e=toPos(p.end,off,A);
+    var kr=kickRows(p,off,A,s,e);
+    if(kr){kr.forEach(function(r){r.score=!!p.scoringPlay&&r===kr[kr.length-1];rows.push(r)});return}
     if(s==null&&e==null)return;
     if(s==null)s=e; if(e==null)e=s;
-    var st=teamIdOf(p.start);
-    rows.push({s:s,e:e,kick:!!(st&&st!==off),score:!!p.scoringPlay,text:p.text||""});
+    rows.push({s:s,e:e,kind:"play",score:!!p.scoringPlay,text:p.text||""});
   });
   if(!rows.length)return "";
   var top=10, rh=6, H=top+rows.length*rh+3;
@@ -396,7 +433,7 @@ function fieldChart(d,vis,done,T){
   g.push('<text x="115" y="'+(H/2)+'" font-size="3.6" text-anchor="middle" fill="var(--muted)" transform="rotate(90 115 '+(H/2)+')" font-family="Barlow Condensed,Arial Narrow,sans-serif">'+esc(defAb)+'</text>');
   var lastP=vis[vis.length-1], be=null;
   if(!done&&lastP&&!lastP.scoringPlay){
-    be=toPos(lastP.end,off);
+    be=toPos(lastP.end,off,A);
     var et=teamIdOf(lastP.end);
     if(be!=null&&(!et||et===off)){
       var dist=+((lastP.end||{}).distance)||0;
@@ -405,17 +442,17 @@ function fieldChart(d,vis,done,T){
     }else be=null;
   }
   rows.forEach(function(r,i){
-    var yy=top+i*rh+1, col=r.score?"var(--accent)":r.kick?"var(--kick)":(r.e>=r.s?"var(--score)":"var(--warn)");
+    var yy=top+i*rh+1, col=r.score?"var(--accent)":r.kind==="kick"?"var(--kick)":r.kind==="ret"?"var(--ret)":(r.e>=r.s?"var(--score)":"var(--warn)");
     var a=X(Math.min(r.s,r.e)), b=X(Math.max(r.s,r.e));
     g.push('<g><title>'+esc(r.text)+'</title>'+(b-a>0.8?'<rect x="'+a+'" y="'+yy+'" width="'+(b-a)+'" height="3.4" rx="1.7" fill="'+col+'"/>':'')+'<circle cx="'+X(r.e)+'" cy="'+(yy+1.7)+'" r="1.8" fill="'+col+'" stroke="var(--surface)" stroke-width="0.5"/></g>');
   });
-  var first=rows.filter(function(r){return !r.kick})[0], lastRow=rows[rows.length-1];
+  var own=rows.filter(function(r){return r.kind==="play"}), first=own[0], lastRow=own[own.length-1];
   var cap;
   if(done)cap=(d.displayResult||d.result||"")+(d.description?" · "+d.description:"");
-  else{var yds=first?Math.round(lastRow.e-first.s):0;cap=vis.length+" play"+(vis.length>1?"s":"")+" · "+(yds>=0?yds:yds)+" yds";}
+  else{var yds=first?Math.round(lastRow.e-first.s):0;cap=vis.length+" play"+(vis.length>1?"s":"")+" · "+yds+" yds";}
   return '<div class="chart"><div class="cap"><b>'+esc(offAb)+(done?" last drive":" drive")+'</b><span>'+esc(cap)+'</span></div>'+
     '<svg viewBox="0 0 120 '+H+'" role="img" aria-label="'+esc(offAb)+' drive chart">'+g.join("")+'</svg>'+
-    '<div class="legend"><span><i style="background:var(--score)"></i>Gain</span><span><i style="background:var(--warn)"></i>Loss</span><span><i style="background:var(--kick)"></i>Kick</span><span><i style="background:var(--accent)"></i>Score / line to gain</span><span><i style="background:var(--fg)"></i>Ball</span></div></div>';
+    '<div class="legend"><span><i style="background:var(--score)"></i>Gain</span><span><i style="background:var(--warn)"></i>Loss</span><span><i style="background:var(--kick)"></i>Kick</span><span><i style="background:var(--ret)"></i>Return</span><span><i style="background:var(--accent)"></i>Score / line to gain</span><span><i style="background:var(--fg)"></i>Ball</span></div></div>';
 }
 
 function renderInfo(j){
