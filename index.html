@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: sticky score bar (score, down & distance, delay dial, status chips), then Drives (field chart + drive log, newest first) and Stats (your team / opponent / team stats), game info and setup at the bottom. Phone-first, one column. */
+/* Layout: compact sticky score bar (score, down & distance, status + settings chip), game info, then Drives (field chart + drive log, newest first) and Stats. Delay, keep-screen-on and game choice live in a bottom settings sheet. Phone-first, one column. */
 :root{
   --bg:#f3f4f2; --surface:#ffffff; --line:#dfe2dc; --fg:#17201b; --muted:#5a665e;
   --accent:#8a6408; --accent-ink:#ffffff; --score:#1d6b3f; --warn:#a4421d;
@@ -40,8 +40,27 @@ button,select,input{font:inherit;color:inherit}
 .tm.pos .ab::after{content:" ●";color:var(--accent)}
 .mid{text-align:center;font:600 19px/1.15 var(--display);letter-spacing:.03em;min-width:0}
 .mid small{display:block;font:500 12px var(--body);color:var(--muted);letter-spacing:0;margin-top:2px}
-.sit{margin-top:6px;text-align:center;font:700 21px/1.2 var(--display);letter-spacing:.03em;min-height:1.2em}
-.dial{margin-top:8px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--surface);display:grid;gap:6px}
+.sit{margin-top:4px;text-align:center;font:700 21px/1.2 var(--display);letter-spacing:.03em;min-height:1.2em}
+.dial{display:grid;gap:6px}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-radius:16px 16px 0 0;max-height:88vh;overflow-y:auto;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+.sheet .in{max-width:640px;margin:0 auto;display:grid;gap:14px}
+.sheethead{display:flex;justify-content:space-between;align-items:center}
+.sheethead h2{margin:0;font:700 20px var(--display);letter-spacing:.04em}
+.sheethead button{min-height:40px;padding:0 18px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer}
+.sect{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.sect h3{margin:0;font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.switch{flex:none;width:52px;height:32px;border-radius:999px;border:1px solid var(--line);background:var(--bg);position:relative;cursor:pointer}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--muted);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--score);border-color:var(--score)}
+.switch[aria-checked="true"]::after{left:23px;background:#fff}
+.field{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.field select,.field input{min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;max-width:100%}
+.field input{width:5.5em;text-transform:uppercase}
+.help{font-size:13px;color:var(--muted);margin:0}
 .dialrow{display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;gap:6px;align-items:center}
 .dialrow button{height:44px;border:1px solid var(--line);background:var(--bg);border-radius:10px;font:600 17px var(--display);cursor:pointer}
 .dialrow button:active{background:var(--accent);color:var(--accent-ink)}
@@ -50,9 +69,8 @@ button,select,input{font:inherit;color:inherit}
 .dv{text-align:center;min-width:4.6ch;padding:0 4px}
 .dv .val{font:700 26px/1 var(--display);font-variant-numeric:tabular-nums}
 .dv .lbl{font-size:11px;color:var(--muted)}
-.dialhelp{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
-.dialhelp button{height:40px;padding:0 18px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer;flex:none}
-.statusrow{display:flex;justify-content:center;align-items:center;gap:6px 8px;flex-wrap:wrap;margin-top:8px}
+.dialhelp{font-size:12px;color:var(--muted);text-align:center}
+.statusrow{display:flex;justify-content:space-between;align-items:center;gap:6px 8px;flex-wrap:wrap;margin-top:6px}
 .status{font-size:12px;color:var(--muted);text-align:center}
 .status.err{color:var(--warn);font-weight:600}
 .chip{min-height:32px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:12px;cursor:pointer;color:var(--muted)}
@@ -108,18 +126,15 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 .pl th{font:600 12px var(--body);color:var(--muted)}
 .pl th:first-child,.pl td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
 .pl tr:last-child td{border-bottom:0}
-.info{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-top:18px}
-.info>summary{list-style:none;cursor:pointer;padding:12px;min-height:44px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.info{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-top:12px}
+.info>summary{list-style:none;cursor:pointer;padding:10px 12px;min-height:44px;font-size:13px;color:var(--fg);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.info>summary span{min-width:0}
 .info>summary::-webkit-details-marker{display:none}
 .info>summary::after{content:"Show";font-weight:600;color:var(--fg)}
 .info[open]>summary::after{content:"Hide"}
 .info dl{margin:0;padding:0 12px 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
 .info dt{color:var(--muted)}
 .info dd{margin:0;min-width:0;overflow-wrap:anywhere}
-.setup{margin-top:14px;font-size:13px;color:var(--muted);display:grid;gap:10px}
-.setup .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.setup select,.setup input{min-height:44px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;max-width:100%}
-.setup input{width:5.5em;text-transform:uppercase}
 button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 [hidden]{display:none!important}
@@ -133,25 +148,18 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     <div class="tm" id="homeBox"><span class="ab" id="homeAb">HOME</span><span class="pts" id="homePts">–</span></div>
   </div>
   <div class="sit" id="sit"></div>
-  <div class="dial" id="dial">
-    <div class="dialrow">
-      <button id="m30" class="minus" aria-label="30 seconds less">−30</button>
-      <button id="m5" class="minus" aria-label="5 seconds less">−5</button>
-      <div class="dv"><div class="val" id="delayVal">45s</div><div class="lbl">delay</div></div>
-      <button id="p5" class="plus" aria-label="5 seconds more">+5</button>
-      <button id="p30" class="plus" aria-label="30 seconds more">+30</button>
-    </div>
-    <div class="dialhelp"><span>Play shows here first? Tap +.<br>Behind your TV? Tap −.</span><button id="dialDone">Set</button></div>
-  </div>
   <div class="statusrow">
     <span class="status" id="status">Connecting to the live feed…</span>
-    <button class="chip" id="dialShow" hidden>Delay 45s · Adjust</button>
-    <button class="chip" id="wake">Keep screen on</button>
+    <button class="chip" id="openSettings">Delay 45s · Settings</button>
     <button class="chip warn" id="retry" hidden>Retry now</button>
   </div>
 </div></div>
 
 <main class="wrap">
+  <details class="info" id="info">
+    <summary><span id="infoSum">Game info</span></summary>
+    <dl id="infoBody"></dl>
+  </details>
   <div class="tabs" role="tablist">
     <button id="tabDrives" role="tab" aria-selected="true">Drives</button>
     <button id="tabStats" role="tab" aria-selected="false">Stats</button>
@@ -166,19 +174,34 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     <div id="statsBody"></div>
   </section>
 
-  <details class="info" id="info">
-    <summary id="infoSum">Game info</summary>
-    <dl id="infoBody"></dl>
-  </details>
-
-  <div class="setup">
-    <div class="row">
-      <label for="team">Team</label><input id="team" maxlength="4" value="LAR">
-      <label for="game">Game</label><select id="game"><option value="">Auto (live or next)</option></select>
-    </div>
-    <div>How to sync: when a play shows up here before you see it on DAZN, wait for it on TV and tap "Just happened on TV" under it. If plays show up after your TV, tap −5 until they match. Then tap Set. Your delay is remembered on this phone.</div>
-  </div>
 </main>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="in">
+  <div class="sheethead"><h2 id="sheetTitle">Settings</h2><button id="sheetDone">Done</button></div>
+  <div class="sect">
+    <h3>Delay</h3>
+    <div class="dial">
+      <div class="dialrow">
+        <button id="m30" class="minus" aria-label="30 seconds less">−30</button>
+        <button id="m5" class="minus" aria-label="5 seconds less">−5</button>
+        <div class="dv"><div class="val" id="delayVal">45s</div><div class="lbl">delay</div></div>
+        <button id="p5" class="plus" aria-label="5 seconds more">+5</button>
+        <button id="p30" class="plus" aria-label="30 seconds more">+30</button>
+      </div>
+      <div class="dialhelp">Play shows here first? Tap +. Behind your TV? Tap −.</div>
+    </div>
+    <p class="help">Quickest way: when a new play shows up before you see it on DAZN, wait for it on TV and tap "Just happened on TV" under it.</p>
+  </div>
+  <div class="sect">
+    <div class="opt"><div><b>Keep screen on</b><small id="wakeNote">Stops your phone from locking while this page is open.</small></div><button class="switch" id="wake" role="switch" aria-checked="false" aria-label="Keep screen on"></button></div>
+  </div>
+  <div class="sect">
+    <h3>Game</h3>
+    <div class="field"><label for="team">Team</label><input id="team" maxlength="4" value="LAR"></div>
+    <div class="field"><label for="game">Game</label><select id="game"><option value="">Auto (live or next)</option></select></div>
+  </div>
+</div></div>
 
 <script>
 (function(){
@@ -187,7 +210,7 @@ var API="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
-  team:load("db_team","LAR"), delay:load("db_delay",45), dialHidden:load("db_dialHidden",false),
+  team:load("db_team","LAR"), delay:load("db_delay",45),
   lagSamples:load("db_lag",[]), statTab:load("db_statTab","mine"), wantWake:load("db_wake",false),
   pick:"", eventId:null, sum:null, sumVer:0, state:"pre",
   seen:{}, estimated:{}, shownAt:{}, synced:{}, loaded:false, lastOk:0, nextPollAt:0, snaps:[], err:"", schedule:[],
@@ -393,8 +416,7 @@ function latestDrive(j,T,V){
 function render(){
   var now=Date.now();
   $("delayVal").textContent=fmtDelay(S.delay);
-  $("dial").hidden=S.dialHidden; $("dialShow").hidden=!S.dialHidden;
-  $("dialShow").textContent="Delay "+fmtDelay(S.delay)+" · Adjust";
+  $("openSettings").textContent="Delay "+fmtDelay(S.delay)+(S.wantWake?" · Screen on":"")+" · Settings";
   var st=$("status"), retry=$("retry");
   retry.hidden=!S.err;
   if(S.err){
@@ -438,7 +460,7 @@ function render(){
     st.className="status";
     st.textContent=S.state==="post"&&allShown?"Game over. Everything is shown."
       :S.state==="pre"&&!V.plays.length?"Pre-game · checking every minute"
-      :"Live · in sync with your "+fmtDelay(S.delay)+" delay";
+      :"Live · in sync";
   }
   var dk=S.sumVer+"|"+V.last+"|"+S.state+"|"+Math.floor(now/30000);
   if(S.keys.drives!==dk){S.keys.drives=dk;renderDrives(j,T,V,L)}
@@ -587,8 +609,11 @@ $("m30").onclick=function(){setDelay(S.delay-30)};
 $("m5").onclick=function(){setDelay(S.delay-5)};
 $("p5").onclick=function(){setDelay(S.delay+5)};
 $("p30").onclick=function(){setDelay(S.delay+30)};
-$("dialDone").onclick=function(){S.dialHidden=true;save("db_dialHidden",true);render()};
-$("dialShow").onclick=function(){S.dialHidden=false;save("db_dialHidden",false);render()};
+function sheet(open){$("sheet").hidden=!open;$("scrim").hidden=!open;if(open)$("sheetDone").focus();else $("openSettings").focus()}
+$("openSettings").onclick=function(){sheet(true)};
+$("sheetDone").onclick=function(){sheet(false)};
+$("scrim").onclick=function(){sheet(false)};
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("sheet").hidden)sheet(false)});
 $("retry").onclick=function(){$("status").textContent="Retrying…";poll()};
 $("drives").addEventListener("click",function(e){
   var b=e.target.closest("[data-sync]");
@@ -612,21 +637,32 @@ $("team").value=S.team;
 $("team").onchange=function(){var v=this.value.trim().toUpperCase();if(!v)return;S.team=v;save("db_team",v);S.schedule=[];S.pick="";S.eventId=null;S.sum=null;$("game").value="";render();poll()};
 $("game").onchange=function(){S.pick=this.value;poll()};
 
-/* Keep the screen on, and turn it back on after switching apps. */
-var lock=null, wakeBtn=$("wake");
-function wakeUI(msg){wakeBtn.textContent=msg||(lock?"Screen stays on":"Keep screen on");wakeBtn.classList.toggle("on",!!lock)}
-function getLock(){
-  if(!("wakeLock" in navigator)){wakeUI("Screen lock not supported");return}
-  navigator.wakeLock.request("screen").then(function(l){lock=l;wakeUI();
-    l.addEventListener("release",function(){if(lock===l){lock=null;wakeUI()}})})
-  .catch(function(){lock=null;wakeUI("Tap again to keep screen on")});
+/* Keep the screen on. Uses the browser's screen lock where it works, plus a tiny
+   silent looping video, which is what keeps iPhones (and home-screen apps) awake. */
+var lock=null, video=null, wakeBtn=$("wake");
+var VID="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAMvbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAll0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAABAAAAAQAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHRbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAgABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABfG1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAATxzdGJsAAAAvHN0c2QAAAAAAAAAAQAAAKxhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAABAAEABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAMmF2Y0MBZAAK/+EAF2dkAAqs2V7ARAAAAwAEAAADAAg8SJZYAQAEaO+Py/34+AAAAAAQcGFzcAAAAAEAAAABAAAAFGJ0cnQAAAAAAAALQAAAC0AAAAAYc3R0cwAAAAAAAAABAAAAAgAAQAAAAAAUc3RzcwAAAAAAAAABAAAAAQAAABxzdHNjAAAAAAAAAAEAAAABAAAAAgAAAAEAAAAcc3RzegAAAAAAAAAAAAAAAgAAAsQAAAAMAAAAFHN0Y28AAAAAAAAAAQAAA18AAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjYwLjE2LjEwMAAAAAhmcmVlAAAC2G1kYXQAAAKqBgX//6bcRem95tlIt5Ys2CDZI+7veDI2NCAtIGNvcmUgMTY0IHIzMTA4IDMxZTE5ZjkgLSBILjI2NC9NUEVHLTQgQVZDIGNvZGVjIC0gQ29weWxlZnQgMjAwMy0yMDIzIC0gaHR0cDovL3d3dy52aWRlb2xhbi5vcmcveDI2NC5odG1sIC0gb3B0aW9uczogY2FiYWM9MSByZWY9MSBkZWJsb2NrPTE6MDowIGFuYWx5c2U9MHgzOjB4MyBtZT1oZXggc3VibWU9MiBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0wIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MCA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0wIHRocmVhZHM9MSBsb29rYWhlYWRfdGhyZWFkcz0xIHNsaWNlZF90aHJlYWRzPTAgbnI9MCBkZWNpbWF0ZT0xIGludGVybGFjZWQ9MCBibHVyYXlfY29tcGF0PTAgY29uc3RyYWluZWRfaW50cmE9MCBiZnJhbWVzPTMgYl9weXJhbWlkPTIgYl9hZGFwdD0xIGJfYmlhcz0wIGRpcmVjdD0xIHdlaWdodGI9MSBvcGVuX2dvcD0wIHdlaWdodHA9MSBrZXlpbnQ9MjUwIGtleWludF9taW49MSBzY2VuZWN1dD00MCBpbnRyYV9yZWZyZXNoPTAgcmNfbG9va2FoZWFkPTEwIHJjPWNyZiBtYnRyZWU9MSBjcmY9MjMuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAABJliIQAFv/sf8JVf9ECkR5tf/EAAAAIQZohGIK//vA=";
+function startVideo(){
+  if(!video){video=document.createElement("video");video.setAttribute("playsinline","");video.setAttribute("muted","");video.muted=true;video.loop=true;video.src=VID;
+    video.style.cssText="position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0.01;pointer-events:none";document.body.appendChild(video)}
+  var p=video.play(); if(p&&p.catch)p.catch(function(){});
 }
+function getLock(){
+  if(!("wakeLock" in navigator)||lock)return;
+  navigator.wakeLock.request("screen").then(function(l){lock=l;l.addEventListener("release",function(){if(lock===l)lock=null})}).catch(function(){});
+}
+function wakeUI(){wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");render()}
+function wakeOn(){startVideo();getLock()}
+function wakeOff(){if(video)video.pause();if(lock){var l=lock;lock=null;l.release()}}
 wakeBtn.onclick=function(){
-  if(lock){S.wantWake=false;save("db_wake",false);var l=lock;lock=null;l.release();wakeUI();return}
-  S.wantWake=true;save("db_wake",true);getLock();
+  S.wantWake=!S.wantWake; save("db_wake",S.wantWake);
+  if(S.wantWake)wakeOn(); else wakeOff();
+  wakeUI();
 };
-document.addEventListener("visibilitychange",function(){if(!document.hidden){poll();if(S.wantWake&&!lock)getLock()}});
-if(S.wantWake)getLock();
+document.addEventListener("visibilitychange",function(){if(!document.hidden){poll();if(S.wantWake)wakeOn()}});
+/* Phones only allow this after a tap, so on reopening, the first tap anywhere turns it back on. */
+document.addEventListener("pointerdown",function(){if(S.wantWake&&(!video||video.paused))wakeOn()},true);
+if(S.wantWake)wakeOn();
+wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");
 
 setInterval(render,1000);
 tab("drives"); render(); poll();
