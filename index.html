@@ -217,7 +217,7 @@ var S={
   lagSamples:load("db_lag",[]), statTab:load("db_statTab","mine"), wantWake:load("db_wake",false),
   pick:"", eventId:null, sum:null, sumVer:0, state:"pre",
   seen:{}, estimated:{}, shownAt:{}, synced:{}, loaded:false, lastOk:0, nextPollAt:0, snaps:[], err:"", schedule:[],
-  tab:"drives", openState:{}, keys:{}
+  tab:"drives", openState:{}, keys:{}, crews:null
 };
 var $=function(id){return document.getElementById(id)};
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -281,6 +281,20 @@ function poll(){
     timer=setTimeout(poll,wait);
     render();
   });
+}
+/* Broadcast crews, refreshed every few hours by a GitHub job from 506sports.com. */
+function loadCrews(){
+  fetch("crews.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null})
+    .then(function(c){if(c){S.crews=c;S.keys.info=null;render()}}).catch(function(){});
+}
+function crewFor(j,T){
+  if(!S.crews||!T.away||!T.home)return null;
+  var h=j.header||{}, wk=(h.week!=null?+h.week:null), yr=((h.season||{}).year!=null?+h.season.year:null);
+  var m=(S.crews.games||[]).filter(function(g){
+    var teams=(g.away===T.away.ab&&g.home===T.home.ab)||(g.away===T.home.ab&&g.home===T.away.ab);
+    return teams&&(wk==null||!g.week||g.week===wk)&&(yr==null||!g.season||g.season===yr);
+  });
+  return m[0]||null;
 }
 function pruneSnaps(){
   var cut=Date.now()-S.delay*1000-60000, s=S.snaps, i=0;
@@ -607,6 +621,7 @@ function fieldChart(L){
 }
 
 function renderInfo(j){
+  var T=teamsOf(j), crew=crewFor(j,T);
   var gi=j.gameInfo||{}, v=gi.venue||{}, ad=v.address||{}, comp=hdrComp(j), rows=[], nets=[];
   function add(x){if(x&&nets.indexOf(x)<0)nets.push(x)}
   (comp.broadcasts||[]).concat(j.broadcasts||[],comp.geoBroadcasts||[]).forEach(function(b){
@@ -621,12 +636,13 @@ function renderInfo(j){
   if(v.grass!=null||v.indoor!=null)rows.push(["Field",[v.indoor?"Indoor":v.indoor===false?"Outdoor":"",v.grass?"grass":v.grass===false?"turf":""].filter(Boolean).join(", ")]);
   var w=gi.weather;
   if(w&&(w.temperature!=null||w.displayValue))rows.push(["Weather",[w.displayValue,w.temperature!=null?w.temperature+"°F ("+Math.round((w.temperature-32)*5/9)+"°C)":""].filter(Boolean).join(", ")]);
+  if(crew&&crew.network&&nets.indexOf(crew.network)<0)nets.unshift(crew.network);
   rows.push(["US TV",nets.length?nets.join(", "):"Not in the feed yet"]);
-  rows.push(["Commentators","Not included in the feed"]);
+  rows.push(["Commentators",crew&&crew.crew.length?crew.crew.join(", ")+(crew.network?" ("+crew.network+")":""):S.crews?"Not listed yet":"Loading…"]);
   var ref=(gi.officials||[]).filter(function(o){return /referee/i.test(((o.position||{}).displayName)||((o.position||{}).name)||"")})[0];
   if(ref)rows.push(["Referee",ref.displayName||ref.fullName]);
   if(gi.attendance)rows.push(["Attendance",Number(gi.attendance).toLocaleString()]);
-  $("infoSum").textContent="Game info · "+([v.fullName,nets.join(", ")].filter(Boolean).join(" · ")||"loading");
+  $("infoSum").textContent="Game info · "+([v.fullName,nets.join(", "),crew&&crew.crew.length?crew.crew.join(", "):""].filter(Boolean).join(" · ")||"loading");
   $("infoBody").innerHTML=rows.map(function(r){return '<dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd>'}).join("");
 }
 
@@ -737,6 +753,7 @@ if(S.wantWake)wakeOn();
 wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");
 
 setInterval(render,1000);
+loadCrews(); setInterval(loadCrews,30*60000);
 tab("drives"); render(); poll();
 })();
 </script>

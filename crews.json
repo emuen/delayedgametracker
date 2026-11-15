@@ -1,0 +1,189 @@
+{
+ "source": "506sports.com",
+ "season": 2026,
+ "week": 10,
+ "games": [
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "WSH",
+   "home": "NYG",
+   "network": "Prime Video",
+   "slot": "Thu 8:00 ET",
+   "crew": [
+    "Al Michaels",
+    "Kirk Herbstreit"
+   ],
+   "note": "also WTTG/FOX Washington, WNYW/FOX New York"
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "NE",
+   "home": "DET",
+   "network": "FOX",
+   "slot": "Sun 9:30 AM ET",
+   "crew": [
+    "Joe Davis",
+    "Greg Olsen"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "PIT",
+   "home": "CIN",
+   "network": "NBC",
+   "slot": "Sun 8:00 ET",
+   "crew": [
+    "Mike Tirico",
+    "Cris Collinsworth"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "LAC",
+   "home": "BAL",
+   "network": "ESPN",
+   "slot": "Mon 8:00 ET",
+   "crew": [
+    "Joe Buck",
+    "Troy Aikman"
+   ],
+   "note": "also KABC/ABC LA, WBAL/NBC Baltimore"
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "KC",
+   "home": "ATL",
+   "network": "CBS",
+   "slot": "Single",
+   "crew": [
+    "Jim Nantz",
+    "J.J. Watt"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "BUF",
+   "home": "NYJ",
+   "network": "CBS",
+   "slot": "Single",
+   "crew": [
+    "Kevin Harlan",
+    "Trent Green"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "MIA",
+   "home": "IND",
+   "network": "CBS",
+   "slot": "Single",
+   "crew": [
+    "Spero Dedes",
+    "Adam Archuleta"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "SEA",
+   "home": "LV",
+   "network": "CBS",
+   "slot": "Late",
+   "crew": [
+    "Ian Eagle",
+    "Ross Tucker"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "LAR",
+   "home": "ARI",
+   "network": "CBS",
+   "slot": "Late",
+   "crew": [
+    "Andrew Catalon",
+    "Logan Ryan"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "MIN",
+   "home": "GB",
+   "network": "FOX",
+   "slot": "Early",
+   "crew": [
+    "Adam Amin",
+    "Drew Brees"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "HOU",
+   "home": "CLE",
+   "network": "FOX",
+   "slot": "Early",
+   "crew": [
+    "Kenny Albert",
+    "Jonathan Vilma"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "CAR",
+   "home": "NO",
+   "network": "FOX",
+   "slot": "Early",
+   "crew": [
+    "Kevin Kugler",
+    "Daryl Johnston"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "JAX",
+   "home": "TEN",
+   "network": "FOX",
+   "slot": "Early",
+   "crew": [
+    "Chris Myers",
+    "Mark Schlereth"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 10,
+   "away": "SF",
+   "home": "DAL",
+   "network": "FOX",
+   "slot": "Late",
+   "crew": [
+    "Kevin Burkhardt",
+    "Tom Brady"
+   ],
+   "note": ""
+  }
+ ]
+}
