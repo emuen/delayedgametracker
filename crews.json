@@ -184,6 +184,107 @@
     "Tom Brady"
    ],
    "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "PIT",
+   "home": "PHI",
+   "network": "CBS",
+   "slot": "Early",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "MIA",
+   "home": "BUF",
+   "network": "CBS",
+   "slot": "Early",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "ARI",
+   "home": "KC",
+   "network": "CBS",
+   "slot": "Early",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "JAX",
+   "home": "NYG",
+   "network": "CBS",
+   "slot": "Late",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "LV",
+   "home": "DEN",
+   "network": "CBS",
+   "slot": "Late",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "TEN",
+   "home": "DAL",
+   "network": "FOX",
+   "slot": "Single",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "NO",
+   "home": "CHI",
+   "network": "FOX",
+   "slot": "Single",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "BAL",
+   "home": "CAR",
+   "network": "FOX",
+   "slot": "Single",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "TB",
+   "home": "DET",
+   "network": "FOX",
+   "slot": "Single",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "NYJ",
+   "home": "LAC",
+   "network": "FOX",
+   "slot": "Late",
+   "crew": [],
+   "note": ""
   }
- ]
+ ],
+ "updated": "2026-11-15T23:26:18Z"
 }
