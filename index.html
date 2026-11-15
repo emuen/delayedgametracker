@@ -110,6 +110,7 @@ ol.plays li:last-child{border-bottom:0}
 .yd{font:700 15px var(--display);font-variant-numeric:tabular-nums;text-align:right;min-width:2.6em}
 .yd.g{color:var(--score)} .yd.l{color:var(--warn)} .yd.z{color:var(--muted)}
 li.spt .tx{font-weight:700}
+li.np .tx{color:var(--muted);font-style:italic}
 .tx{min-width:0;overflow-wrap:anywhere}
 .tvsync{grid-column:2/4;justify-self:start;margin-top:2px;min-height:36px;border:1px dashed var(--accent);background:none;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
 .empty{padding:28px 12px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px}
@@ -360,6 +361,10 @@ function cleanText(t){
     .trim();
 }
 var NOYARD=/timeout|end of|two-minute|kickoff|punt|extra point|field goal|coin toss|end period|official/i;
+/* Timeouts, quarter breaks and warnings: listed, but not plays. */
+function isNonPlay(p){var ty=((p.type||{}).text||""),t=p.text||"";return /timeout|end of|end period|end quarter|end game|two-minute|coin toss/i.test(ty)||/^\s*(official\s+)?timeout\b|^\s*end (of )?(quarter|half|game)|^\s*two-minute warning/i.test(t)}
+/* ESPN's play text sometimes uses the league's older codes. */
+var ALIAS={ARZ:"ARI",LA:"LAR",WAS:"WSH",JAC:"JAX",BLT:"BAL",CLV:"CLE",HST:"HOU",OAK:"LV",SD:"LAC",STL:"LAR"};
 
 /* ---------- field positions ---------- */
 function toPos(sit,off,A){
@@ -373,6 +378,7 @@ function toPos(sit,off,A){
 }
 function sideOf(a,A){
   if(a===A.off)return "o"; if(a===A.def)return "d";
+  if(ALIAS[a]){if(ALIAS[a]===A.off)return "o";if(ALIAS[a]===A.def)return "d"}
   var o=A.off.indexOf(a)===0||a.indexOf(A.off)===0, d=A.def.indexOf(a)===0||a.indexOf(A.def)===0;
   return o&&!d?"o":d&&!o?"d":null;
 }
@@ -419,6 +425,7 @@ function latestDrive(j,T,V){
   var defT=(T.home&&T.home.id===off)?T.away:T.home, defAb=defT?defT.ab:"";
   var A={off:offAb,def:defAb}, rows=[];
   out.vis.forEach(function(p){
+    if(isNonPlay(p))return;
     var s=toPos(p.start,off,A), e=toPos(p.end,off,A);
     var kr=kickRows(p,off,A,s,e);
     if(kr){kr.forEach(function(r,i){r.score=p.scoringPlay&&i===kr.length-1?scoreLabel(p):"";rows.push(r)});return}
@@ -427,7 +434,8 @@ function latestDrive(j,T,V){
     rows.push({s:s,e:e,kind:"play",score:p.scoringPlay?scoreLabel(p):"",text:p.text||""});
   });
   var own=rows.filter(function(r){return r.kind==="play"});
-  var nPlays=out.vis.filter(function(p){return !isKick(p)}).length;
+  var nPlays=out.vis.filter(function(p){return !isKick(p)&&!isNonPlay(p)}).length;
+  out.real=out.vis.filter(function(p){return !isNonPlay(p)});
   var yds=own.length?Math.round(own[own.length-1].e-own[0].s):0;
   out.off=off; out.offAb=offAb; out.defAb=defAb; out.A=A; out.rows=rows;
   out.summary=out.done?offAb+" "+String(d.displayResult||d.result||"drive over").toLowerCase()
@@ -469,8 +477,9 @@ function render(){
   }else if(lastP){
     var c=clockText(lastP);
     mid.innerHTML=esc(c.q+" "+c.clk)+"<small>"+esc(L?L.summary:"")+"</small>";
-    var e=lastP.end;
-    if(e&&e.down>0&&e.downDistanceText&&!lastP.scoringPlay){sit=e.downDistanceText;posId=teamIdOf(e)||teamIdOf(lastP.start)}
+    var rp=null; for(var k=V.last;k>=0;k--){if(!isNonPlay(V.plays[k])){rp=V.plays[k];break}}
+    var e=rp&&rp.end;
+    if(e&&e.down>0&&e.downDistanceText&&!rp.scoringPlay){sit=e.downDistanceText;posId=teamIdOf(e)||teamIdOf(rp.start)}
   }else{
     mid.innerHTML="Waiting<small>for the first play</small>";
   }
@@ -493,7 +502,8 @@ function render(){
 
 function renderDrives(j,T,V,L){
   var drives=drivesOf(j), cur=(j.drives||{}).current, html=[], now=Date.now(), TC=teamColors(j,T);
-  var newest=V.plays[V.last], syncId=null;
+  var newest=null, syncId=null;
+  for(var k=V.last;k>=0;k--){if(!isNonPlay(V.plays[k])){newest=V.plays[k];break}}
   if(newest&&S.shownAt[newest.id]&&now-S.shownAt[newest.id]<120000&&!S.synced[newest.id]&&S.state!=="post")syncId=newest.id;
   drives.forEach(function(d){
     var all=d.plays||[], vis=all.filter(function(p){return V.ids[p.id]});
@@ -502,19 +512,20 @@ function renderDrives(j,T,V,L){
     var done=vis.length===all.length&&!isCur;
     var tm=(d.team&&d.team.abbreviation)||(T.byId[String((d.team||{}).id)]||{}).ab||"";
     var res=done?(d.displayResult||d.result||"Done"):"In progress";
-    var desc=done?(d.description||vis.length+" play"+(vis.length>1?"s":"")):vis.length+" play"+(vis.length>1?"s":"")+" so far";
+    var nReal=vis.filter(function(p){return !isNonPlay(p)}).length;
+    var desc=done?(d.description||nReal+" play"+(nReal===1?"":"s")):nReal+" play"+(nReal===1?"":"s")+" so far";
     var start=d.start||{}, sc=done&&d.isScore, sClock=clockText(start);
     var startTx=(start.text?"From "+start.text:"")+(sClock.q?" · "+sClock.q+" "+sClock.clk:"");
     var userOpen=S.openState[d.id], open=userOpen===undefined?!done:userOpen;
     var tc=TC[String((d.team||{}).id)], style=tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'';
     var q=((d.start||{}).period||{}).number||((vis[0]||{}).period||{}).number||0;
     var items=vis.slice().reverse().map(function(p){
-      var c=clockText(p), dd=(p.start||{}).shortDownDistanceText||"", yd="";
+      var c=clockText(p), dd=((p.start||{}).down>0&&!isNonPlay(p))?((p.start||{}).shortDownDistanceText||""):"", yd="";
       var y=p.statYardage, ty=((p.type||{}).text||"");
       if(typeof y==="number"&&!NOYARD.test(ty)&&!isKick(p))yd='<span class="yd '+(y>0?"g":y<0?"l":"z")+'">'+(y>0?"+":"")+y+'</span>';
       else yd='<span></span>';
       var btn=p.id===syncId?'<button class="tvsync" data-sync="'+esc(p.id)+'">Just happened on TV</button>':'';
-      return '<li class="'+(p.scoringPlay?"spt":"")+'"><div class="pc"><b>'+esc(c.q+" "+c.clk)+'</b>'+esc(dd)+'</div><div class="tx">'+esc(cleanText(p.text)||ty)+'</div>'+yd+btn+'</li>';
+      return '<li class="'+(p.scoringPlay?"spt":"")+(isNonPlay(p)?" np":"")+'"><div class="pc"><b>'+esc(c.q+" "+c.clk)+'</b>'+esc(dd)+'</div><div class="tx">'+esc(cleanText(p.text)||ty)+'</div>'+yd+btn+'</li>';
     }).join("");
     html.push({q:q,h:'<details class="drive'+(sc?" sc":"")+'" data-k="'+esc(d.id)+'"'+style+(open?" open":"")+'><summary><span class="dt">'+esc(tm)+'</span><span class="dd">'+esc(desc)+(startTx?"<br>"+esc(startTx):"")+'</span><span class="dr'+(done?(sc?" sc":""):" live")+'">'+esc(res)+'</span></summary><ol class="plays">'+items+'</ol></details>'});
   });
@@ -540,7 +551,7 @@ function fieldChart(L){
   }
   g.push('<text x="5" y="'+(H/2)+'" font-size="4.6" font-weight="700" text-anchor="middle" dominant-baseline="middle" fill="var(--fg)" transform="rotate(-90 5 '+(H/2)+')" '+F+'>'+esc(L.offAb)+'</text>');
   g.push('<text x="115" y="'+(H/2)+'" font-size="4.6" font-weight="700" text-anchor="middle" dominant-baseline="middle" fill="var(--fg)" transform="rotate(90 115 '+(H/2)+')" '+F+'>'+esc(L.defAb)+'</text>');
-  var lastP=L.vis[L.vis.length-1];
+  var lastP=L.real[L.real.length-1];
   if(!L.done&&lastP&&!lastP.scoringPlay){
     var be=toPos(lastP.end,L.off,L.A);
     if(be!=null&&be>=0&&be<=100){
@@ -552,7 +563,8 @@ function fieldChart(L){
   rows.forEach(function(r,i){
     var yy=top+i*rh+1.2, col=r.kind==="kick"?"var(--kick)":r.kind==="ret"?"var(--ret)":(r.e>=r.s?"var(--score)":"var(--warn)");
     var a=X(Math.min(r.s,r.e)), b=X(Math.max(r.s,r.e)), ex=X(r.e);
-    var lab=r.score?'<text x="'+(ex+(r.e>=r.s?2.6:-2.6))+'" y="'+(yy+2.9)+'" font-size="4" font-weight="700" text-anchor="'+(r.e>=r.s?"start":"end")+'" fill="var(--fg)" '+F+'>'+esc(r.score)+'</text>':'';
+    var right=r.e>=r.s?ex<X(90):ex<X(10);
+    var lab=r.score?'<text x="'+(ex+(right?2.8:-2.8))+'" y="'+(yy+2.9)+'" font-size="4" font-weight="700" text-anchor="'+(right?"start":"end")+'" fill="var(--fg)" '+F+'>'+esc(r.score)+'</text>':'';
     g.push('<g><title>'+esc(r.text)+'</title>'+(b-a>0.8?'<rect x="'+a+'" y="'+yy+'" width="'+(b-a)+'" height="3.6" rx="1.8" fill="'+col+'"/>':'')+'<circle cx="'+ex+'" cy="'+(yy+1.8)+'" r="1.9" fill="'+col+'" stroke="var(--surface)" stroke-width="0.5"/>'+lab+'</g>');
   });
   var d=L.d, cap=L.done?(d.description||""):L.summary.replace(L.offAb+" drive · ","");
