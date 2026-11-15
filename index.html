@@ -89,15 +89,17 @@ button,select,input{font:inherit;color:inherit}
 .chart svg{display:block;width:100%;height:auto}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
 .legend i{display:inline-block;width:12px;height:5px;border-radius:3px;margin-right:4px;vertical-align:middle}
-details.drive{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
-details.drive.sc{border-left:4px solid var(--score)}
+details.drive{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--tc,var(--line));border-radius:10px;margin-bottom:8px;overflow:hidden}
+.qhead{margin:16px 2px 8px;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
+.qhead::after{content:"";flex:1;height:1px;background:var(--line)}
+.qhead:first-of-type{margin-top:4px}
 details.drive>summary{list-style:none;cursor:pointer;padding:12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;min-height:52px}
 details.drive>summary::-webkit-details-marker{display:none}
-.dt{font:700 16px var(--display);letter-spacing:.05em}
+.dt{font:700 15px var(--display);letter-spacing:.05em;background:var(--tc,var(--fg));color:var(--tci,var(--bg));border-radius:6px;padding:3px 7px;min-width:3.2em;text-align:center}
 .dd{font-size:13px;color:var(--muted);min-width:0}
 .dr{font:600 15px var(--display);letter-spacing:.04em;text-align:right}
 .dr.live{color:var(--accent)}
-.dr.sc{color:var(--score)}
+.dr.sc{font-weight:700;color:var(--fg)}
 .dr::after{content:" ▸";color:var(--muted)}
 details[open] .dr::after{content:" ▾"}
 ol.plays{list-style:none;margin:0;padding:0 12px 10px;border-top:1px solid var(--line)}
@@ -107,7 +109,7 @@ ol.plays li:last-child{border-bottom:0}
 .pc b{display:block;color:var(--fg);font-weight:600}
 .yd{font:700 15px var(--display);font-variant-numeric:tabular-nums;text-align:right;min-width:2.6em}
 .yd.g{color:var(--score)} .yd.l{color:var(--warn)} .yd.z{color:var(--muted)}
-li.spt .tx{font-weight:600;color:var(--score)}
+li.spt .tx{font-weight:700}
 .tx{min-width:0;overflow-wrap:anywhere}
 .tvsync{grid-column:2/4;justify-self:start;margin-top:2px;min-height:36px;border:1px dashed var(--accent);background:none;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
 .empty{padding:28px 12px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px}
@@ -302,6 +304,27 @@ function teamsOf(j){
   out.mine=is(h)&&!is(a)?h:is(a)?a:a; out.opp=out.mine===h?a:h;
   return out;
 }
+/* Team colours: from the feed, with a fallback table. Picks a shade that stands out
+   on the current background, and separates two teams with similar colours. */
+var COLORS={ARI:["97233F","FFB612"],ATL:["A71930","000000"],BAL:["241773","9E7C0C"],BUF:["00338D","C60C30"],CAR:["0085CA","101820"],CHI:["0B162A","C83803"],CIN:["FB4F14","000000"],CLE:["311D00","FF3C00"],DAL:["003594","869397"],DEN:["FB4F14","002244"],DET:["0076B6","B0B7BC"],GB:["203731","FFB612"],HOU:["03202F","A71930"],IND:["002C5F","A2AAAD"],JAX:["006778","D7A22A"],KC:["E31837","FFB81C"],LV:["000000","A5ACAF"],LAC:["0080C6","FFC20E"],LAR:["003594","FFA300"],MIA:["008E97","FC4C02"],MIN:["4F2683","FFC62F"],NE:["002244","C60C30"],NO:["D3BC8D","101820"],NYG:["0B2265","A71930"],NYJ:["125740","FFFFFF"],PHI:["004C54","A5ACAF"],PIT:["FFB612","101820"],SF:["AA0000","B3995D"],SEA:["002244","69BE28"],TB:["D50A0A","FF7900"],TEN:["0C2340","4B92DB"],WSH:["5A1414","FFB612"]};
+function hexRgb(h){h=String(h||"").replace("#","");if(!/^[0-9a-f]{6}$/i.test(h))return null;return [0,2,4].map(function(i){return parseInt(h.substr(i,2),16)})}
+function lum(c){var a=c.map(function(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)});return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]}
+function contrast(a,b){var x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)}
+function teamColors(j,T){
+  var dark=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches, surf=dark?[24,32,28]:[255,255,255];
+  var raw={};
+  (hdrComp(j).competitors||[]).forEach(function(c){var t=c.team||{},ab=t.abbreviation,fb=COLORS[ab]||[];raw[String(t.id)]=[hexRgb(t.color)||hexRgb(fb[0]),hexRgb(t.alternateColor)||hexRgb(fb[1])]});
+  function pick(id,avoid){
+    var opts=(raw[id]||[]).filter(Boolean), best=null;
+    opts.forEach(function(c){if(best)return;if(contrast(c,surf)<1.8)return;if(avoid&&Math.abs(c[0]-avoid[0])+Math.abs(c[1]-avoid[1])+Math.abs(c[2]-avoid[2])<120)return;best=c});
+    return best||opts.filter(function(c){return contrast(c,surf)>=1.8})[0]||null;
+  }
+  var out={}, h=T.home&&T.home.id, a=T.away&&T.away.id;
+  if(h)out[h]=pick(h); if(a)out[a]=pick(a,out[h]);
+  Object.keys(out).forEach(function(k){var c=out[k];if(!c){delete out[k];return}out[k]={bg:"rgb("+c.join(",")+")",ink:lum(c)>0.35?"#111":"#fff"}});
+  return out;
+}
+function qLabel(n){return n>5?(n-4)+"nd overtime":n===5?"Overtime":["","1st","2nd","3rd","4th"][n]+" quarter"}
 function drivesOf(j){
   var d=j.drives||{}, list=(d.previous||[]).slice(), seen={};
   if(d.current)list.push(d.current);
@@ -469,7 +492,7 @@ function render(){
 }
 
 function renderDrives(j,T,V,L){
-  var drives=drivesOf(j), cur=(j.drives||{}).current, html=[], now=Date.now();
+  var drives=drivesOf(j), cur=(j.drives||{}).current, html=[], now=Date.now(), TC=teamColors(j,T);
   var newest=V.plays[V.last], syncId=null;
   if(newest&&S.shownAt[newest.id]&&now-S.shownAt[newest.id]<120000&&!S.synced[newest.id]&&S.state!=="post")syncId=newest.id;
   drives.forEach(function(d){
@@ -483,6 +506,8 @@ function renderDrives(j,T,V,L){
     var start=d.start||{}, sc=done&&d.isScore, sClock=clockText(start);
     var startTx=(start.text?"From "+start.text:"")+(sClock.q?" · "+sClock.q+" "+sClock.clk:"");
     var userOpen=S.openState[d.id], open=userOpen===undefined?!done:userOpen;
+    var tc=TC[String((d.team||{}).id)], style=tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'';
+    var q=((d.start||{}).period||{}).number||((vis[0]||{}).period||{}).number||0;
     var items=vis.slice().reverse().map(function(p){
       var c=clockText(p), dd=(p.start||{}).shortDownDistanceText||"", yd="";
       var y=p.statYardage, ty=((p.type||{}).text||"");
@@ -491,11 +516,13 @@ function renderDrives(j,T,V,L){
       var btn=p.id===syncId?'<button class="tvsync" data-sync="'+esc(p.id)+'">Just happened on TV</button>':'';
       return '<li class="'+(p.scoringPlay?"spt":"")+'"><div class="pc"><b>'+esc(c.q+" "+c.clk)+'</b>'+esc(dd)+'</div><div class="tx">'+esc(cleanText(p.text)||ty)+'</div>'+yd+btn+'</li>';
     }).join("");
-    html.push('<details class="drive'+(sc?" sc":"")+'" data-k="'+esc(d.id)+'"'+(open?" open":"")+'><summary><span class="dt">'+esc(tm)+'</span><span class="dd">'+esc(desc)+(startTx?"<br>"+esc(startTx):"")+'</span><span class="dr'+(done?(sc?" sc":""):" live")+'">'+esc(res)+'</span></summary><ol class="plays">'+items+'</ol></details>');
+    html.push({q:q,h:'<details class="drive'+(sc?" sc":"")+'" data-k="'+esc(d.id)+'"'+style+(open?" open":"")+'><summary><span class="dt">'+esc(tm)+'</span><span class="dd">'+esc(desc)+(startTx?"<br>"+esc(startTx):"")+'</span><span class="dr'+(done?(sc?" sc":""):" live")+'">'+esc(res)+'</span></summary><ol class="plays">'+items+'</ol></details>'});
   });
   var box=$("drives");
   if(!html.length){box.innerHTML='<div class="empty">'+(S.state==="pre"?"Kickoff soon. Start DAZN at kickoff, then match the first play using the delay buttons above.":"Holding plays back by "+fmtDelay(S.delay)+". The first one shows up when your stream reaches it.")+'</div>';return}
-  box.innerHTML=(L?fieldChart(L):"")+html.reverse().join("");
+  var list=[], lastQ=null;
+  html.reverse().forEach(function(x){if(x.q!==lastQ&&x.q){list.push('<h4 class="qhead">'+esc(qLabel(x.q))+'</h4>');lastQ=x.q}list.push(x.h)});
+  box.innerHTML=(L?fieldChart(L):"")+list.join("");
 }
 
 /* Field chart: the offense always drives left to right. Newest play at the top, like the list. */
