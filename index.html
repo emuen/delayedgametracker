@@ -61,6 +61,7 @@ button,select,input{font:inherit;color:inherit}
 .field select,.field input{min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;max-width:100%}
 .field input{width:5.5em;text-transform:uppercase}
 .help{font-size:13px;color:var(--muted);margin:0}
+.opt select{min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:12em}
 .dialrow{display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;gap:6px;align-items:center}
 .dialrow button{height:44px;border:1px solid var(--line);background:var(--bg);border-radius:10px;font:600 17px var(--display);cursor:pointer}
 .dialrow button:active{background:var(--accent);color:var(--accent-ink)}
@@ -179,6 +180,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .game{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;color:inherit;text-decoration:none;min-height:64px}
 .game:active{background:var(--bg)}
 .game.done{opacity:.8}
+.game.fav{border:2px solid var(--accent);padding:9px 11px;opacity:1}
+.tr .star{color:var(--accent);margin-left:4px}
 .teams{display:grid;gap:5px;min-width:0}
 .tr{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;min-width:0}
 .tr .badge{font-size:13px;padding:2px 6px;min-width:3.1em;text-align:center}
@@ -264,6 +267,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     <p class="help">Quickest way: when a new play shows up before you see it on DAZN, wait for it on TV and tap "Just happened on TV" under it.</p>
   </div>
   <div class="sect">
+    <div class="opt"><div><b>Favourite team</b><small>Its game is highlighted on the game list.</small></div><select id="fav" aria-label="Favourite team"></select></div>
+  </div>
+  <div class="sect">
     <div class="opt"><div><b>Keep screen on</b><small id="wakeNote">Stops your phone from locking while this page is open.</small></div><button class="switch" id="wake" role="switch" aria-checked="false" aria-label="Keep screen on"></button></div>
   </div>
 </div></div>
@@ -275,7 +281,7 @@ var API="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
-  delay:load("db_delay",45), view:"list",
+  delay:load("db_delay",45), view:"list", fav:load("db_fav",load("db_team","LAR")||""),
   lagSamples:load("db_lag",[]), statTab:load("db_statTab","mine"), wantWake:load("db_wake",false),
   pick:"", eventId:null, sum:null, sumVer:0, state:"pre",
   seen:{}, estimated:{}, shownAt:{}, synced:{}, loaded:false, lastOk:0, nextPollAt:0, snaps:[], err:"", schedule:[],
@@ -817,13 +823,18 @@ function recordOf(t,opp,st){
   if(n.length>2&&!n[2])n=n.slice(0,2);
   return n.join("-");
 }
+var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",BUF:"Buffalo Bills",CAR:"Carolina Panthers",CHI:"Chicago Bears",CIN:"Cincinnati Bengals",CLE:"Cleveland Browns",DAL:"Dallas Cowboys",DEN:"Denver Broncos",DET:"Detroit Lions",GB:"Green Bay Packers",HOU:"Houston Texans",IND:"Indianapolis Colts",JAX:"Jacksonville Jaguars",KC:"Kansas City Chiefs",LV:"Las Vegas Raiders",LAC:"Los Angeles Chargers",LAR:"Los Angeles Rams",MIA:"Miami Dolphins",MIN:"Minnesota Vikings",NE:"New England Patriots",NO:"New Orleans Saints",NYG:"New York Giants",NYJ:"New York Jets",PHI:"Philadelphia Eagles",PIT:"Pittsburgh Steelers",SF:"San Francisco 49ers",SEA:"Seattle Seahawks",TB:"Tampa Bay Buccaneers",TEN:"Tennessee Titans",WSH:"Washington Commanders"};
+(function(){var f=$("fav");f.innerHTML='<option value="">None</option>'+Object.keys(NAMES).sort(function(a,b){return NAMES[a].localeCompare(NAMES[b])}).map(function(k){return '<option value="'+k+'">'+NAMES[k]+'</option>'}).join("");f.value=S.fav;
+  f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);if(S.view==="list")renderList()}})();
 function gameRow(e){
   var st=evState(e), c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
+  function isFav(t){return !!(S.fav&&t&&t.team&&t.team.abbreviation===S.fav)}
+  var fav=isFav(a)||isFav(h);
   var hs=teamStyle(h), as=teamStyle(a,hs.rgb), show=LS.scores&&st!=="pre";
   var aw=show&&a&&h&&+a.score>+h.score, hw=show&&a&&h&&+h.score>+a.score;
   function tr(t,sty,win,opp){
     var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.shortDisplayName||tm.displayName||tm.name||"To be decided", rec=recordOf(t,opp,st);
-    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(t.score):"")+'</span></div>';
+    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(isFav(t)?'<span class="star" aria-label="Favourite">★</span>':'')+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(t.score):"")+'</span></div>';
   }
   var nets=evNets(e).slice(0,2).join(", "), meta;
   var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
@@ -836,7 +847,7 @@ function gameRow(e){
   }
   var playable=a&&h&&a.team&&h.team&&a.team.abbreviation&&h.team.abbreviation&&!/tbd/i.test(a.team.abbreviation+h.team.abbreviation);
   var inner='<div class="teams">'+tr(a,as.css,aw,h)+tr(h,hs.css,hw,a)+'</div><div class="gmeta">'+meta+'</div>';
-  return playable?'<a class="game'+(st==="post"?" done":"")+'" href="#g-'+esc(e.id)+'">'+inner+'</a>':'<div class="game">'+inner+'</div>';
+  return playable?'<a class="game'+(st==="post"?" done":"")+(fav?" fav":"")+'" href="#g-'+esc(e.id)+'">'+inner+'</a>':'<div class="game">'+inner+'</div>';
 }
 function renderList(){
   var w=LS.sel||LS.cur, sel=$("wkSel");
