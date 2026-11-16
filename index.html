@@ -90,6 +90,8 @@ button,select,input{font:inherit;color:inherit}
 .chart svg{display:block;width:100%;height:auto}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
 .legend i{display:inline-block;width:12px;height:5px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.legend.dk{background:#24622e;border-radius:6px;padding:5px 8px;color:#e9f3ea}
+.chart .cap .badge{font-size:13px;padding:2px 6px;margin-right:2px;color:var(--tci,var(--bg))}
 details.drive{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--tc,var(--line));border-radius:10px;margin-bottom:8px;overflow:hidden}
 .qhead{margin:16px 2px 8px;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
 .qhead::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -516,16 +518,16 @@ function latestDrive(j,T,V){
     if(isNonPlay(p))return;
     var s=toPos(p.start,off,A), e=toPos(p.end,off,A);
     var kr=kickRows(p,off,A,s,e);
-    if(kr){kr.forEach(function(r,i){r.score=p.scoringPlay&&i===kr.length-1?scoreLabel(p):"";rows.push(r)});return}
+    if(kr){kr.forEach(function(r,i){r.p=p;r.score=p.scoringPlay&&i===kr.length-1?scoreLabel(p):"";rows.push(r)});return}
     if(s==null&&e==null)return;
     if(s==null)s=e; if(e==null)e=s;
-    rows.push({s:s,e:e,kind:"play",score:p.scoringPlay?scoreLabel(p):"",text:p.text||""});
+    rows.push({s:s,e:e,kind:"play",score:p.scoringPlay?scoreLabel(p):"",text:p.text||"",p:p});
   });
   var own=rows.filter(function(r){return r.kind==="play"});
   var nPlays=out.vis.filter(function(p){return !isKick(p)&&!isNonPlay(p)}).length;
   out.real=out.vis.filter(function(p){return !isNonPlay(p)});
   var yds=own.length?Math.round(own[own.length-1].e-own[0].s):0;
-  out.off=off; out.offAb=offAb; out.defAb=defAb; out.A=A; out.rows=rows;
+  out.off=off; out.offAb=offAb; out.defAb=defAb; out.A=A; out.rows=rows; out.T=T; out.TC=teamColors(j,T);
   out.summary=out.done?offAb+" "+String(out.label||"drive over").toLowerCase()
     :offAb+" drive · "+nPlays+" play"+(nPlays===1?"":"s")+", "+yds+" yds";
   return out;
@@ -627,42 +629,87 @@ function renderDrives(j,T,V,L){
   box.innerHTML=(L?fieldChart(L):"")+list.join("");
 }
 
-/* Field chart: the offense always drives left to right. Newest play at the top, like the list. */
+/* Drive chart in the style of the old NFL Game Center: a fixed field with the away
+   team's end zone on the left and the home team's on the right, end zones in team
+   colours, one arrow per play in the direction the offense is moving (newest on top),
+   a football at the ball spot, blue line of scrimmage and yellow line to gain. */
+var PK={run:["#ffffff","Run"],pass:["#7fd4ff","Pass"],pen:["#ffd23f","Penalty"],kick:["#cfd6d0","Kick"],ret:["#d9c2ff","Return"],to:["#ff7a6b","Turnover"]};
+function playKind(r){
+  if(r.kind==="kick")return "kick"; if(r.kind==="ret")return "ret";
+  var ty=((r.p||{}).type||{}).text||"", t=(r.p||{}).text||"";
+  if(/interception|fumble recovery \(opponent\)|fumble return/i.test(ty)||/\bintercepted\b/i.test(t))return "to";
+  if(/penalty/i.test(ty))return "pen";
+  if(/pass|sack|scramble/i.test(ty+" "+t))return "pass";
+  return "run";
+}
+function clockSecs(p){var m=String(((p||{}).clock||{}).displayValue||"").match(/^(\d+):(\d+)$/);return m?+m[1]*60+(+m[2]):null}
+function driveTime(L){
+  var ps=L.real; if(ps.length<2)return "";
+  var a=ps[0], b=ps[ps.length-1], ca=clockSecs(a), cb=clockSecs(b), pa=((a.period||{}).number)||0, pb=((b.period||{}).number)||0;
+  if(ca==null||cb==null||!pa||!pb)return "";
+  var t=pa===pb?ca-cb:ca+(pb-pa-1)*900+(900-cb);
+  return t>0?Math.floor(t/60)+":"+String(t%60).padStart(2,"0"):"";
+}
 function fieldChart(L){
   var rows=L.rows.slice().reverse();
   if(!rows.length)return "";
-  var top=10, rh=6.4, H=top+rows.length*rh+3;
-  function X(y){return 10+Math.max(-8,Math.min(108,y))}
-  var F='font-family="Barlow Condensed,Arial Narrow,sans-serif"', g=[];
-  g.push('<rect x="0" y="0" width="120" height="'+H+'" rx="2" fill="var(--field)"/>');
-  g.push('<rect x="0" y="0" width="10" height="'+H+'" fill="var(--ez)"/><rect x="110" y="0" width="10" height="'+H+'" fill="var(--ez)"/>');
-  for(var y=10;y<100;y+=10){
-    g.push('<line x1="'+X(y)+'" y1="0" x2="'+X(y)+'" y2="'+H+'" stroke="var(--yard)" stroke-width="'+(y===50?0.7:0.4)+'"/>');
-    g.push('<text x="'+X(y)+'" y="6.2" font-size="4" text-anchor="middle" fill="var(--muted)" '+F+'>'+(y<=50?y:100-y)+'</text>');
+  var T=L.T, TC=L.TC||{}, offIsAway=!!(T.away&&T.away.id===L.off);
+  function F(x){return offIsAway?x:100-x}
+  function X(f){return 10+Math.max(-8,Math.min(108,f))}
+  var top=9, rh=6.2, H=Math.max(44,top+rows.length*rh+9), mid=H/2;
+  var FT='font-family="Barlow Condensed,Arial Narrow,sans-serif"', g=[];
+  // turf: alternating 10-yard stripes
+  for(var y=0;y<100;y+=10)g.push('<rect x="'+X(y)+'" y="0" width="10" height="'+H+'" fill="'+((y/10)%2?"#2f7d3a":"#2a7234")+'"/>');
+  // end zones
+  function ez(team,x0){var c=team&&TC[team.id], bg=c?c.bg:"#1f5a29", ink=c?c.ink:"#fff";
+    var cx=x0+5;
+    return '<rect x="'+x0+'" y="0" width="10" height="'+H+'" fill="'+bg+'"/><text x="'+cx+'" y="'+mid+'" font-size="5.2" font-weight="700" letter-spacing="0.6" text-anchor="middle" dominant-baseline="middle" fill="'+ink+'" transform="rotate('+(x0?90:-90)+' '+cx+' '+mid+')" '+FT+'>'+esc(team?team.ab:"")+'</text>'}
+  g.push(ez(T.away,0)); g.push(ez(T.home,110));
+  // yard lines and numbers
+  for(var f=5;f<100;f+=5){
+    var big=f%10===0;
+    g.push('<line x1="'+X(f)+'" y1="0" x2="'+X(f)+'" y2="'+H+'" stroke="#fff" stroke-opacity="'+(big?0.55:0.25)+'" stroke-width="'+(f===50?0.7:big?0.45:0.3)+'"/>');
+    if(big){var lab=f<=50?f:100-f;
+      g.push('<text x="'+X(f)+'" y="5.6" font-size="4.2" font-weight="600" text-anchor="middle" fill="#fff" fill-opacity="0.85" '+FT+'>'+lab+'</text>');
+      g.push('<text x="'+X(f)+'" y="'+(H-2)+'" font-size="4.2" font-weight="600" text-anchor="middle" fill="#fff" fill-opacity="0.85" '+FT+'>'+lab+'</text>');}
   }
-  g.push('<text x="5" y="'+(H/2)+'" font-size="4.6" font-weight="700" text-anchor="middle" dominant-baseline="middle" fill="var(--fg)" transform="rotate(-90 5 '+(H/2)+')" '+F+'>'+esc(L.offAb)+'</text>');
-  g.push('<text x="115" y="'+(H/2)+'" font-size="4.6" font-weight="700" text-anchor="middle" dominant-baseline="middle" fill="var(--fg)" transform="rotate(90 115 '+(H/2)+')" '+F+'>'+esc(L.defAb)+'</text>');
-  var lastP=L.real[L.real.length-1];
+  g.push('<line x1="10" y1="0" x2="10" y2="'+H+'" stroke="#fff" stroke-width="0.8"/><line x1="110" y1="0" x2="110" y2="'+H+'" stroke="#fff" stroke-width="0.8"/>');
+  // line of scrimmage, line to gain, football
+  var lastP=L.real[L.real.length-1], ball=null;
   if(!L.done&&lastP&&!lastP.scoringPlay){
     var be=toPos(lastP.end,L.off,L.A);
     if(be!=null&&be>=0&&be<=100){
       var dist=+((lastP.end||{}).distance)||0;
-      if(dist&&lastP.end.down>0&&be+dist<100)g.push('<line x1="'+X(be+dist)+'" y1="'+(top-2)+'" x2="'+X(be+dist)+'" y2="'+H+'" stroke="var(--ltg)" stroke-width="1"/>');
-      g.push('<line x1="'+X(be)+'" y1="'+(top-2)+'" x2="'+X(be)+'" y2="'+H+'" stroke="var(--los)" stroke-width="1"/>');
+      if(dist&&lastP.end.down>0&&be+dist<100)g.push('<line x1="'+X(F(be+dist))+'" y1="0" x2="'+X(F(be+dist))+'" y2="'+H+'" stroke="#ffd23f" stroke-width="1.1"/>');
+      g.push('<line x1="'+X(F(be))+'" y1="0" x2="'+X(F(be))+'" y2="'+H+'" stroke="#3d8bff" stroke-width="1.1"/>');
+      ball=X(F(be));
     }
   }
+  // plays
   rows.forEach(function(r,i){
-    var yy=top+i*rh+1.2, col=r.kind==="kick"?"var(--kick)":r.kind==="ret"?"var(--ret)":(r.e>=r.s?"var(--score)":"var(--warn)");
-    var a=X(Math.min(r.s,r.e)), b=X(Math.max(r.s,r.e)), ex=X(r.e);
-    var right=r.e>=r.s?ex<X(90):ex<X(10);
-    var lab=r.score?'<text x="'+(ex+(right?2.8:-2.8))+'" y="'+(yy+2.9)+'" font-size="4" font-weight="700" text-anchor="'+(right?"start":"end")+'" fill="var(--fg)" '+F+'>'+esc(r.score)+'</text>':'';
-    g.push('<g><title>'+esc(r.text)+'</title>'+(b-a>0.8?'<rect x="'+a+'" y="'+yy+'" width="'+(b-a)+'" height="3.6" rx="1.8" fill="'+col+'"/>':'')+'<circle cx="'+ex+'" cy="'+(yy+1.8)+'" r="1.9" fill="'+col+'" stroke="var(--surface)" stroke-width="0.5"/>'+lab+'</g>');
+    var k=playKind(r), col=PK[k][0], yy=top+i*rh+rh/2, x1=X(F(r.s)), x2=X(F(r.e)), dir=x2>=x1?1:-1, len=Math.abs(x2-x1);
+    var dash=k==="pen"||k==="kick"?' stroke-dasharray="1.4 0.9"':'';
+    var tip='<title>'+esc(r.text)+'</title>', shape;
+    if(len<1.2)shape='<circle cx="'+x1+'" cy="'+yy+'" r="1.3" fill="none" stroke="'+col+'" stroke-width="0.7"/>';
+    else shape='<line x1="'+x1+'" y1="'+yy+'" x2="'+(x2-dir*1.6)+'" y2="'+yy+'" stroke="'+col+'" stroke-width="1.5" stroke-linecap="round"'+dash+'/>'+
+      '<polygon points="'+x2+','+yy+' '+(x2-dir*2.4)+','+(yy-1.6)+' '+(x2-dir*2.4)+','+(yy+1.6)+'" fill="'+col+'"/>';
+    var yds=r.kind==="play"?Math.round(r.e-r.s):null, lab=r.score||(yds==null?"":(yds>0?"+":"")+yds);
+    if(r.kind==="play"&&len<1.2&&/incomplete/i.test(r.text))lab="inc";
+    var after=dir>0?x2+1.6:x2-1.6, anchor=dir>0?"start":"end";
+    if(after>104||after<16){after=dir>0?x1-1.6:x1+1.6;anchor=dir>0?"end":"start"}
+    var text=lab?'<text x="'+after+'" y="'+(yy+1.4)+'" font-size="3.6" font-weight="700" text-anchor="'+anchor+'" fill="#fff" '+FT+'>'+esc(lab)+'</text>':'';
+    g.push('<g>'+tip+shape+text+'</g>');
   });
-  var d=L.d, nOwn=L.real.filter(function(p){return !isKick(p)}).length;
-  var cap=L.done?(L.label||"")+" · "+nOwn+" play"+(nOwn===1?"":"s"):L.summary.replace(L.offAb+" drive · ","");
-  return '<div class="chart"><div class="cap"><b>'+(L.done?"Last drive · ":"Current drive · ")+esc(L.offAb)+'</b><span>'+esc(cap)+'</span></div>'+
-    '<svg viewBox="0 0 120 '+H+'" role="img" aria-label="'+esc(L.offAb)+' drive chart">'+g.join("")+'</svg>'+
-    '<div class="legend"><span><i style="background:var(--score)"></i>Gain</span><span><i style="background:var(--warn)"></i>Loss</span><span><i style="background:var(--kick)"></i>Kick</span><span><i style="background:var(--ret)"></i>Return</span></div></div>';
+  if(ball!=null)g.push('<g transform="translate('+ball+' '+(H-7.2)+')"><ellipse rx="2.6" ry="1.6" fill="#7a3b12" stroke="#fff" stroke-width="0.35"/><line x1="-1" y1="0" x2="1" y2="0" stroke="#fff" stroke-width="0.35"/><line x1="-0.5" y1="-0.5" x2="-0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0" y1="-0.5" x2="0" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0.5" y1="-0.5" x2="0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/></g>');
+  var nOwn=L.real.filter(function(p){return !isKick(p)}).length, own=L.rows.filter(function(r){return r.kind==="play"});
+  var yds=own.length?Math.round(own[own.length-1].e-own[0].s):0, top_=driveTime(L);
+  var stats=[nOwn+" play"+(nOwn===1?"":"s"),yds+" yds"].concat(top_?[top_]:[]).join(" · ");
+  var used={}; L.rows.forEach(function(r){used[playKind(r)]=1});
+  var legend=Object.keys(PK).filter(function(k){return used[k]}).map(function(k){return '<span><i style="background:'+PK[k][0]+'"></i>'+PK[k][1]+'</span>'}).join("");
+  var tc=TC[L.off];
+  return '<div class="chart"><div class="cap"><b>'+(L.done?"Last drive":"Current drive")+'</b><span><span class="badge"'+(tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'')+'>'+esc(L.offAb)+'</span> '+(L.done&&L.label?esc(L.label)+" · ":"")+esc(stats)+'</span></div>'+
+    '<svg viewBox="0 0 120 '+H+'" role="img" aria-label="'+esc(L.offAb)+' drive chart" style="border-radius:6px">'+g.join("")+'</svg>'+
+    '<div class="legend dk">'+legend+'</div></div>';
 }
 
 function renderInfo(j){
