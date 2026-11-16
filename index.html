@@ -142,15 +142,6 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 .more>summary::-webkit-details-marker{display:none}
 .more>summary::after{content:"Show all team stats ▾"}
 .more[open]>summary::after{content:"Show fewer ▴"}
-.leaders{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--tc,var(--fg));border-radius:12px;padding:4px 12px;margin-bottom:10px}
-.leader{display:grid;grid-template-columns:5.5em 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
-.leader:first-child{border-top:0}
-.leader .cat{font:600 11px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.leader .who{min-width:0}
-.leader .who b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.leader .who small{color:var(--muted);font-size:12px}
-.leader .big{font:700 24px/1 var(--display);font-variant-numeric:tabular-nums;text-align:right}
-.leader .big small{display:block;font:600 11px var(--body);color:var(--muted);letter-spacing:.04em}
 .card.pt{border-top:3px solid var(--tc,var(--line))}
 .pl td.k{font-weight:700}
 .scroll.more{-webkit-mask-image:linear-gradient(to right,#000 80%,transparent);mask-image:linear-gradient(to right,#000 80%,transparent)}
@@ -719,16 +710,6 @@ function renderStats(j,T,allShown){
     var want=T[S.statTab], players=box.players||[], tp=null;
     players.forEach(function(x){if(want&&String((x.team||{}).id)===want.id)tp=x});
     if(tp){
-      var cats={}; (tp.statistics||[]).forEach(function(s){cats[s.name]=s});
-      var L=[["passing","Passing","YDS",["C/ATT","TD","INT"]],["rushing","Rushing","YDS",["CAR","TD","LONG"]],["receiving","Receiving","YDS",["REC","TD","LONG"]],["defensive","Tackles","TOT",["SACKS","TFL"]]];
-      var lead=L.map(function(c){
-        var s=cats[c[0]]; if(!s||!(s.athletes||[]).length)return "";
-        var lab=s.labels||[], a=s.athletes[0], st=a.stats||[], big=st[lab.indexOf(c[2])];
-        if(big==null)return "";
-        var sub=c[3].map(function(l){var i=lab.indexOf(l);return i<0||st[i]==null?"":(l==="C/ATT"?st[i]:st[i]+" "+l.toLowerCase())}).filter(Boolean).join(" · ");
-        return '<div class="leader"><span class="cat">'+c[1]+'</span><span class="who"><b>'+esc((a.athlete||{}).shortName||(a.athlete||{}).displayName||"")+'</b><small>'+esc(sub)+'</small></span><span class="big">'+esc(big)+'<small>'+esc(c[2]==="TOT"?"TACKLES":"YARDS")+'</small></span></div>';
-      }).join("");
-      if(lead)out.push('<div class="leaders"'+sty(want)+'>'+lead+'</div>');
       (tp.statistics||[]).forEach(function(s){
         if(!(s.athletes||[]).length)return;
         var lab=s.labels||[], ki=lab.indexOf("YDS");
