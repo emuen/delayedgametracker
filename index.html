@@ -169,7 +169,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .weeknav button{font-size:20px;cursor:pointer}
 .weeknav button:disabled{opacity:.35;cursor:default}
 .weeknav select{padding:0 10px;text-align:center;min-width:0}
-.lopts{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px}
+.lopts{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px}
+#favChip{color:var(--fg)}
 .lopts label{display:flex;align-items:center;gap:8px;cursor:pointer}
 .lopts .switch{width:44px;height:26px}
 .lopts .switch::after{width:18px;height:18px}
@@ -207,7 +208,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     <select id="wkSel" aria-label="Week"></select>
     <button id="wkNext" aria-label="Next week">›</button>
   </div>
-  <div class="lopts"><span id="lstatus">Loading games…</span><label><span>Show scores</span><button class="switch" id="showScores" role="switch" aria-checked="false" aria-label="Show scores"></button></label></div>
+  <div class="lopts"><span id="lstatus">Loading games…</span><button class="chip" id="favChip">★ Favourite team</button><label><span>Show scores</span><button class="switch" id="showScores" role="switch" aria-checked="false" aria-label="Show scores"></button></label></div>
   <div id="games"></div>
 </div></div>
 
@@ -253,6 +254,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="in">
   <div class="sheethead"><h2 id="sheetTitle">Settings</h2><button id="sheetDone">Done</button></div>
   <div class="sect">
+    <div class="opt"><div><b>Favourite team</b><small>Its game is highlighted on the game list.</small></div><select id="fav" aria-label="Favourite team"></select></div>
+  </div>
+  <div class="sect">
     <h3>Delay</h3>
     <div class="dial">
       <div class="dialrow">
@@ -265,9 +269,6 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
       <div class="dialhelp">Play shows here first? Tap +. Behind your TV? Tap −.</div>
     </div>
     <p class="help">Quickest way: when a new play shows up before you see it on DAZN, wait for it on TV and tap "Just happened on TV" under it.</p>
-  </div>
-  <div class="sect">
-    <div class="opt"><div><b>Favourite team</b><small>Its game is highlighted on the game list.</small></div><select id="fav" aria-label="Favourite team"></select></div>
   </div>
   <div class="sect">
     <div class="opt"><div><b>Keep screen on</b><small id="wakeNote">Stops your phone from locking while this page is open.</small></div><button class="switch" id="wake" role="switch" aria-checked="false" aria-label="Keep screen on"></button></div>
@@ -825,7 +826,10 @@ function recordOf(t,opp,st){
 }
 var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",BUF:"Buffalo Bills",CAR:"Carolina Panthers",CHI:"Chicago Bears",CIN:"Cincinnati Bengals",CLE:"Cleveland Browns",DAL:"Dallas Cowboys",DEN:"Denver Broncos",DET:"Detroit Lions",GB:"Green Bay Packers",HOU:"Houston Texans",IND:"Indianapolis Colts",JAX:"Jacksonville Jaguars",KC:"Kansas City Chiefs",LV:"Las Vegas Raiders",LAC:"Los Angeles Chargers",LAR:"Los Angeles Rams",MIA:"Miami Dolphins",MIN:"Minnesota Vikings",NE:"New England Patriots",NO:"New Orleans Saints",NYG:"New York Giants",NYJ:"New York Jets",PHI:"Philadelphia Eagles",PIT:"Pittsburgh Steelers",SF:"San Francisco 49ers",SEA:"Seattle Seahawks",TB:"Tampa Bay Buccaneers",TEN:"Tennessee Titans",WSH:"Washington Commanders"};
 (function(){var f=$("fav");f.innerHTML='<option value="">None</option>'+Object.keys(NAMES).sort(function(a,b){return NAMES[a].localeCompare(NAMES[b])}).map(function(k){return '<option value="'+k+'">'+NAMES[k]+'</option>'}).join("");f.value=S.fav;
-  f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);if(S.view==="list")renderList()}})();
+  f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);favChip();if(S.view==="list")renderList()}})();
+function favChip(){$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
+favChip();
+$("favChip").onclick=function(){sheet(true);setTimeout(function(){$("fav").focus()},50)};
 function gameRow(e){
   var st=evState(e), c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
   function isFav(t){return !!(S.fav&&t&&t.team&&t.team.abbreviation===S.fav)}
