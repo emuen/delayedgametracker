@@ -183,6 +183,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .tr{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;min-width:0}
 .tr .badge{font-size:13px;padding:2px 6px;min-width:3.1em;text-align:center}
 .tr .nm{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .nm small{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px;font-variant-numeric:tabular-nums}
 .tr .sc{font:700 18px var(--display);font-variant-numeric:tabular-nums;color:var(--muted)}
 .tr.win .sc,.tr.win .nm{color:var(--fg);font-weight:700}
 .gmeta{text-align:right;display:grid;gap:2px;justify-items:end}
@@ -802,13 +803,27 @@ function teamStyle(t,avoid){
   c=c||opts.filter(function(o){return contrast(o,surf)>=1.8})[0];
   return c?{css:' style="--tc:rgb('+c.join(",")+');--tci:'+(lum(c)>0.35?"#111":"#fff")+'"',rgb:c}:{css:"",rgb:null};
 }
+/* Win-loss record. With scores hidden, a finished game shows the records from
+   before kickoff, so the updated record can't give the result away. */
+function recordOf(t,opp,st){
+  var r=((t&&t.records)||[]).filter(function(x){return x.type==="total"||x.name==="overall"||x.name==="Overall"})[0]||((t&&t.records)||[])[0];
+  if(!r||!r.summary)return "";
+  var n=String(r.summary).split("-").map(Number);
+  if(n.some(isNaN))return r.summary;
+  if(st==="post"&&!LS.scores&&opp&&t.score!=null&&opp.score!=null){
+    var a=+t.score,b=+opp.score,i=a>b?0:a<b?1:2;
+    if(n[i]>0)n[i]--;
+  }
+  if(n.length>2&&!n[2])n=n.slice(0,2);
+  return n.join("-");
+}
 function gameRow(e){
   var st=evState(e), c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
   var hs=teamStyle(h), as=teamStyle(a,hs.rgb), show=LS.scores&&st!=="pre";
   var aw=show&&a&&h&&+a.score>+h.score, hw=show&&a&&h&&+h.score>+a.score;
-  function tr(t,sty,win){
-    var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.shortDisplayName||tm.displayName||tm.name||"To be decided";
-    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+'</span><span class="sc">'+(show&&t?esc(t.score):"")+'</span></div>';
+  function tr(t,sty,win,opp){
+    var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.shortDisplayName||tm.displayName||tm.name||"To be decided", rec=recordOf(t,opp,st);
+    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(t.score):"")+'</span></div>';
   }
   var nets=evNets(e).slice(0,2).join(", "), meta;
   var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
@@ -820,7 +835,7 @@ function gameRow(e){
     meta='<b>'+(special?esc(det):tbd?"TBD":esc(d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})))+'</b><small>'+esc(nets||"")+'</small>';
   }
   var playable=a&&h&&a.team&&h.team&&a.team.abbreviation&&h.team.abbreviation&&!/tbd/i.test(a.team.abbreviation+h.team.abbreviation);
-  var inner='<div class="teams">'+tr(a,as.css,aw)+tr(h,hs.css,hw)+'</div><div class="gmeta">'+meta+'</div>';
+  var inner='<div class="teams">'+tr(a,as.css,aw,h)+tr(h,hs.css,hw,a)+'</div><div class="gmeta">'+meta+'</div>';
   return playable?'<a class="game'+(st==="post"?" done":"")+'" href="#g-'+esc(e.id)+'">'+inner+'</a>':'<div class="game">'+inner+'</div>';
 }
 function renderList(){
