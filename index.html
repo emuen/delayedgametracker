@@ -629,9 +629,9 @@ function renderDrives(j,T,V,L){
   box.innerHTML=(L?fieldChart(L):"")+list.join("");
 }
 
-/* Drive chart in the style of the old NFL Game Center: a fixed field with the away
-   team's end zone on the left and the home team's on the right, end zones in team
-   colours, one arrow per play in the direction the offense is moving (newest on top),
+/* Drive chart in the style of the newer NFL Game Center: the field seen at an angle,
+   away end zone on the left and home on the right in team colours. Passes and kicks
+   arc through the air, runs and penalties run along the turf (newest play nearest),
    a football at the ball spot, blue line of scrimmage and yellow line to gain. */
 var PK={run:["#ffffff","Run"],pass:["#7fd4ff","Pass"],pen:["#ffd23f","Penalty"],kick:["#cfd6d0","Kick"],ret:["#d9c2ff","Return"],to:["#ff7a6b","Turnover"]};
 function playKind(r){
@@ -651,64 +651,78 @@ function driveTime(L){
   return t>0?Math.floor(t/60)+":"+String(t%60).padStart(2,"0"):"";
 }
 function fieldChart(L){
-  var rows=L.rows.slice().reverse();
-  if(!rows.length)return "";
-  var T=L.T, TC=L.TC||{}, offIsAway=!!(T.away&&T.away.id===L.off);
+  var rows=L.rows.slice(), n=rows.length;
+  if(!n)return "";
+  var T=L.T, TC=L.TC||{}, offIsAway=!!(T.away&&T.away.id===L.off), odir=offIsAway?1:-1;
   function F(x){return offIsAway?x:100-x}
-  function X(f){return 10+Math.max(-8,Math.min(108,f))}
-  var top=9, rh=6.2, H=Math.max(44,top+rows.length*rh+9), mid=H/2;
+  /* Perspective: far sideline at the top (smaller), near sideline at the bottom. */
+  var head=16, depth=Math.max(44,n*6.8), yT=head, yB=head+depth, H=yB+9, sF=0.7;
+  function sc(v){return sF+(1-sF)*v}
+  function P(f,v){f=Math.max(-10,Math.min(110,f));return [60+(f-50)*sc(v),yT+(yB-yT)*v]}
+  function pt(q){return q[0].toFixed(2)+","+q[1].toFixed(2)}
+  function quad(f1,f2,fill,extra){return '<polygon points="'+[P(f1,0),P(f2,0),P(f2,1),P(f1,1)].map(pt).join(" ")+'" fill="'+fill+'"'+(extra||"")+'/>'}
+  function arrow(x,y,dx,dy,col,size){var l=Math.sqrt(dx*dx+dy*dy)||1;dx/=l;dy/=l;var s=size||2.3,w=s*0.65;
+    return '<polygon points="'+x.toFixed(2)+","+y.toFixed(2)+" "+(x-dx*s-dy*w).toFixed(2)+","+(y-dy*s+dx*w).toFixed(2)+" "+(x-dx*s+dy*w).toFixed(2)+","+(y-dy*s-dx*w).toFixed(2)+'" fill="'+col+'"/>'}
   var FT='font-family="Barlow Condensed,Arial Narrow,sans-serif"', g=[];
-  // turf: alternating 10-yard stripes
-  for(var y=0;y<100;y+=10)g.push('<rect x="'+X(y)+'" y="0" width="10" height="'+H+'" fill="'+((y/10)%2?"#2f7d3a":"#2a7234")+'"/>');
-  // end zones
-  function ez(team,x0){var c=team&&TC[team.id], bg=c?c.bg:"#1f5a29", ink=c?c.ink:"#fff";
-    var cx=x0+5;
-    return '<rect x="'+x0+'" y="0" width="10" height="'+H+'" fill="'+bg+'"/><text x="'+cx+'" y="'+mid+'" font-size="5.2" font-weight="700" letter-spacing="0.6" text-anchor="middle" dominant-baseline="middle" fill="'+ink+'" transform="rotate('+(x0?90:-90)+' '+cx+' '+mid+')" '+FT+'>'+esc(team?team.ab:"")+'</text>'}
-  g.push(ez(T.away,0)); g.push(ez(T.home,110));
-  // yard lines and numbers
-  for(var f=5;f<100;f+=5){
-    var big=f%10===0;
-    g.push('<line x1="'+X(f)+'" y1="0" x2="'+X(f)+'" y2="'+H+'" stroke="#fff" stroke-opacity="'+(big?0.55:0.25)+'" stroke-width="'+(f===50?0.7:big?0.45:0.3)+'"/>');
-    if(big){var lab=f<=50?f:100-f;
-      g.push('<text x="'+X(f)+'" y="5.6" font-size="4.2" font-weight="600" text-anchor="middle" fill="#fff" fill-opacity="0.85" '+FT+'>'+lab+'</text>');
-      g.push('<text x="'+X(f)+'" y="'+(H-2)+'" font-size="4.2" font-weight="600" text-anchor="middle" fill="#fff" fill-opacity="0.85" '+FT+'>'+lab+'</text>');}
+  for(var y=0;y<100;y+=10)g.push(quad(y,y+10,(y/10)%2?"#2f7d3a":"#2a7234"));
+  function ez(team,f1,f2){var c=team&&TC[team.id], bg=c?c.bg:"#1f5a29", ink=c?c.ink:"#fff", m=P((f1+f2)/2,0.55);
+    return quad(f1,f2,bg)+'<text x="'+m[0].toFixed(2)+'" y="'+m[1].toFixed(2)+'" font-size="5" font-weight="700" letter-spacing="0.6" text-anchor="middle" dominant-baseline="middle" fill="'+ink+'" transform="rotate('+(f1<0?-90:90)+' '+pt(m).replace(","," ")+')" '+FT+'>'+esc(team?team.ab:"")+'</text>'}
+  g.push(ez(T.away,-10,0)); g.push(ez(T.home,100,110));
+  for(var f=0;f<=100;f+=5){
+    var big=f%10===0, a=P(f,0), b=P(f,1);
+    g.push('<line x1="'+a[0].toFixed(2)+'" y1="'+a[1].toFixed(2)+'" x2="'+b[0].toFixed(2)+'" y2="'+b[1].toFixed(2)+'" stroke="#fff" stroke-opacity="'+(f===0||f===100?0.9:big?0.55:0.25)+'" stroke-width="'+(f===0||f===100?0.8:f===50?0.7:big?0.45:0.3)+'"/>');
+    if(big&&f>0&&f<100){var lab=f<=50?f:100-f;
+      g.push('<text x="'+b[0].toFixed(2)+'" y="'+(b[1]+5.4).toFixed(2)+'" font-size="4.2" font-weight="600" text-anchor="middle" fill="var(--muted)" '+FT+'>'+lab+'</text>');
+      g.push('<text x="'+a[0].toFixed(2)+'" y="'+(a[1]-1.4).toFixed(2)+'" font-size="3" font-weight="600" text-anchor="middle" fill="var(--muted)" '+FT+'>'+lab+'</text>');}
   }
-  g.push('<line x1="10" y1="0" x2="10" y2="'+H+'" stroke="#fff" stroke-width="0.8"/><line x1="110" y1="0" x2="110" y2="'+H+'" stroke="#fff" stroke-width="0.8"/>');
-  // line of scrimmage, line to gain, football
   var lastP=L.real[L.real.length-1], ball=null;
   if(!L.done&&lastP&&!lastP.scoringPlay){
     var be=toPos(lastP.end,L.off,L.A);
     if(be!=null&&be>=0&&be<=100){
       var dist=+((lastP.end||{}).distance)||0;
-      if(dist&&lastP.end.down>0&&be+dist<100)g.push('<line x1="'+X(F(be+dist))+'" y1="0" x2="'+X(F(be+dist))+'" y2="'+H+'" stroke="#ffd23f" stroke-width="1.1"/>');
-      g.push('<line x1="'+X(F(be))+'" y1="0" x2="'+X(F(be))+'" y2="'+H+'" stroke="#3d8bff" stroke-width="1.1"/>');
-      ball=X(F(be));
+      function ln(ff,col){var a=P(ff,0),b=P(ff,1);return '<line x1="'+a[0].toFixed(2)+'" y1="'+a[1].toFixed(2)+'" x2="'+b[0].toFixed(2)+'" y2="'+b[1].toFixed(2)+'" stroke="'+col+'" stroke-width="1.1"/>'}
+      if(dist&&lastP.end.down>0&&be+dist<100)g.push(ln(F(be+dist),"#ffd23f"));
+      g.push(ln(F(be),"#3d8bff"));
+      ball=P(F(be),0.95);
     }
   }
-  // plays
   rows.forEach(function(r,i){
-    var k=playKind(r), col=PK[k][0], yy=top+i*rh+rh/2, x1=X(F(r.s)), x2=X(F(r.e)), dir=x2>=x1?1:-1, len=Math.abs(x2-x1);
-    var dash=k==="pen"||k==="kick"?' stroke-dasharray="1.4 0.9"':'';
-    var tip='<title>'+esc(r.text)+'</title>', shape;
-    if(len<1.2)shape='<circle cx="'+x1+'" cy="'+yy+'" r="1.3" fill="none" stroke="'+col+'" stroke-width="0.7"/>';
-    else shape='<line x1="'+x1+'" y1="'+yy+'" x2="'+(x2-dir*1.6)+'" y2="'+yy+'" stroke="'+col+'" stroke-width="1.5" stroke-linecap="round"'+dash+'/>'+
-      '<polygon points="'+x2+','+yy+' '+(x2-dir*2.4)+','+(yy-1.6)+' '+(x2-dir*2.4)+','+(yy+1.6)+'" fill="'+col+'"/>';
-    var yds=r.kind==="play"?Math.round(r.e-r.s):null, lab=r.score||(yds==null?"":(yds>0?"+":"")+yds);
-    if(r.kind==="play"&&len<1.2&&/incomplete/i.test(r.text))lab="inc";
-    var after=dir>0?x2+1.6:x2-1.6, anchor=dir>0?"start":"end";
-    if(after>104||after<16){after=dir>0?x1-1.6:x1+1.6;anchor=dir>0?"end":"start"}
-    var text=lab?'<text x="'+after+'" y="'+(yy+1.4)+'" font-size="3.6" font-weight="700" text-anchor="'+anchor+'" fill="#fff" '+FT+'>'+esc(lab)+'</text>':'';
-    g.push('<g>'+tip+shape+text+'</g>');
+    var k=playKind(r), col=PK[k][0], v=n===1?0.55:0.1+0.72*i/(n-1), z=sc(v);
+    var t=r.text||"", ty=((r.p||{}).type||{}).text||"";
+    var fs=F(r.s), fe=F(r.e), A=P(fs,v), B=P(fe,v), len=Math.abs(fe-fs);
+    var air=(k==="pass"&&!/sack|scramble/i.test(ty+" "+t))||k==="to"&&/intercept/i.test(ty+" "+t)||k==="kick";
+    var inc=k==="pass"&&/incomplete/i.test(t);
+    var dash=k==="pen"||k==="kick"||inc?' stroke-dasharray="1.4 0.9"':'';
+    var sw=(1.5*z).toFixed(2), shape="", lx, ly, ldir;
+    if(inc){fe=fs+odir*10;B=P(fe,v);len=10}
+    if(air&&len>=1){
+      var h=Math.max(3,Math.min(k==="kick"?17:13,len*(k==="kick"?0.32:0.35)))*z;
+      var cx=(A[0]+B[0])/2, cy=(A[1]+B[1])/2-2*h;
+      shape='<path d="M'+pt(A)+" Q"+cx.toFixed(2)+","+cy.toFixed(2)+" "+pt(B)+'" fill="none" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round"'+dash+'/>';
+      if(inc){var s2=1.2*z;shape+='<path d="M'+(B[0]-s2)+","+(B[1]-s2)+" L"+(B[0]+s2)+","+(B[1]+s2)+" M"+(B[0]-s2)+","+(B[1]+s2)+" L"+(B[0]+s2)+","+(B[1]-s2)+'" stroke="'+col+'" stroke-width="'+sw+'"/>'}
+      else shape+=arrow(B[0],B[1],B[0]-cx,B[1]-cy,col,2.4*z);
+    }else if(len>=1){
+      var d=B[0]>=A[0]?1:-1;
+      shape='<line x1="'+pt(A).replace(","," y1=").replace(/^/,"")+'" />';
+      shape='<line x1="'+A[0].toFixed(2)+'" y1="'+A[1].toFixed(2)+'" x2="'+(B[0]-d*1.6*z).toFixed(2)+'" y2="'+B[1].toFixed(2)+'" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round"'+dash+'/>'+arrow(B[0],B[1],d,0,col,2.4*z);
+    }else{
+      shape='<circle cx="'+A[0].toFixed(2)+'" cy="'+A[1].toFixed(2)+'" r="'+(1.2*z).toFixed(2)+'" fill="none" stroke="'+col+'" stroke-width="'+(0.7*z).toFixed(2)+'"/>';
+    }
+    var yds=r.kind==="play"?Math.round(r.e-r.s):null, lab=r.score||(inc?"inc":yds==null?"":(yds>0?"+":"")+yds);
+    ldir=B[0]>=A[0]?1:-1; lx=B[0]+ldir*1.9*z; var anchor=ldir>0?"start":"end";
+    if(lx>112||lx<8){lx=A[0]-ldir*1.9*z;anchor=ldir>0?"end":"start"}
+    var text=lab?'<text x="'+lx.toFixed(2)+'" y="'+(B[1]+1.3*z).toFixed(2)+'" font-size="'+(3.6*z).toFixed(2)+'" font-weight="700" text-anchor="'+anchor+'" fill="#fff" '+FT+'>'+esc(lab)+'</text>':'';
+    g.push('<g><title>'+esc(t)+'</title>'+shape+text+'</g>');
   });
-  if(ball!=null)g.push('<g transform="translate('+ball+' '+(H-7.2)+')"><ellipse rx="2.6" ry="1.6" fill="#7a3b12" stroke="#fff" stroke-width="0.35"/><line x1="-1" y1="0" x2="1" y2="0" stroke="#fff" stroke-width="0.35"/><line x1="-0.5" y1="-0.5" x2="-0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0" y1="-0.5" x2="0" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0.5" y1="-0.5" x2="0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/></g>');
+  if(ball)g.push('<g transform="translate('+ball[0].toFixed(2)+' '+(ball[1]-1.6).toFixed(2)+')"><ellipse rx="2.6" ry="1.5" fill="#7a3b12" stroke="#fff" stroke-width="0.35"/><line x1="-1" y1="0" x2="1" y2="0" stroke="#fff" stroke-width="0.35"/><line x1="-0.5" y1="-0.5" x2="-0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0" y1="-0.5" x2="0" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0.5" y1="-0.5" x2="0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/></g>');
   var nOwn=L.real.filter(function(p){return !isKick(p)}).length, own=L.rows.filter(function(r){return r.kind==="play"});
   var yds=own.length?Math.round(own[own.length-1].e-own[0].s):0, top_=driveTime(L);
   var stats=[nOwn+" play"+(nOwn===1?"":"s"),yds+" yds"].concat(top_?[top_]:[]).join(" · ");
   var used={}; L.rows.forEach(function(r){used[playKind(r)]=1});
-  var legend=Object.keys(PK).filter(function(k){return used[k]}).map(function(k){return '<span><i style="background:'+PK[k][0]+'"></i>'+PK[k][1]+'</span>'}).join("");
+  var legend=Object.keys(PK).filter(function(k){return used[k]}).map(function(k){return '<span><i style="background:'+PK[k][0]+'"></i>'+PK[k][1]+'</span>'}).join("")+'<span>Arc = in the air · newest play nearest</span>';
   var tc=TC[L.off];
   return '<div class="chart"><div class="cap"><b>'+(L.done?"Last drive":"Current drive")+'</b><span><span class="badge"'+(tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'')+'>'+esc(L.offAb)+'</span> '+(L.done&&L.label?esc(L.label)+" · ":"")+esc(stats)+'</span></div>'+
-    '<svg viewBox="0 0 120 '+H+'" role="img" aria-label="'+esc(L.offAb)+' drive chart" style="border-radius:6px">'+g.join("")+'</svg>'+
+    '<svg viewBox="0 0 120 '+H.toFixed(1)+'" role="img" aria-label="'+esc(L.offAb)+' drive chart">'+g.join("")+'</svg>'+
     '<div class="legend dk">'+legend+'</div></div>';
 }
 
