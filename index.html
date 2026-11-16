@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: compact score bar (score, down & distance, status + settings chip), game info, then Drives (field chart + drive log, newest first) and Stats. Delay, keep-screen-on and game choice live in a bottom settings sheet. Phone-first, one column. */
+/* Layout: landing page lists the week's games (live, by day, finished last) with a week picker; tapping a game opens the tracker: compact score bar (score, down & distance, status + settings chip), game info, then Drives (field chart + drive log, newest first) and Stats. Delay, keep-screen-on and game choice live in a bottom settings sheet. Phone-first, one column. */
 :root{
   --bg:#f3f4f2; --surface:#ffffff; --line:#dfe2dc; --fg:#17201b; --muted:#5a665e;
   --accent:#8a6408; --accent-ink:#ffffff; --score:#1d6b3f; --warn:#a4421d;
@@ -160,11 +160,56 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 .info dd{margin:0;min-width:0;overflow-wrap:anywhere}
 button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* game list */
+.lhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.lhead h1{margin:0;font:700 26px var(--display);letter-spacing:.04em}
+.weeknav{display:grid;grid-template-columns:44px 1fr 44px;gap:6px;margin:12px 0 6px}
+.weeknav button,.weeknav select{min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:10px;font-weight:600}
+.weeknav button{font-size:20px;cursor:pointer}
+.weeknav button:disabled{opacity:.35;cursor:default}
+.weeknav select{padding:0 10px;text-align:center;min-width:0}
+.lopts{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px}
+.lopts label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.lopts .switch{width:44px;height:26px}
+.lopts .switch::after{width:18px;height:18px}
+.lopts .switch[aria-checked="true"]::after{left:21px}
+.day{margin:18px 2px 8px;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
+.day::after{content:"";flex:1;height:1px;background:var(--line)}
+.day.live{color:var(--accent)}
+.game{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;color:inherit;text-decoration:none;min-height:64px}
+.game:active{background:var(--bg)}
+.game.done{opacity:.8}
+.teams{display:grid;gap:5px;min-width:0}
+.tr{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;min-width:0}
+.tr .badge{font-size:13px;padding:2px 6px;min-width:3.1em;text-align:center}
+.tr .nm{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .sc{font:700 18px var(--display);font-variant-numeric:tabular-nums;color:var(--muted)}
+.tr.win .sc,.tr.win .nm{color:var(--fg);font-weight:700}
+.gmeta{text-align:right;display:grid;gap:2px;justify-items:end}
+.gmeta b{font:700 17px var(--display);font-variant-numeric:tabular-nums}
+.gmeta small{font-size:12px;color:var(--muted);max-width:7.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.livechip{font:700 12px var(--body);letter-spacing:.06em;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:2px 8px}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
+.nav a{color:var(--fg);font-weight:600;text-decoration:none;min-height:36px;display:inline-flex;align-items:center;padding-right:8px}
+.nav span{color:var(--muted)}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
+<div id="listView" hidden><div class="wrap">
+  <div class="lhead"><h1>Delay Booth</h1><button class="chip" id="openSettings2">Delay 45s · Settings</button></div>
+  <div class="weeknav">
+    <button id="wkPrev" aria-label="Previous week">‹</button>
+    <select id="wkSel" aria-label="Week"></select>
+    <button id="wkNext" aria-label="Next week">›</button>
+  </div>
+  <div class="lopts"><span id="lstatus">Loading games…</span><label><span>Show scores</span><button class="switch" id="showScores" role="switch" aria-checked="false" aria-label="Show scores"></button></label></div>
+  <div id="games"></div>
+</div></div>
+
+<div id="gameView" hidden>
 <div class="bar"><div class="wrap">
+  <div class="nav"><a href="#" id="back">‹ All games</a><span id="navWeek"></span></div>
   <div class="score" id="scoreRow">
     <div class="tm" id="awayBox"><span class="ab" id="awayAb">AWAY</span><span class="pts" id="awayPts">–</span></div>
     <div class="mid" id="mid">Loading<small>&nbsp;</small></div>
@@ -198,6 +243,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
   </section>
 
 </main>
+</div>
 
 <div class="scrim" id="scrim" hidden></div>
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="in">
@@ -219,11 +265,6 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
   <div class="sect">
     <div class="opt"><div><b>Keep screen on</b><small id="wakeNote">Stops your phone from locking while this page is open.</small></div><button class="switch" id="wake" role="switch" aria-checked="false" aria-label="Keep screen on"></button></div>
   </div>
-  <div class="sect">
-    <h3>Game</h3>
-    <div class="field"><label for="team">Team</label><input id="team" maxlength="4" value="LAR"></div>
-    <div class="field"><label for="game">Game</label><select id="game"><option value="">Auto (live or next)</option></select></div>
-  </div>
 </div></div>
 
 <script>
@@ -233,7 +274,7 @@ var API="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
-  team:load("db_team","LAR"), delay:load("db_delay",45),
+  delay:load("db_delay",45), view:"list",
   lagSamples:load("db_lag",[]), statTab:load("db_statTab","mine"), wantWake:load("db_wake",false),
   pick:"", eventId:null, sum:null, sumVer:0, state:"pre",
   seen:{}, estimated:{}, shownAt:{}, synced:{}, loaded:false, lastOk:0, nextPollAt:0, snaps:[], err:"", schedule:[],
@@ -243,43 +284,19 @@ var $=function(id){return document.getElementById(id)};
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function getJSON(url){return fetch(url,{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})}
 
-/* ---------- finding the game ---------- */
-function loadSchedule(){
-  return getJSON(API+"/teams/"+S.team.toLowerCase()+"/schedule").then(function(j){
-    S.schedule=(j.events||[]).map(function(e){
-      var c=(e.competitions||[])[0]||{}; var st=((c.status||{}).type||{}).state||"";
-      return {id:e.id,date:e.date,name:e.shortName||e.name,state:st};
-    });
-    var sel=$("game"), keep=S.pick; sel.innerHTML='<option value="">Auto (live or next)</option>';
-    S.schedule.forEach(function(e){
-      var o=document.createElement("option"); o.value=e.id;
-      o.textContent=new Date(e.date).toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · "+e.name;
-      sel.appendChild(o);
-    });
-    sel.value=keep;
-  });
-}
-function autoEvent(){
-  var now=Date.now(), ev=S.schedule;
-  var live=ev.filter(function(e){return e.state==="in"})[0]; if(live)return live.id;
-  var near=ev.filter(function(e){var t=Date.parse(e.date);return t<=now+30*60e3&&t>=now-5*3600e3&&e.state!=="post"})[0]; if(near)return near.id;
-  var next=ev.filter(function(e){return Date.parse(e.date)>now})[0]; if(next)return next.id;
-  return ev.length?ev[ev.length-1].id:null;
-}
-
 /* ---------- polling ----------
    Every play is held back for the full delay from the moment this page first
    receives it, so ESPN's quick corrections land before the play is shown. */
 var timer=null;
 function poll(){
   clearTimeout(timer);
-  var p=S.schedule.length?Promise.resolve():loadSchedule();
-  p.then(function(){
-    var id=S.pick||autoEvent();
-    if(!id)throw new Error("No games found for "+S.team);
+  if(S.view!=="game"||!S.pick)return;
+  var id=S.pick;
+  Promise.resolve().then(function(){
     if(id!==S.eventId){S.eventId=id;S.sum=null;S.seen={};S.estimated={};S.shownAt={};S.synced={};S.loaded=false;S.snaps=[];S.openState={};S.keys={}}
     return getJSON(API+"/summary?event="+id);
   }).then(function(j){
+    if(id!==S.pick)return;
     var now=Date.now();
     var catchUp=!S.loaded||(S.lastOk&&now-S.lastOk>30000);
     allPlays(j).forEach(function(p){
@@ -296,6 +313,7 @@ function poll(){
   }).catch(function(e){
     S.err=(e&&/fetch|network|load/i.test(e.message||""))?"Offline":(e.message||"Feed error");
   }).then(function(){
+    if(S.view!=="game"||S.pick!==id)return;
     var wait=S.err?15000:S.state==="in"?6000:S.state==="post"?120000:60000;
     S.nextPollAt=Date.now()+wait;
     timer=setTimeout(poll,wait);
@@ -334,9 +352,7 @@ function teamsOf(j){
     var t={id:String((c.team||{}).id||c.id),ab:(c.team||{}).abbreviation||"?",ha:c.homeAway};
     out[c.homeAway]=t; out.byId[t.id]=t;
   });
-  var me=S.team, a=out.away, h=out.home;
-  function is(t){return t&&(t.ab===me||t.ab.indexOf(me)===0||me.indexOf(t.ab)===0)}
-  out.mine=is(h)&&!is(a)?h:is(a)?a:a; out.opp=out.mine===h?a:h;
+  out.mine=out.away; out.opp=out.home;
   return out;
 }
 /* Team colours: from the feed, with a fallback table. Picks a shade that stands out
@@ -509,9 +525,10 @@ function latestDrive(j,T,V){
 
 /* ---------- render ---------- */
 function render(){
+  if(S.view!=="game")return;
   var now=Date.now();
   $("delayVal").textContent=fmtDelay(S.delay);
-  $("openSettings").textContent="Delay "+fmtDelay(S.delay)+(S.wantWake?" · Screen on":"")+" · Settings";
+  chips();
   var st=$("status"), retry=$("retry");
   retry.hidden=!S.err;
   if(S.err){
@@ -521,7 +538,7 @@ function render(){
   }
   if(!S.sum){
     $("mid").innerHTML=(S.err?"Offline":"Loading")+"<small>&nbsp;</small>";
-    $("drives").innerHTML='<div class="empty">'+(S.err?"Waiting for the feed to come back.":"Finding the "+esc(S.team)+" game…")+'</div>';
+    $("drives").innerHTML='<div class="empty">'+(S.err?"Waiting for the feed to come back.":"Loading the game…")+'</div>';
     return;
   }
   var j=S.sum, T=teamsOf(j), V=visibleIds(j), lastP=V.plays[V.last];
@@ -736,14 +753,150 @@ function markScrolls(){
 document.addEventListener("scroll",function(e){var t=e.target;if(t&&t.classList&&t.classList.contains("scroll"))t.classList.toggle("more",t.scrollWidth-t.clientWidth-t.scrollLeft>4)},true);
 window.addEventListener("resize",markScrolls);
 
+/* ---------- game list (landing page) ----------
+   Scores stay hidden unless you switch them on, so the list can't spoil a game. */
+var LS={cal:null, flat:[], cur:null, sel:null, data:null, timer:null, err:"", scores:load("db_scores",false)};
+function wkKey(w){return w?w.year+"-"+w.type+"-"+w.week:""}
+function buildCal(sb){
+  var year=+((sb.season||{}).year)||new Date().getFullYear(), groups=[];
+  ((((sb.leagues||[])[0])||{}).calendar||[]).forEach(function(c){
+    var type=+c.value; if(!c.entries||type===4)return;
+    var es=c.entries.filter(function(e){return !/pro bowl/i.test(e.label||"")}).map(function(e){return {year:year,type:type,week:+e.value,label:e.label,detail:e.detail||"",start:e.startDate,end:e.endDate}});
+    if(es.length)groups.push({label:c.label,entries:es});
+  });
+  LS.cal=groups; LS.flat=[]; groups.forEach(function(g){LS.flat=LS.flat.concat(g.entries)});
+}
+function calEntry(w){return LS.flat.filter(function(e){return wkKey(e)===wkKey(w)})[0]||null}
+function loadWeek(){
+  clearTimeout(LS.timer);
+  if(S.view!=="list")return;
+  var w=LS.sel, url=API+"/scoreboard"+(w?"?dates="+w.year+"&seasontype="+w.type+"&week="+w.week:"");
+  var asked=wkKey(w);
+  getJSON(url).then(function(sb){
+    if(wkKey(LS.sel)!==asked)return;
+    if(!LS.cal)buildCal(sb);
+    if(!w)LS.cur={year:+sb.season.year,type:+sb.season.type,week:+sb.week.number};
+    LS.data=sb; LS.err="";
+  }).catch(function(e){LS.err=/fetch|network|load/i.test(e.message||"")?"Offline · retrying":"Couldn't load games ("+e.message+")"})
+  .then(function(){
+    if(S.view!=="list")return;
+    renderList();
+    var live=LS.data&&(LS.data.events||[]).some(function(e){return evState(e)==="in"});
+    LS.timer=setTimeout(loadWeek,LS.err?15000:live?30000:120000);
+  });
+}
+function evComp(e){return (e.competitions||[])[0]||{}}
+function evState(e){return (((evComp(e).status||e.status||{}).type)||{}).state||"pre"}
+function evTeam(e,ha){return (evComp(e).competitors||[]).filter(function(c){return c.homeAway===ha})[0]||null}
+function evNets(e){
+  var c=evComp(e), out=[];
+  (c.broadcasts||[]).forEach(function(b){(b.names||[]).forEach(function(n){if(out.indexOf(n)<0)out.push(n)})});
+  (c.geoBroadcasts||[]).forEach(function(b){var n=(b.media||{}).shortName;if(n&&out.indexOf(n)<0)out.push(n)});
+  return out;
+}
+function teamStyle(t,avoid){
+  if(!t||!t.team)return {css:"",rgb:null};
+  var dark=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches, surf=dark?[24,32,28]:[255,255,255];
+  var fb=COLORS[t.team.abbreviation]||[], opts=[hexRgb(t.team.color)||hexRgb(fb[0]),hexRgb(t.team.alternateColor)||hexRgb(fb[1])].filter(Boolean), c=null;
+  opts.forEach(function(o){if(c||contrast(o,surf)<1.8)return;if(avoid&&Math.abs(o[0]-avoid[0])+Math.abs(o[1]-avoid[1])+Math.abs(o[2]-avoid[2])<120)return;c=o});
+  c=c||opts.filter(function(o){return contrast(o,surf)>=1.8})[0];
+  return c?{css:' style="--tc:rgb('+c.join(",")+');--tci:'+(lum(c)>0.35?"#111":"#fff")+'"',rgb:c}:{css:"",rgb:null};
+}
+function gameRow(e){
+  var st=evState(e), c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
+  var hs=teamStyle(h), as=teamStyle(a,hs.rgb), show=LS.scores&&st!=="pre";
+  var aw=show&&a&&h&&+a.score>+h.score, hw=show&&a&&h&&+h.score>+a.score;
+  function tr(t,sty,win){
+    var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.shortDisplayName||tm.displayName||tm.name||"To be decided";
+    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+'</span><span class="sc">'+(show&&t?esc(t.score):"")+'</span></div>';
+  }
+  var nets=evNets(e).slice(0,2).join(", "), meta;
+  var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
+  if(st==="in")meta='<span class="livechip">LIVE</span><small>'+esc(nets)+'</small>';
+  else if(st==="post")meta='<b>Final</b><small>'+esc(nets)+'</small>';
+  else{
+    var d=new Date(e.date), det=((((c.status||{}).type)||{}).shortDetail)||"";
+    var special=/postponed|canceled|cancelled|delayed|suspended/i.test(det);
+    meta='<b>'+(special?esc(det):tbd?"TBD":esc(d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})))+'</b><small>'+esc(nets||"")+'</small>';
+  }
+  var playable=a&&h&&a.team&&h.team&&a.team.abbreviation&&h.team.abbreviation&&!/tbd/i.test(a.team.abbreviation+h.team.abbreviation);
+  var inner='<div class="teams">'+tr(a,as.css,aw)+tr(h,hs.css,hw)+'</div><div class="gmeta">'+meta+'</div>';
+  return playable?'<a class="game'+(st==="post"?" done":"")+'" href="#g-'+esc(e.id)+'">'+inner+'</a>':'<div class="game">'+inner+'</div>';
+}
+function renderList(){
+  var w=LS.sel||LS.cur, sel=$("wkSel");
+  if(LS.cal&&!sel.options.length){
+    sel.innerHTML=LS.cal.map(function(g){return '<optgroup label="'+esc(g.label)+'">'+g.entries.map(function(e){return '<option value="'+wkKey(e)+'">'+esc(e.label)+(LS.cur&&wkKey(e)===wkKey(LS.cur)?" (this week)":"")+'</option>'}).join("")+'</optgroup>'}).join("");
+  }
+  if(w)sel.value=wkKey(w);
+  var i=LS.flat.map(wkKey).indexOf(wkKey(w));
+  $("wkPrev").disabled=i<=0; $("wkNext").disabled=i<0||i>=LS.flat.length-1;
+  $("showScores").setAttribute("aria-checked",LS.scores?"true":"false");
+  var box=$("games");
+  if(LS.err&&!LS.data){$("lstatus").textContent=LS.err;box.innerHTML='<div class="empty">'+esc(LS.err)+'</div>';return}
+  var sb=LS.data||{}, ev=(sb.events||[]).slice().sort(function(x,y){return Date.parse(x.date)-Date.parse(y.date)});
+  var ce=calEntry(w);
+  $("lstatus").textContent=LS.err||(ce&&ce.detail?ce.detail:"")||"";
+  if(!ev.length){
+    box.innerHTML='<div class="empty">'+(ce&&ce.type===3?"Matchups and kickoff times for "+esc(ce.label)+" aren't set yet."+(ce.detail?"<br>"+esc(ce.detail):""):"No games this week.")+'</div>';
+    return;
+  }
+  var live=[], done=[], days=[], byDay={};
+  ev.forEach(function(e){
+    var st=evState(e);
+    if(st==="in")return live.push(e);
+    if(st==="post")return done.push(e);
+    var tbd=evComp(e).timeValid===false, k=tbd?"zz":new Date(e.date).toDateString();
+    if(!byDay[k]){byDay[k]=[];days.push(k)}
+    byDay[k].push(e);
+  });
+  var html=[];
+  if(live.length)html.push('<h2 class="day live">Live now</h2>'+live.map(gameRow).join(""));
+  days.forEach(function(k){
+    var label=k==="zz"?"Date to be decided":new Date(byDay[k][0].date).toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"});
+    html.push('<h2 class="day">'+esc(label)+'</h2>'+byDay[k].map(gameRow).join(""));
+  });
+  if(done.length)html.push('<h2 class="day">Finished</h2>'+done.map(gameRow).join(""));
+  box.innerHTML=html.join("");
+}
+$("wkSel").onchange=function(){var e=LS.flat.filter(function(x){return wkKey(x)===$("wkSel").value})[0];if(e)goWeek(e)};
+$("wkPrev").onclick=function(){var i=LS.flat.map(wkKey).indexOf(wkKey(LS.sel||LS.cur));if(i>0)goWeek(LS.flat[i-1])};
+$("wkNext").onclick=function(){var i=LS.flat.map(wkKey).indexOf(wkKey(LS.sel||LS.cur));if(i>=0&&i<LS.flat.length-1)goWeek(LS.flat[i+1])};
+function goWeek(e){location.hash=LS.cur&&wkKey(e)===wkKey(LS.cur)?"":"w-"+wkKey(e)}
+$("showScores").onclick=function(){LS.scores=!LS.scores;save("db_scores",LS.scores);renderList()};
+
+/* ---------- routing: #g-<game> opens the tracker, #w-<year>-<type>-<week> a week, nothing = this week ---------- */
+var listHash="";
+function route(){
+  var h=location.hash.replace(/^#/,""), m;
+  if((m=h.match(/^g-(\d+)$/))){
+    S.view="game"; clearTimeout(LS.timer);
+    $("listView").hidden=true; $("gameView").hidden=false;
+    $("back").setAttribute("href","#"+listHash);
+    var ce=calEntry(LS.sel||LS.cur); $("navWeek").textContent=ce?ce.label:"";
+    if(S.pick!==m[1]){S.pick=m[1];S.sum=null;S.keys={};tab("drives")}
+    window.scrollTo(0,0); render(); poll();
+    return;
+  }
+  S.view="list"; clearTimeout(timer);
+  $("gameView").hidden=true; $("listView").hidden=false;
+  listHash=h;
+  var wm=h.match(/^w-(\d{4})-(\d)-(\d{1,2})$/);
+  var nsel=wm?{year:+wm[1],type:+wm[2],week:+wm[3]}:null;
+  if(wkKey(nsel)!==wkKey(LS.sel)){LS.sel=nsel;LS.data=null;$("games").innerHTML='<div class="empty">Loading games…</div>'}
+  renderList(); loadWeek();
+}
+
 /* ---------- controls ---------- */
-function setDelay(v){S.delay=Math.max(0,Math.min(900,Math.round(v)));save("db_delay",S.delay);S.keys={};render()}
+function chips(){var t="Delay "+fmtDelay(S.delay)+(S.wantWake?" · Screen on":"")+" · Settings";$("openSettings").textContent=t;$("openSettings2").textContent=t;$("delayVal").textContent=fmtDelay(S.delay)}
+function setDelay(v){S.delay=Math.max(0,Math.min(900,Math.round(v)));save("db_delay",S.delay);S.keys={};chips();render()}
 $("m30").onclick=function(){setDelay(S.delay-30)};
 $("m5").onclick=function(){setDelay(S.delay-5)};
 $("p5").onclick=function(){setDelay(S.delay+5)};
 $("p30").onclick=function(){setDelay(S.delay+30)};
-function sheet(open){$("sheet").hidden=!open;$("scrim").hidden=!open;if(open)$("sheetDone").focus();else $("openSettings").focus()}
+function sheet(open){$("sheet").hidden=!open;$("scrim").hidden=!open;if(open)$("sheetDone").focus()}
 $("openSettings").onclick=function(){sheet(true)};
+$("openSettings2").onclick=function(){sheet(true)};
 $("sheetDone").onclick=function(){sheet(false)};
 $("scrim").onclick=function(){sheet(false)};
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("sheet").hidden)sheet(false)});
@@ -766,9 +919,6 @@ function stab(t){S.statTab=t;save("db_statTab",t);S.keys.stats=null;render()}
 $("segMine").onclick=function(){stab("mine")};
 $("segOpp").onclick=function(){stab("opp")};
 $("segTeam").onclick=function(){stab("team")};
-$("team").value=S.team;
-$("team").onchange=function(){var v=this.value.trim().toUpperCase();if(!v)return;S.team=v;save("db_team",v);S.schedule=[];S.pick="";S.eventId=null;S.sum=null;$("game").value="";render();poll()};
-$("game").onchange=function(){S.pick=this.value;poll()};
 
 /* Keep the screen on. Uses the browser's screen lock where it works, plus a tiny
    silent looping video, which is what keeps iPhones (and home-screen apps) awake. */
@@ -783,7 +933,7 @@ function getLock(){
   if(!("wakeLock" in navigator)||lock)return;
   navigator.wakeLock.request("screen").then(function(l){lock=l;l.addEventListener("release",function(){if(lock===l)lock=null})}).catch(function(){});
 }
-function wakeUI(){wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");render()}
+function wakeUI(){wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");chips();render()}
 function wakeOn(){startVideo();getLock()}
 function wakeOff(){if(video)video.pause();if(lock){var l=lock;lock=null;l.release()}}
 wakeBtn.onclick=function(){
@@ -791,7 +941,7 @@ wakeBtn.onclick=function(){
   if(S.wantWake)wakeOn(); else wakeOff();
   wakeUI();
 };
-document.addEventListener("visibilitychange",function(){if(!document.hidden){poll();if(S.wantWake)wakeOn()}});
+document.addEventListener("visibilitychange",function(){if(!document.hidden){if(S.view==="game")poll();else loadWeek();if(S.wantWake)wakeOn()}});
 /* Phones only allow this after a tap, so on reopening, the first tap anywhere turns it back on. */
 document.addEventListener("pointerdown",function(){if(S.wantWake&&(!video||video.paused))wakeOn()},true);
 if(S.wantWake)wakeOn();
@@ -799,7 +949,8 @@ wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");
 
 setInterval(render,1000);
 loadCrews(); setInterval(loadCrews,30*60000);
-tab("drives"); render(); poll();
+tab("drives"); chips(); route();
+window.addEventListener("hashchange",route);
 })();
 </script>
 </body>
