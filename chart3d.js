@@ -219,16 +219,22 @@
     });
     if (spec.callout && calloutAt) {
       var c = spec.callout, at = scr(calloutAt), pad = 8 * u, lh = 14 * u;
-      var TONE = { gain: "#1a7a3c", loss: "#b4381f", zero: "#4a544e" };
+      var TEXT = "#3c463f", KIND = { yd: TEXT, to: "#b4381f", sc: "#9a6a00" };
       var FB = Math.round(11 * u) + "px Inter, system-ui, sans-serif", FH = "700 " + Math.round(11 * u) + "px Inter, system-ui, sans-serif";
       o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif";
       var w1 = o.measureText(c.head).width;
       /* A line is drawn in pieces so the yardage phrase can be bold and coloured. */
       function pieces(line) {
-        if (!line) return [];
-        var i = c.hl ? line.indexOf(c.hl) : -1;
-        if (i < 0) return [[line, FB, "#3c463f"]];
-        return [[line.slice(0, i), FB, "#3c463f"], [c.hl, FH, TONE[c.tone] || TONE.zero], [line.slice(i + c.hl.length), FB, "#3c463f"]];
+        var out = [], rest = line || "";
+        while (rest) {
+          var best = null;
+          (c.hls || []).forEach(function (h) { var i = rest.indexOf(h.t); if (i >= 0 && (!best || i < best.i)) best = { i: i, h: h }; });
+          if (!best) { out.push([rest, FB, TEXT]); break; }
+          if (best.i) out.push([rest.slice(0, best.i), FB, TEXT]);
+          out.push([best.h.t, FH, KIND[best.h.k] || TEXT]);
+          rest = rest.slice(best.i + best.h.t.length);
+        }
+        return out;
       }
       function widthOf(line) { return pieces(line).reduce(function (w, p) { o.font = p[1]; return w + o.measureText(p[0]).width; }, 0); }
       var w2 = Math.max(widthOf(c.l1), widthOf(c.l2));
