@@ -107,7 +107,7 @@ details.drive>summary::-webkit-details-marker{display:none}
 .dr::after{content:" ▸";color:var(--muted)}
 details[open] .dr::after{content:" ▾"}
 ol.plays{list-style:none;margin:0;padding:0 12px 10px;border-top:1px solid var(--line)}
-ol.plays li{padding:9px 0;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:5.2em 1fr auto;gap:8px;font-size:14px;align-items:start}
+ol.plays li{padding:9px 0;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:5.2em 1fr;gap:8px;font-size:14px;align-items:start}
 ol.plays li:last-child{border-bottom:0}
 .pc{font:500 13px var(--display);color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.25}
 .pc b{display:block;color:var(--fg);font-weight:600}
@@ -116,7 +116,7 @@ ol.plays li:last-child{border-bottom:0}
 li.spt .tx{font-weight:700}
 li.np .tx{color:var(--muted);font-style:italic}
 .tx{min-width:0;overflow-wrap:anywhere}
-.tvsync{grid-column:2/4;justify-self:start;margin-top:2px;min-height:36px;border:1px dashed var(--accent);background:none;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
+.tvsync{grid-column:2/3;justify-self:start;margin-top:2px;min-height:36px;border:1px dashed var(--accent);background:none;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
 .empty{padding:28px 12px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 12px;margin-bottom:10px}
@@ -618,9 +618,7 @@ function renderDrives(j,T,V,L){
     var q=((d.start||{}).period||{}).number||((vis[0]||{}).period||{}).number||0;
     var items=vis.slice().reverse().map(function(p){
       var c=clockText(p), dd=((p.start||{}).down>0&&!isNonPlay(p))?((p.start||{}).shortDownDistanceText||""):"", yd="";
-      var y=p.statYardage, ty=((p.type||{}).text||"");
-      if(typeof y==="number"&&!NOYARD.test(ty)&&!isKick(p))yd='<span class="yd '+(y>0?"g":y<0?"l":"z")+'">'+(y>0?"+":"")+y+'</span>';
-      else yd='<span></span>';
+      var ty=((p.type||{}).text||"");
       var btn=p.id===syncId?'<button class="tvsync" data-sync="'+esc(p.id)+'">Just happened on TV</button>':'';
       return '<li class="'+(p.scoringPlay?"spt":"")+(isNonPlay(p)?" np":"")+'"><div class="pc"><b>'+esc(c.q+" "+c.clk)+'</b>'+esc(dd)+'</div><div class="tx">'+esc(cleanText(p.text)||ty)+'</div>'+yd+btn+'</li>';
     }).join("");
