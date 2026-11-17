@@ -219,15 +219,20 @@
     });
     if (spec.callout && calloutAt) {
       var c = spec.callout, at = scr(calloutAt), pad = 8 * u, lh = 14 * u;
-      var TONE = { gain: "#1d7a3f", loss: "#b4381f", zero: "#5d6862", score: "#b8860b" };
+      var TONE = { gain: "#1a7a3c", loss: "#b4381f", zero: "#4a544e" };
+      var FB = Math.round(11 * u) + "px Inter, system-ui, sans-serif", FH = "700 " + Math.round(11 * u) + "px Inter, system-ui, sans-serif";
       o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif";
       var w1 = o.measureText(c.head).width;
-      o.font = Math.round(11 * u) + "px Inter, system-ui, sans-serif";
-      var w2 = Math.max(o.measureText(c.l1 || "").width, o.measureText(c.l2 || "").width);
-      var bigFs = Math.round(20 * u), tagW = 0;
-      if (c.big) { o.font = "700 " + bigFs + "px " + DISPLAY; tagW = o.measureText(c.big).width + 14 * u; }
-      var bh = pad * 2 + lh * (c.l2 ? 3 : 2) - 4 * u;
-      var bw = Math.min(W - 12 * u, Math.max(w1, w2) + pad * 2 + (tagW ? tagW + pad : 0));
+      /* A line is drawn in pieces so the yardage phrase can be bold and coloured. */
+      function pieces(line) {
+        if (!line) return [];
+        var i = c.hl ? line.indexOf(c.hl) : -1;
+        if (i < 0) return [[line, FB, "#3c463f"]];
+        return [[line.slice(0, i), FB, "#3c463f"], [c.hl, FH, TONE[c.tone] || TONE.zero], [line.slice(i + c.hl.length), FB, "#3c463f"]];
+      }
+      function widthOf(line) { return pieces(line).reduce(function (w, p) { o.font = p[1]; return w + o.measureText(p[0]).width; }, 0); }
+      var w2 = Math.max(widthOf(c.l1), widthOf(c.l2));
+      var bw = Math.min(W - 12 * u, Math.max(w1, w2) + pad * 2), bh = pad * 2 + lh * (c.l2 ? 3 : 2) - 4 * u;
       var bx = Math.max(6 * u, Math.min(W - bw - 6 * u, at[0] - bw / 2)), by = 8 * u;
       o.strokeStyle = "rgba(255,255,255,0.95)"; o.lineWidth = 1.5 * u;
       o.beginPath(); o.moveTo(Math.max(bx + 10 * u, Math.min(bx + bw - 10 * u, at[0])), by + bh); o.lineTo(at[0], at[1]); o.stroke();
@@ -236,20 +241,14 @@
       o.fillStyle = "#fff"; o.beginPath();
       if (o.roundRect) o.roundRect(bx, by, bw, bh, 5 * u); else o.rect(bx, by, bw, bh);
       o.fill(); o.shadowColor = "transparent";
-      if (c.big) {
-        /* Yardage tag on the right, full height of the box. */
-        var tx = bx + bw - tagW - pad * 0.6, ty = by + pad * 0.6, th = bh - pad * 1.2;
-        o.fillStyle = TONE[c.tone] || TONE.zero; o.beginPath();
-        if (o.roundRect) o.roundRect(tx, ty, tagW, th, 4 * u); else o.rect(tx, ty, tagW, th);
-        o.fill();
-        o.fillStyle = "#fff"; o.textAlign = "center"; o.textBaseline = "middle";
-        o.font = "700 " + bigFs + "px " + DISPLAY; o.fillText(c.big, tx + tagW / 2, ty + th / 2 + 1 * u);
-      }
       o.textAlign = "left"; o.textBaseline = "middle"; o.fillStyle = "#17201b";
       o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif"; o.fillText(c.head, bx + pad, by + pad + lh / 2 - 2 * u);
-      o.fillStyle = "#3c463f"; o.font = Math.round(11 * u) + "px Inter, system-ui, sans-serif";
-      o.fillText(c.l1 || "", bx + pad, by + pad + lh * 1.5 - 2 * u);
-      if (c.l2) o.fillText(c.l2, bx + pad, by + pad + lh * 2.5 - 2 * u);
+      function drawLine(line, y) {
+        var x = bx + pad;
+        pieces(line).forEach(function (p) { o.font = p[1]; o.fillStyle = p[2]; o.fillText(p[0], x, y); x += o.measureText(p[0]).width; });
+      }
+      drawLine(c.l1, by + pad + lh * 1.5 - 2 * u);
+      if (c.l2) drawLine(c.l2, by + pad + lh * 2.5 - 2 * u);
     }
     scene.traverse(function (obj) {
       if (obj.geometry) obj.geometry.dispose();
