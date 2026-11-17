@@ -323,8 +323,9 @@ function simView(full){
   j.boxscore=null;
   return j;
 }
-/* Test mode for the 3D drive chart: add ?chart=3d to the address. */
-var TEST3D=/[?&]chart=3d\b/.test(location.search);
+/* The 3D drive chart is the default; ?chart=2d forces the flat chart. If 3D can't load, the
+   flat chart is used automatically. (The name TEST3D is kept from the test-page days.) */
+var TEST3D=!/[?&]chart=2d\b/.test(location.search);
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
@@ -1266,7 +1267,7 @@ function route(){
     var ce=calEntry(LS.sel||LS.cur); $("navWeek").textContent=ce?ce.label:"";
     if(S.pick!==m[1]){S.pick=m[1];S.sum=null;S.keys={};tab("drives")}
     if(SIM){
-      var base=location.pathname+"?"+(TEST3D?"chart=3d&":"")+"sim=1", sb=$("simbar");
+      var base=location.pathname+"?sim=1", sb=$("simbar");
       function lk(sp,fr,txt,on){return '<a href="'+base+"&speed="+sp+"&from="+fr+location.hash+'"'+(on?' class="on"':'')+'>'+txt+'</a>'}
       sb.innerHTML='<b>Simulated live</b><span>Speed '+[1,2,4].map(function(v){return lk(v,SIM.from,v+"×",v===SIM.speed)}).join(" ")+'</span><span>Start '+[1,2,3,4].map(function(v){return lk(SIM.speed,v,"Q"+v,v===SIM.from)}).join(" ")+'</span>';
       sb.hidden=false;
@@ -1413,7 +1414,7 @@ if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
   ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=19",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
-  document.title="Delay Booth · 3D test";
+
 }
 loadCrews(); setInterval(loadCrews,30*60000);
 tab("drives"); chips(); route();
