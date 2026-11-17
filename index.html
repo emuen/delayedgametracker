@@ -203,6 +203,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .nav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
 .nav a{color:var(--fg);font-weight:600;text-decoration:none;min-height:36px;display:inline-flex;align-items:center;padding-right:8px}
 .nav span{color:var(--muted)}
+.simbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--accent);border-radius:10px;padding:6px 10px;margin-bottom:8px}
+.simbar b{color:var(--accent)}
+.simbar a{color:var(--fg);text-decoration:none;padding:2px 6px;border-radius:6px;border:1px solid var(--line)}
+.simbar a.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -221,6 +225,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 <div id="gameView" hidden>
 <div class="bar"><div class="wrap">
   <div class="nav"><a href="#" id="back">‹ All games</a><span id="navWeek"></span></div>
+  <div class="simbar" id="simbar" hidden></div>
   <div class="score" id="scoreRow">
     <div class="tm" id="awayBox"><span class="ab" id="awayAb">AWAY</span><span class="pts" id="awayPts">–</span></div>
     <div class="mid" id="mid">Loading<small>&nbsp;</small></div>
@@ -291,6 +296,33 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 (function(){
 "use strict";
 var API="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
+/* Simulation: add ?sim=1 (optionally &speed=1|2|4 and &from=1..4) to replay a finished game as if
+   it were live. Plays are released one by one, spaced like the real game (breaks capped at 40 s),
+   so the delay, heads-up and live animation behave as in a real game. Stats are hidden (final). */
+var SIM=/[?&]sim=1\b/.test(location.search)?{speed:+((location.search.match(/[?&]speed=(\d)/)||[])[1]||2),from:+((location.search.match(/[?&]from=(\d)/)||[])[1]||1)}:null;
+function simView(full){
+  if(full){
+    var plays=[];
+    ((full.drives||{}).previous||[]).concat((full.drives||{}).current?[full.drives.current]:[]).forEach(function(d){(d.plays||[]).forEach(function(p){plays.push(p)})});
+    plays.sort(function(a,b){return (+a.sequenceNumber||0)-(+b.sequenceNumber||0)});
+    var t=0,pw=null,at={};
+    plays.forEach(function(p){var w=Date.parse(p.wallclock);if(pw!=null&&!isNaN(w))t+=Math.max(2500,Math.min(40000,w-pw));if(!isNaN(w))pw=w;at[p.id]=t});
+    var s0=plays.filter(function(p){return ((p.period||{}).number||0)>=SIM.from})[0], off=s0?at[s0.id]-6000*SIM.speed:0;
+    SIM.rel={};plays.forEach(function(p){SIM.rel[p.id]=(at[p.id]-off)/SIM.speed});
+    SIM.total=plays.length; SIM.src=full;
+  }
+  var el=Date.now()-SIM.t0, src=SIM.src, out=[], n=0;
+  ((src.drives||{}).previous||[]).concat((src.drives||{}).current?[src.drives.current]:[]).forEach(function(d){
+    var ps=(d.plays||[]).filter(function(p){return SIM.rel[p.id]<=el});
+    if(ps.length){n+=ps.length;out.push(Object.assign({},d,{plays:ps}))}
+  });
+  var done=n>=SIM.total, j=Object.assign({},src);
+  j.drives={previous:done?out:out.slice(0,-1),current:done?null:out[out.length-1]||null};
+  j.header=JSON.parse(JSON.stringify(src.header||{}));
+  var c=((j.header.competitions||[])[0]||{});c.status=c.status||{};c.status.type=Object.assign({},c.status.type||{},{state:done?"post":"in"});
+  j.boxscore=null;
+  return j;
+}
 /* Test mode for the 3D drive chart: add ?chart=3d to the address. */
 var TEST3D=/[?&]chart=3d\b/.test(location.search);
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
@@ -316,7 +348,8 @@ function poll(){
   var id=S.pick;
   Promise.resolve().then(function(){
     if(id!==S.eventId){S.eventId=id;S.sum=null;S.seen={};S.estimated={};S.shownAt={};S.synced={};S.loaded=false;S.snaps=[];S.openState={};S.keys={}}
-    return getJSON(API+"/summary?event="+id);
+    if(SIM&&SIM.src&&SIM.id===id)return simView();
+    return getJSON(API+"/summary?event="+id).then(function(j){if(!SIM)return j;SIM.src=null;SIM.id=id;SIM.t0=Date.now();return simView(j)});
   }).then(function(j){
     if(id!==S.pick)return;
     var now=Date.now();
@@ -336,7 +369,7 @@ function poll(){
     S.err=(e&&/fetch|network|load/i.test(e.message||""))?"Offline":(e.message||"Feed error");
   }).then(function(){
     if(S.view!=="game"||S.pick!==id)return;
-    var wait=S.err?15000:S.state==="in"?6000:S.state==="post"?120000:60000;
+    var wait=S.err?15000:S.state==="in"?(SIM?2500:6000):S.state==="post"?(SIM?5000:120000):60000;
     S.nextPollAt=Date.now()+wait;
     timer=setTimeout(poll,wait);
     render();
@@ -1229,6 +1262,13 @@ function route(){
     $("back").setAttribute("href","#"+listHash);
     var ce=calEntry(LS.sel||LS.cur); $("navWeek").textContent=ce?ce.label:"";
     if(S.pick!==m[1]){S.pick=m[1];S.sum=null;S.keys={};tab("drives")}
+    if(SIM){
+      var base=location.pathname+"?"+(TEST3D?"chart=3d&":"")+"sim=1", sb=$("simbar");
+      function lk(sp,fr,txt,on){return '<a href="'+base+"&speed="+sp+"&from="+fr+location.hash+'"'+(on?' class="on"':'')+'>'+txt+'</a>'}
+      sb.innerHTML='<b>Simulated live</b><span>Speed '+[1,2,4].map(function(v){return lk(v,SIM.from,v+"×",v===SIM.speed)}).join(" ")+'</span><span>Start '+[1,2,3,4].map(function(v){return lk(SIM.speed,v,"Q"+v,v===SIM.from)}).join(" ")+'</span>';
+      sb.hidden=false;
+      sb.onclick=function(e){var a=e.target.closest("a");if(a){e.preventDefault();location.href=a.getAttribute("href")}};
+    }
     window.scrollTo(0,0); render(); poll();
     return;
   }
