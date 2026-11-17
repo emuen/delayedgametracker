@@ -306,9 +306,9 @@
       var len = Math.abs((s.fc != null ? Math.abs(s.fc - s.fs) + Math.abs(s.fe - s.fc) : Math.abs(s.fe - s.fs)));
       return Math.max(700, Math.min(s.type === "kick" ? 2000 : 1700, 550 + len * 28));
     }
-    function overlay(showCallout) {
+    function overlay(showCallout, playDone) {
       o.clearRect(0, 0, W, H);
-      var labels = B.rows.slice(0, showCallout ? i + 1 : i).map(function (x) { return x.label; }).filter(Boolean);
+      var labels = B.rows.slice(0, playDone ? i + 1 : i).map(function (x) { return x.label; }).filter(Boolean);
       var row = spec.rows[i];
       drawOverlay(o, W, H, B, labels, showCallout && row ? row.callout : null, showCallout && B.rows[i] ? B.rows[i].at : null);
     }
@@ -316,12 +316,13 @@
       if (stopped) return;
       if (phase === "start") {
         var row = spec.rows[i];
-        B.setLines(row.los, row.ltg); overlay(false); phase = "anim"; t0 = now;
+        /* The info box shows as the play starts, so it can be read while the arrow draws. */
+        B.setLines(row.los, row.ltg); overlay(true, false); phase = "anim"; t0 = now;
       }
       if (phase === "anim") {
         var f = Math.min(1, (now - t0) / dur(i)), e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
         B.reveal(B.rows[i], e);
-        if (f >= 1) { phase = "hold"; t0 = now; overlay(true); }
+        if (f >= 1) { phase = "hold"; t0 = now; overlay(true, true); }
       } else if (phase === "hold" && now - t0 >= linger) {
         i++;
         if (i >= spec.rows.length) {
