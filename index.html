@@ -788,34 +788,167 @@ function fieldChart3D(L){
   L.rows.forEach(function(r,i){
     var k=playKind(r), t=r.text||"", ty=((r.p||{}).type||{}).text||"";
     var col=k==="pen"?"#ffd23f":k==="kick"?"#f2f2f2":(k==="ret"&&r.byOff===false)?defCol:offCol;
-    var inc=k==="pass"&&/incomplete/i.test(t);
+    var inc=k==="pass"&&/incomplete/i.test(t.split(/TWO-POINT/i)[0]);   /* a failed 2-pt pass is not the play */
     var air=(k==="pass"&&!/sack|scramble/i.test(ty+" "+t))||(k==="to"&&/intercept/i.test(ty+" "+t));
     var fs=F(r.s), fe=F(r.e), fc=null, type=k==="kick"?"kick":inc?"inc":air?"air":"ground";
     if(inc){fe=fs+odir*(/deep/i.test(t)?18:9)}
     var yac=(r.p||{}).yardsAfterCatch;
     if(type==="air"&&typeof yac==="number"&&yac>0&&r.kind==="play"&&Math.abs(yac)>=0.5)fc=F(r.e-yac);
+    /* Safety: the play ends in the offence's own end zone (the feed's end spot can be the other way). */
+    var safety=r.score==="SAFETY"&&r.kind==="play"; if(safety){fe=F(-2);fc=null;type="ground"}
     if(Math.abs(fe-fs)<0.8&&!inc&&fc==null)type="dot";
-    var yds=r.kind==="play"?Math.round(r.e-r.s):null;
-    rows.push({fs:+fs.toFixed(2),fe:+fe.toFixed(2),fc:fc==null?null:+fc.toFixed(2),type:type,dir:odir,color:col,label:r.score||""});
+    var yds=r.kind==="play"?Math.round(safety?-2-r.s:r.e-r.s):null;
+    rows.push({fs:+fs.toFixed(2),fe:+fe.toFixed(2),fc:fc==null?null:+fc.toFixed(2),type:type,dir:odir,color:col,label:r.score||"",
+      /* Replay-only hints (the still image ignores them). */
+      kind:k,yds:yds,td:r.score==="TD",fg:/field goal/i.test(ty+" "+t)&&r.kind==="play",to:k==="to",sack:/sack/i.test(ty+" "+t),
+      spike:/spike/i.test(t),safety:safety,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
+    var row=rows[rows.length-1], ct=cleanText(t), m;
+    /* Interception: where the ball was caught, so the pass flies forward and the return comes back in the defence's colour. */
+    if(k==="to"&&(m=/INTERCEPTED by \S+ at ([A-Z]{2,4} -?\d+|50)\b/.exec(ct.replace(/\s*\([^)]*\)/g,"")))){var ia=parseSpot(m[1],L.A);if(ia!=null){row.intAt=+F(ia).toFixed(2);row.retColor=defCol}}
+    /* Return yards as the play text states them (the chart's end spot can differ after a fumble). */
+    if(k==="ret"&&(m=/\.\s+\S+ to (?:[A-Z]{2,4} -?\d+|50) for (-?\d+) yards?/.exec(ct)))row.yds=+m[1];
+    if(row.fg)row.fgMiss=/field goal is (No Good|BLOCKED)/i.test(t);
+    /* Penalty after a real snap: the play that happened before the flag (replay draws it, then the walk-off). */
+    if(k==="pen"&&/No Play/i.test(t)){var bf=ct.split(/\.?\s?PENALTY/)[0];
+      if(/pass incomplete/i.test(bf))row.prePlay={type:"inc",len:/deep/i.test(bf)?18:9};
+      else if((m=/for (-?\d+) yards?/.exec(bf)))row.prePlay={type:/\bpass\b/i.test(bf)&&!/sacked/i.test(bf)?"air":"ground",len:+m[1]};
+      else if(/for no gain/.test(bf))row.prePlay={type:"ground",len:0};
+      if(row.prePlay)row.ghostColor=offCol;}
+  });
+  /* Team timeouts called just before a play, shown during that play's pre-snap beat in a replay. */
+  var tmo=null, ri=0;
+  (L.vis||[]).forEach(function(p){
+    if(isNonPlay(p)){var m=/^\s*timeout\s*#?(\d+)\s+by\s+([A-Z]{2,4})/i.exec(p.text||"");if(m)tmo=m[2]+" timeout #"+m[1];return}
+    while(ri<L.rows.length&&L.rows[ri].p!==p)ri++;
+    if(ri<L.rows.length&&tmo){rows[ri].tmo=tmo}
+    tmo=null;
   });
   var los=null, ltg=null, lastP=L.real[L.real.length-1];
   if(!L.done&&lastP&&!lastP.scoringPlay){
     var be=toPos(lastP.end,L.off,L.A);
     if(be!=null&&be>=0&&be<=100){los=+F(be).toFixed(2);var dist=+((lastP.end||{}).distance)||0;if(dist&&lastP.end.down>0&&be+dist<100)ltg=+F(be+dist).toFixed(2)}
   }
+  /* Play text, condensed and outcome first: no tacklers, snapper/holder or enforcement legalese.
+     A "\n" splits it into the box's two lines. */
+  /* Sentences that are not the play: eligibility reports, injury notes, challenges, replay reviews. */
+  function scrub(t){
+    return t.replace(/^.*?The Replay Official reviewed[^.]*?(?:REVERSED|upheld|confirmed|stands)\.\s*/i,"")
+      .replace(/^.*?reported in as eligible\.\s*/i,"")
+      .replace(/\*\*\s*Injury Update:\s*[A-Z]{2,4}-\S+(?:\s+[a-z][^.]*)?\.\s*/g,"").replace(/\s*\*\*.*$/,"")
+      .replace(/\s*[A-Z]{2,4}-\S+ (?:was injured during the play|has returned to the game)\.?/g,"")
+      .replace(/\.?\s*[A-Z][a-z]+ challenged .*$/,".").replace(/\s*The [^.]* was assisted by replay\.?/gi,"").trim();
+  }
+  var SP="(?:[A-Z]{2,4} -?\\d+|50)";
+  /* Shared clean-up: no formations, tacklers, assists, snapper/holder, declined penalties; PAT / 2-pt /
+     fumbles said briefly. Used for both the snap text and the result text. */
+  function tidy(raw){
+    var off2=0, t=scrub(cleanText(raw))
+      .replace(/\s*\([^)]*\)/g,"").replace(/\s*\[[^\]]*\]/g,"")
+      .replace(/([a-z0-9])\.(?=[A-Z]{2,}|Penalty\b|The\b)/g,"$1. ")
+      .replace(/,?\s*(?:Center|Holder)-\S+?(?=[,.](?:\s|$)|$)/g,"")
+      .replace(/\s*\S+ extra point is GOOD\.?/g," PAT good.").replace(/\s*\S+ extra point is (?:No Good|BLOCKED)[^.]*\.?/g," PAT missed.")
+      .replace(/\s*TWO-POINT CONVERSION ATTEMPT\.\s*.*?ATTEMPT (SUCCEEDS|FAILS)\.?/,function(_,r){return r==="SUCCEEDS"?" 2-pt good.":" 2-pt failed."})
+      .replace(/\s*Penalty on [^,]+,[^,]+, declined\.?/gi,"")
+      .replace(/,?\s*TOUCHDOWN NULLIFIED by Penalty\.?/i," · TD nullified.")
+      .replace(/^Direct snap to \S+?\.\s+/,"").replace(new RegExp(",?\\s*impetus ends at "+SP,"g"),"")
+      .replace(/,?\s*(downed|fair catch) by \S+?(?=[,.](?:\s|$)|$)/g,", $1")
+      .replace(new RegExp("\\s*Penalty on [A-Z]{2,4}(?:-\\S+)?, [^,]+, offsetting(?:, enforced at "+SP+")?(?: - No Play)?\\.?","gi"),function(){off2=1;return ""}).replace(/\s*\d+-second runoff[^.]*\./g,"")
+      .replace(new RegExp("\\s*\\S+ MUFFS catch,?\\s*(?:touched at "+SP+",\\s*)?RECOVERED by ([A-Z]{2,4})-\\S+? at ("+SP+")\\.?","g")," MUFFED, $1 recovers at $2.")
+      .replace(new RegExp("\\s*\\S+ MUFFS catch,?\\s*(?:touched at "+SP+",\\s*)?and recovers at ("+SP+")\\.?(?:\\s*\\S+ (?:to "+SP+" )?for (?:-?\\d+ yards?|no gain)\\.?)?","g")," MUFFED, recovered at $1.")
+      .replace(new RegExp("FUMBLES,?\\s*(?:touched at "+SP+",\\s*)?RECOVERED by ([A-Z]{2,4})-\\S+? at ("+SP+")\\.?(?:\\s*\\S+ (?:to "+SP+" )?for (?:-?\\d+ yards?|no gain)\\.?)?","gi"),"FUMBLE, $1 recovers at $2.")
+      .replace(new RegExp("FUMBLES,?\\s*and recovers at ("+SP+")\\.?","g"),"FUMBLE, recovered at $1.")
+      .replace(new RegExp("FUMBLES,?\\s*ball out of bounds at ("+SP+")\\.?","g"),"FUMBLE, out of bounds at $1.");
+    if(off2)t=t.replace(/[\s.]*$/,"")+". Offsetting penalties, no play.";
+    return t.replace(/\s+/g," ").replace(/\s+([.,])/g,"$1").replace(/,\./g,".").replace(/\.{2,}/g,".").trim();
+  }
+  /* One line of the box: drop trailing " · " parts, then cut at a sentence end, then at a word with "…". Never mid-word. */
+  var LINE=52;
+  function fitLine(x,max){
+    max=max||LINE; x=x.trim(); if(x.length<=max)return x;
+    var parts=x.split(" · "); while(parts.length>1&&parts.join(" · ").length>max)parts.pop();
+    x=parts.join(" · "); if(x.length<=max)return x;
+    var se=x.slice(0,max).lastIndexOf(". "); if(se>=max*0.5)return x.slice(0,se+1);
+    var cut=x.slice(0,max-1).lastIndexOf(" "); return (cut>0?x.slice(0,cut):x.slice(0,max-1)).replace(/[\s,;·.]+$/,"")+"…";
+  }
+  /* Is this team (as the play text spells it) the drive's offence? */
+  function isOff(ab){return L.A&&typeof sideOf==="function"?sideOf(ab,L.A)==="o":ab===L.offAb}
+  function plural(n){return Math.abs(n)===1?" yd":" yds"}
+  function short(f){return f.charAt(0)+f.slice(1).toLowerCase().replace(/^efensive /,"ef. ").replace(/^ffensive /,"ff. ")}
+  /* A penalty sentence as "Penalty TEN, Roughing the passer, +12 · 1st down". */
+  function penOf(t,cp){
+    var m=/PENALTY on ([A-Z]{2,4})(?:-[^,]+)?,\s*([^,]+?),\s*(?:(\d+) yards?|placed at ([A-Z]{2,4} -?\d+|50))[^.]*\./i.exec(t); if(!m)return null;
+    var mine=isOff(m[1]), fd=cp&&cp.end&&cp.end.down===1&&!mine&&m[3]?" · 1st down":"";
+    return {idx:m.index, text:"Penalty "+m[1]+", "+short(m[2])+(m[3]?", "+(mine?"−":"+")+m[3]:" · ball at "+m[4])+fd};
+  }
+  function kindOf(b){
+    return /PAT|extra point/i.test(b)?"extra point":/2-pt/.test(b)?"2-pt try":/pass incomplete|incomplete/i.test(b)?"incomplete pass":/sacked/i.test(b)?"sack":/\bpass\b/i.test(b)?"completed pass":/kneels/i.test(b)?"kneel":/punts/i.test(b)?"punt":/kicks/i.test(b)?"kick":/field goal/i.test(b)?"field goal":/scrambles/i.test(b)?"scramble":"run";
+  }
+  /* A play said shortly: "J.Love pass short left to M.Golden for 8 yards" (the spot shows in the next header). */
+  function compact(b){return b.replace(new RegExp("\\s(?:to|ran ob at|pushed ob at|out of bounds at) "+SP+"(?= for)","g"),"").replace(/[\s.]+$/,"")}
+  /* Result text, outcome first. A "\n" splits it into the box's two lines. */
+  function condense(raw,cp){
+    var t=tidy(raw), m, pen=penOf(t,cp);
+    if((m=new RegExp("^(.*?)\\s+(?:intended for (\\S+)\\s+)?INTERCEPTED by (\\S+) at ("+SP+")\\.?\\s*(.*)$").exec(t))){
+      var r=new RegExp("^\\S+ (?:(?:to|pushed ob at|ran ob at) "+SP+" )?for (-?\\d+) yards?(, TOUCHDOWN)?|^\\S+ (?:to "+SP+" )?for no gain").exec(m[5]), ret="";
+      if(r)ret=r[1]==null?" · no return":" · "+parseInt(r[1],10)+"-yd return";
+      var ip=penOf(m[5],cp), l2=ip?"+ "+ip.text:m[1]+(m[2]?" to "+m[2]:"");
+      if(r&&r[2])return "INTERCEPTED by "+m[3]+" · TOUCHDOWN, "+parseInt(r[1],10)+"-yd return\n"+l2;
+      return "INTERCEPTED by "+m[3]+" at "+m[4]+ret+"\n"+l2;
+    }
+    if(pen){
+      var before=t.slice(0,pen.idx).replace(/[\s.]+$/,""), nop=/No Play/i.test(t);
+      if(nop||!before)return pen.text+(before?"\nNo play · "+kindOf(before):nop?"\nNo play":"");
+      if(/TOUCHDOWN/.test(before))return "TOUCHDOWN · "+compact(before.replace(/,?\s*TOUCHDOWN\.?/,"."))+"\n+ "+pen.text;
+      if(!/\b(?:kicks|punts)\b/.test(before))return compact(before)+"\n+ "+pen.text;
+    }
+    if((m=/^(\S+) (\d+) yard field goal is (GOOD|No Good|BLOCKED)/i.exec(t)))return "Field goal "+(/^good$/i.test(m[3])?"GOOD":/blocked/i.test(m[3])?"BLOCKED":"NO GOOD")+" · "+m[1]+" from "+m[2]+" yds";
+    if((m=new RegExp("^(\\S+) (kicks|punts)(?: onside)? (\\d+) yards? (?:from "+SP+" )?to ((?:the )?"+SP+"|(?:the )?[A-Z]{2,4} End Zone|end zone)([^.]*)\\.\\s*(.*)$").exec(t))){
+      var l1=(m[2]==="punts"?"Punt ":/onside/.test(t)?"Onside kick ":"Kickoff ")+m[3]+" yds to "+m[4].replace(/^the /,"")+m[5].replace(/ by \S+/g,"").replace(/,?\s*Touchback.*$/i,", touchback").replace(/\bFair catch\b/i,"fair catch").replace(/\bOut of bounds\b/i,"out of bounds");
+      var rest=m[6], bits=[], r2;
+      if((r2=new RegExp("^(\\S+) (?:(?:to|pushed ob at|ran ob at) "+SP+" )?for (?:(-?\\d+) yards?|no gain)(, TOUCHDOWN)?\\.?\\s*(.*)$").exec(rest))){
+        bits.push(r2[2]==null?r2[1]+", no return":r2[1]+" returns "+r2[2]+plural(+r2[2])+(r2[3]?" · TOUCHDOWN":"")); rest=r2[4];
+      }
+      if((r2=/^(FUMBLE|MUFFED), ([^.]*)\.\s*(.*)$/.exec(rest))){bits.push(r2[1]+", "+r2[2].replace(/ at .*$/,""));rest=r2[3]}
+      var kp=penOf(rest,cp); if(kp){bits.push(kp.text);rest=""}
+      if(/PAT|2-pt/.test(rest)){bits.push(rest.replace(/\.$/,""));rest=""}
+      if(rest)bits.push(compact(rest).replace(/^Lateral/,"lateral"));
+      return l1+(bits.length?"\n"+bits.join(" · "):"");
+    }
+    if(/,?\s*TOUCHDOWN\.?/.test(t))return "TOUCHDOWN · "+t.replace(/,?\s*TOUCHDOWN\.?/,".").replace(/\.\./g,".");
+    if((m=/^(.{3,40}?)\s+Safety\.?$/i.exec(t)))return "SAFETY · "+m[1];
+    return t.length>LINE*2?compact(t).replace(/\. Lateral/g,", lateral"):t;
+  }
   /* Callout text for any play (used for the newest play, and for each play in a replay). */
-  function calloutOf(cp,row){
+  function calloutOf(cp,row,only){
     var st0=cp.start||{}, c0=clockText(cp);
     var head=[(st0.down>0?st0.shortDownDistanceText:""),st0.possessionText||""].filter(Boolean).join(" · ")+(c0.clk?"  ("+c0.q+" "+c0.clk+")":"");
-    var txt=cleanText(cp.text), hls=[];
+    var txt=condense(only||cp.text,cp), hls=[];
     function mark(re,kind){var m;re.lastIndex=0;while((m=re.exec(txt))){var t=m[0].replace(/ /g,"\u00a0");txt=txt.slice(0,m.index)+t+txt.slice(m.index+m[0].length);hls.push({t:t,k:kind});re.lastIndex=m.index+t.length}}
-    mark(/\bfor (?:a loss of )?-?\d+ yards?\b|\bfor no gain\b|\bincomplete\b/gi,"yd");
-    mark(/\bINTERCEPTED\b|\bintercepted\b|\bFUMBLES\b|\bFUMBLE\b|\bRECOVERED\b/g,"to");
-    mark(/\bTOUCHDOWN\b|\bfield goal is GOOD\b|\bSAFETY\b/g,"sc");
-    var words=txt.split(" "), l1="", l2="";
-    words.forEach(function(wd){if((l1+" "+wd).trim().length<=46&&!l2)l1=(l1+" "+wd).trim();else l2=(l2+" "+wd).trim()});
-    if(l2.length>46)l2=l2.slice(0,44)+"…";
-    return {head:head,l1:l1,l2:l2,hls:hls,row:row};
+    mark(/\bfor (?:a loss of )?-?\d+ yards?\b|\bfor no gain\b|\bincomplete\b|\breturns -?\d+ yds?\b|\b\d+-yd return\b|[+−]\d+(?= ·|$|\n)/gi,"yd");
+    mark(/\bINTERCEPTED\b|\bintercepted\b|\bField goal (?:NO GOOD|BLOCKED)\b/g,"to");
+    /* Fumbles and muffs: red only when the other team got the ball. */
+    (function(){var re=/\b(?:FUMBLE|MUFFED), (?:([A-Z]{2,4}) recovers|recovered)\b/g,mm,found=[];while((mm=re.exec(txt)))found.push(mm);
+      found.forEach(function(x){mark(new RegExp(x[0].replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"g"),x[1]&&!isOff(x[1])?"to":"fum")})})();
+    mark(/\bPAT missed\b|\b2-pt failed\b/g,"fum");
+    mark(/\bSAFETY\b/g,"to");   /* points against the offence */
+    mark(/\bTOUCHDOWN\b|\bField goal GOOD\b|\bPAT good\b|\b2-pt good\b/g,"sc");
+    mark(/^Penalty [A-Z]{2,4}/g,"yd");
+    var parts=txt.split("\n"), l1="", l2="";
+    if(parts.length>1){l1=fitLine(parts[0]);l2=fitLine(parts.slice(1).join(" · "))}
+    else if(txt.length<=LINE)l1=txt;
+    else{var words=txt.split(" ");while(words.length&&(l1+" "+words[0]).trim().length<=LINE)l1=(l1+" "+words.shift()).trim();l2=fitLine(words.join(" "))}
+    /* Replay: a pre-snap head, and the play's setup without its result ("T.Lawrence pass deep left to P.Washington…"). */
+    var ty0=((cp.type||{}).text||"");
+    var rhead=st0.down>0?head:((isKick(cp)?(/punt/i.test(ty0+" "+cp.text)?"Punt":"Kickoff"):/extra point|two-point/i.test(ty0)?"Conversion":ty0)+head).trim().replace(/\s+\(/,"  (");
+    var pre=tidy(only||cp.text).replace(/\s+incomplete\b/i,"").replace(/\bintended for\b/,"to");
+    var cut=pre.search(/\s(?:for (?:a loss of )?-?\d+ yards?|for no gain|pushed ob|ran ob|out of bounds|to (?:[A-Z]{2,4} -?\d+|50)\b|INTERCEPTED|FUMBLE|MUFFED|sacked|is GOOD|is No Good|is BLOCKED|onside|-?\d+ yards? (?:from|to)\b|Safety\b)|\.?\s?PENALTY|,?\s?TOUCHDOWN|\s(?:PAT|2-pt)\b/);
+    if(cut>=0)pre=pre.slice(0,cut);
+    pre=pre.replace(/^PAT\b.*/,"Extra point").replace(/^2-pt\b.*/,"Two-point try").replace(/[\s.,;]+$/,"");
+    var p1="", p2="", pw=pre.split(" ").filter(Boolean);
+    while(pw.length&&(p1+" "+pw[0]).trim().length<=LINE-1)p1=(p1+" "+pw.shift()).trim();
+    if(pw.length)p2=fitLine(pw.join(" "),LINE-1).replace(/…$/,"");
+    if(p2)p2+="…";else if(p1)p1+="…";
+    return {head:head,l1:l1,l2:l2,hls:hls,row:row,rhead:rhead,pre:{l1:p1,l2:p2}};
   }
   /* Where each play started, for the replay's line of scrimmage and line to gain. */
   L.rows.forEach(function(r,i){
@@ -823,7 +956,10 @@ function fieldChart3D(L){
     row.los=row.fs; row.ltg=null;
     var st=(r.p||{}).start||{};
     if(r.kind==="play"&&st.down>0&&+st.distance&&r.s+(+st.distance)<100)row.ltg=+F(r.s+(+st.distance)).toFixed(2);
-    if(r.p&&(r.kind==="play"||i===0||L.rows[i-1].p!==r.p))row.callout=calloutOf(r.p,i);
+    /* A kick that has a return row after it: its own result text stops at the kick's first sentence. */
+    var nx=L.rows[i+1], kickOnly=r.kind==="kick"&&nx&&nx.p===r.p?(cleanText(r.p.text).match(/^.*?\.(?=\s|$)/)||[""])[0]:"";
+    if(r.p&&(r.kind==="play"||i===0||L.rows[i-1].p!==r.p))row.callout=calloutOf(r.p,i,kickOnly||undefined);
+    else if(i>0&&r.p&&L.rows[i-1].p===r.p&&L.rows[i-1].kind==="kick"){var kc=rows[i-1].callout;row.callout=calloutOf(r.p,i);row.callout.pre={l1:kc.l1,l2:kc.l2};row.callout.rhead=kc.rhead}
     else if(i>0&&rows[i-1].callout)row.callout=Object.assign({},rows[i-1].callout,{row:i});
   });
   var last=L.rows[n-1], callout=last&&last.p?calloutOf(last.p,n-1):null;
@@ -1174,7 +1310,7 @@ wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");
 setInterval(render,1000);
 if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
-  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=15",function(){
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=18",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
   document.title="Delay Booth · 3D test";
 }
