@@ -90,7 +90,8 @@ button,select,input{font:inherit;color:inherit}
 .chart svg{display:block;width:100%;height:auto}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
 .legend i{display:inline-block;width:12px;height:5px;border-radius:3px;margin-right:4px;vertical-align:middle}
-.legend.dk{background:#24622e;border-radius:6px;padding:5px 8px;color:#e9f3ea}
+.legend.gc{color:var(--muted);align-items:center}
+.legend.gc svg{display:inline-block;width:18px;height:8px;vertical-align:middle;margin-right:4px;color:var(--fg)}
 .chart .cap .badge{font-size:13px;padding:2px 6px;margin-right:2px;color:var(--tci,var(--bg))}
 details.drive{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--tc,var(--line));border-radius:10px;margin-bottom:8px;overflow:hidden}
 .qhead{margin:16px 2px 8px;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
@@ -359,7 +360,7 @@ function hdrComp(j){return ((j.header||{}).competitions||[])[0]||{}}
 function teamsOf(j){
   var out={home:null,away:null,byId:{}};
   (hdrComp(j).competitors||[]).forEach(function(c){
-    var t={id:String((c.team||{}).id||c.id),ab:(c.team||{}).abbreviation||"?",ha:c.homeAway};
+    var tm=c.team||{}, t={id:String(tm.id||c.id),ab:tm.abbreviation||"?",ha:c.homeAway,nm:tm.name||tm.nickname||tm.shortDisplayName||tm.abbreviation||""};
     out[c.homeAway]=t; out.byId[t.id]=t;
   });
   out.mine=out.away; out.opp=out.home;
@@ -494,8 +495,8 @@ function kickRows(p,off,A,s,e){
   if((m=t.match(/\b(?:punts|kicks)\s+(-?\d+)\s+yards?\s+(?:from\s+\S+\s+\S+\s+)?to\s+(?:the\s+)?([A-Z]{2,4}\s+(?:End Zone|-?\d{1,2})|50)/)))land=parseSpot(m[2],A);
   if(land==null&&(m=t.match(/\b(?:punts|kicks)\s+(-?\d+)\s+yards?/)))land=los+(kickerOff?1:-1)*(+m[1]);
   if(land==null)return fallback;
-  var rows=[{s:los,e:land,kind:"kick",text:t}];
-  if(!/touchback|fair catch|downed|out of bounds/i.test(t)&&e!=null&&Math.abs(e-land)>0.8)rows.push({s:land,e:e,kind:"ret",text:t});
+  var rows=[{s:los,e:land,kind:"kick",text:t,byOff:kickerOff}];
+  if(!/touchback|fair catch|downed|out of bounds/i.test(t)&&e!=null&&Math.abs(e-land)>0.8)rows.push({s:land,e:e,kind:"ret",text:t,byOff:!kickerOff});
   return rows;
 }
 function scoreLabel(p){var t=(p.text||"")+" "+((p.type||{}).text||"");return /touchdown/i.test(t)?"TD":/field goal/i.test(t)?"FG":/safety/i.test(t)?"SAFETY":/extra point|two-point|conversion/i.test(t)?"PAT":"PTS"}
@@ -654,92 +655,117 @@ function fieldChart(L){
   var rows=L.rows.slice(), n=rows.length;
   if(!n)return "";
   var T=L.T, TC=L.TC||{}, offIsAway=!!(T.away&&T.away.id===L.off), odir=offIsAway?1:-1;
+  var defT=offIsAway?T.home:T.away, offCol=(TC[L.off]||{}).bg||"#1d3f8f", defCol=(defT&&TC[defT.id]||{}).bg||"#8f1d1d";
   function F(x){return offIsAway?x:100-x}
-  /* Perspective: far sideline at the top (smaller), near sideline at the bottom. */
-  var head=16, depth=Math.max(44,n*6.8), yT=head, yB=head+depth, H=yB+9, sF=0.7;
-  function sc(v){return sF+(1-sF)*v}
+  /* Low camera on the near sideline: far side small at the top, near side wide at the bottom. */
+  var sky=24, depth=Math.max(46,n*7), yT=sky, yB=sky+depth, H=yB+1, sF=0.56, sN=1.0;
+  function sc(v){return sF+(sN-sF)*v}
   function P(f,v){f=Math.max(-10,Math.min(110,f));return [60+(f-50)*sc(v),yT+(yB-yT)*v]}
   function pt(q){return q[0].toFixed(2)+","+q[1].toFixed(2)}
-  function quad(f1,f2,fill,extra){return '<polygon points="'+[P(f1,0),P(f2,0),P(f2,1),P(f1,1)].map(pt).join(" ")+'" fill="'+fill+'"'+(extra||"")+'/>'}
-  function arrow(x,y,dx,dy,col,size){var l=Math.sqrt(dx*dx+dy*dy)||1;dx/=l;dy/=l;var s=size||2.3,w=s*0.65;
-    return '<polygon points="'+x.toFixed(2)+","+y.toFixed(2)+" "+(x-dx*s-dy*w).toFixed(2)+","+(y-dy*s+dx*w).toFixed(2)+" "+(x-dx*s+dy*w).toFixed(2)+","+(y-dy*s-dx*w).toFixed(2)+'" fill="'+col+'"/>'}
+  function quad(f1,f2,fill){return '<polygon points="'+[P(f1,0),P(f2,0),P(f2,1),P(f1,1)].map(pt).join(" ")+'" fill="'+fill+'"/>'}
+  function arrow(x,y,dx,dy,col,s){var l=Math.sqrt(dx*dx+dy*dy)||1;dx/=l;dy/=l;var w=s*0.62;
+    return '<polygon points="'+x.toFixed(2)+","+y.toFixed(2)+" "+(x-dx*s-dy*w).toFixed(2)+","+(y-dy*s+dx*w).toFixed(2)+" "+(x-dx*s+dy*w).toFixed(2)+","+(y-dy*s-dx*w).toFixed(2)+'" fill="'+col+'" stroke="rgba(0,0,0,.35)" stroke-width="0.25" stroke-linejoin="round"/>'}
+  /* Ribbon: shadow, colour, highlight, so each play reads as a raised band. */
+  function ribbon(d,col,w,dots){
+    if(dots)w=w*0.7;
+    var dash=dots?' stroke-dasharray="0.01 '+(w*1.9).toFixed(2)+'"':'';
+    return '<path d="'+d+'" fill="none" stroke="#000" stroke-opacity="0.3" stroke-width="'+(w+0.9).toFixed(2)+'" stroke-linecap="round"'+dash+' transform="translate(0 0.7)"/>'+
+      '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="'+w.toFixed(2)+'" stroke-linecap="round" stroke-linejoin="round"'+dash+'/>'+
+      (dots?'':'<path d="'+d+'" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="'+(w*0.32).toFixed(2)+'" stroke-linecap="round" transform="translate(0 '+(-w*0.22).toFixed(2)+')"/>');
+  }
   var FT='font-family="Barlow Condensed,Arial Narrow,sans-serif"', g=[];
-  for(var y=0;y<100;y+=10)g.push(quad(y,y+10,(y/10)%2?"#2f7d3a":"#2a7234"));
-  function ez(team,f1,f2){var c=team&&TC[team.id], bg=c?c.bg:"#1f5a29", ink=c?c.ink:"#fff";
-    var cs=[P(f1,0),P(f2,0),P(f2,1),P(f1,1)], mx=(cs[0][0]+cs[1][0]+cs[2][0]+cs[3][0])/4, my=(cs[0][1]+cs[2][1])/2;
-    return quad(f1,f2,bg)+'<text x="'+mx.toFixed(2)+'" y="'+my.toFixed(2)+'" dy="0.35em" font-size="5.4" font-weight="700" letter-spacing="0.8" text-anchor="middle" fill="'+ink+'" transform="rotate('+(f1<0?-90:90)+' '+mx.toFixed(2)+' '+my.toFixed(2)+')" '+FT+'>'+esc(team?team.ab:"")+'</text>'}
+  g.push('<defs><linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f8fd8"/><stop offset="0.75" stop-color="#9fd0f2"/><stop offset="1" stop-color="#d9eefb"/></linearGradient></defs>');
+  g.push('<rect x="0" y="0" width="120" height="'+(yT+1)+'" fill="url(#skyG)"/>');
+  g.push('<ellipse cx="22" cy="9" rx="13" ry="2.6" fill="#fff" opacity="0.35"/><ellipse cx="86" cy="6" rx="17" ry="2.2" fill="#fff" opacity="0.28"/><ellipse cx="66" cy="14" rx="10" ry="1.8" fill="#fff" opacity="0.3"/>');
+  for(var y=0;y<100;y+=10)g.push(quad(y,y+10,(y/10)%2?"#5aa64f":"#4f9a46"));
+  function ez(team,f1,f2){
+    var c=team&&TC[team.id], bg=c?c.bg:"#1f5a29", ink=c?c.ink:"#fff", fc=(f1+f2)/2;
+    var a=P(fc,0.96), b=P(fc,0.06), mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
+    var ang=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI; if(f1>0)ang+=180;
+    var len=Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2)), word=String(team?(team.nm||team.ab):"").toUpperCase();
+    var fs=Math.min(7.4*sc(0.5),len/Math.max(3,word.length)*1.55);
+    return quad(f1,f2,bg)+'<text x="'+mx.toFixed(2)+'" y="'+my.toFixed(2)+'" dy="0.36em" font-size="'+fs.toFixed(2)+'" font-weight="700" font-style="italic" letter-spacing="0.5" text-anchor="middle" fill="'+ink+'" transform="rotate('+ang.toFixed(1)+' '+mx.toFixed(2)+' '+my.toFixed(2)+')" '+FT+'>'+esc(word)+'</text>';
+  }
   g.push(ez(T.away,-10,0)); g.push(ez(T.home,100,110));
   for(var f=0;f<=100;f+=5){
     var big=f%10===0, a=P(f,0), b=P(f,1);
-    g.push('<line x1="'+a[0].toFixed(2)+'" y1="'+a[1].toFixed(2)+'" x2="'+b[0].toFixed(2)+'" y2="'+b[1].toFixed(2)+'" stroke="#fff" stroke-opacity="'+(f===0||f===100?0.9:big?0.55:0.25)+'" stroke-width="'+(f===0||f===100?0.8:f===50?0.7:big?0.45:0.3)+'"/>');
-    if(big&&f>0&&f<100){var lab=f<=50?f:100-f;
-      g.push('<text x="'+b[0].toFixed(2)+'" y="'+(b[1]+5.4).toFixed(2)+'" font-size="4.2" font-weight="600" text-anchor="middle" fill="var(--muted)" '+FT+'>'+lab+'</text>');
-      g.push('<text x="'+a[0].toFixed(2)+'" y="'+(a[1]-1.4).toFixed(2)+'" font-size="3" font-weight="600" text-anchor="middle" fill="var(--muted)" '+FT+'>'+lab+'</text>');}
+    g.push('<line x1="'+a[0].toFixed(2)+'" y1="'+a[1].toFixed(2)+'" x2="'+b[0].toFixed(2)+'" y2="'+b[1].toFixed(2)+'" stroke="#fff" stroke-opacity="'+(f===0||f===100?0.95:big?0.7:0.4)+'" stroke-width="'+(f===0||f===100?0.9:big?0.5:0.32)+'"/>');
   }
+  for(var hm=1;hm<100;hm++){if(hm%5===0)continue;[0.38,0.62].forEach(function(v){var q=P(hm,v);g.push('<line x1="'+q[0].toFixed(2)+'" y1="'+(q[1]-0.5*sc(v)).toFixed(2)+'" x2="'+q[0].toFixed(2)+'" y2="'+(q[1]+0.5*sc(v)).toFixed(2)+'" stroke="#fff" stroke-opacity="0.45" stroke-width="0.22"/>')})}
+  for(var f2=10;f2<100;f2+=10){var q=P(f2,0.9), lab=f2<=50?f2:100-f2, zz=sc(0.9);
+    g.push('<text x="0" y="0" font-size="6" font-weight="700" font-style="italic" text-anchor="middle" fill="#fff" fill-opacity="0.85" transform="translate('+q[0].toFixed(2)+' '+(q[1]+1).toFixed(2)+') scale('+(zz*0.9).toFixed(3)+' '+(zz*0.75).toFixed(3)+')" '+FT+'>'+lab+'</text>');}
   var lastP=L.real[L.real.length-1], ball=null;
+  function ln(ff,col){var a=P(ff,0),b=P(ff,1);return '<line x1="'+a[0].toFixed(2)+'" y1="'+a[1].toFixed(2)+'" x2="'+b[0].toFixed(2)+'" y2="'+b[1].toFixed(2)+'" stroke="'+col+'" stroke-width="1"/>'}
   if(!L.done&&lastP&&!lastP.scoringPlay){
     var be=toPos(lastP.end,L.off,L.A);
     if(be!=null&&be>=0&&be<=100){
       var dist=+((lastP.end||{}).distance)||0;
-      function ln(ff,col){var a=P(ff,0),b=P(ff,1);return '<line x1="'+a[0].toFixed(2)+'" y1="'+a[1].toFixed(2)+'" x2="'+b[0].toFixed(2)+'" y2="'+b[1].toFixed(2)+'" stroke="'+col+'" stroke-width="1.1"/>'}
       if(dist&&lastP.end.down>0&&be+dist<100)g.push(ln(F(be+dist),"#ffd23f"));
-      g.push(ln(F(be),"#3d8bff"));
-      ball=P(F(be),0.95);
+      g.push(ln(F(be),"#2f7cff"));
+      ball=P(F(be),0.97);
     }
   }
+  var callout=null;
   rows.forEach(function(r,i){
-    var k=playKind(r), col=PK[k][0], v=n===1?0.55:0.1+0.72*i/(n-1), z=sc(v);
+    var k=playKind(r), v=n===1?0.5:0.1+0.68*i/(n-1), z=sc(v);
     var t=r.text||"", ty=((r.p||{}).type||{}).text||"";
+    var col=k==="pen"?"#ffd23f":(k==="kick"||k==="ret")?(r.byOff===false?defCol:offCol):offCol;
+    if(k==="kick")col="#f2f2f2";
     var fs=F(r.s), fe=F(r.e), A=P(fs,v), B=P(fe,v), len=Math.abs(fe-fs);
-    var air=(k==="pass"&&!/sack|scramble/i.test(ty+" "+t))||k==="to"&&/intercept/i.test(ty+" "+t)||k==="kick";
-    var inc=k==="pass"&&/incomplete/i.test(t);
-    var dash='';
-    var sw=((air?1.7:1.6)*z).toFixed(2), shape="", lx, ly, ldir;
-    if(inc){fe=fs+odir*10;B=P(fe,v);len=10}
+    var air=(k==="pass"&&!/sack|scramble/i.test(ty+" "+t))||(k==="to"&&/intercept/i.test(ty+" "+t))||k==="kick";
+    var inc=k==="pass"&&/incomplete/i.test(t), w=2.3*z, shape="";
+    if(inc){fe=fs+odir*Math.max(8,Math.min(20,/deep/i.test(t)?18:9));B=P(fe,v);len=Math.abs(fe-fs)}
     if(air&&len>=1){
-      var h=Math.max(3,Math.min(k==="kick"?17:13,len*(k==="kick"?0.32:0.35)))*z;
-      var cx=(A[0]+B[0])/2, cy=(A[1]+B[1])/2-2*h;
-      /* Completed pass: arc to the catch, then yards after the catch along the ground. */
-      var yac=(r.p||{}).yardsAfterCatch, G=null;
+      var h=Math.max(3.4,Math.min(k==="kick"?18:14,len*(k==="kick"?0.34:0.38)))*z, G=null;
+      var yac=(r.p||{}).yardsAfterCatch;
       if(k==="pass"&&!inc&&typeof yac==="number"&&yac>0&&r.kind==="play"){
-        /* The catch can be behind the line (screens): then yards after catch exceed the gain. */
         var xc=r.e-yac;
-        if(Math.abs(r.e-xc)>=0.5){G=B;B=P(F(xc),v);h=Math.max(3.4,Math.min(13,Math.abs(F(xc)-fs)*0.35))*z;cx=(A[0]+B[0])/2;cy=(A[1]+B[1])/2-2*h}
+        if(Math.abs(r.e-xc)>=0.5){G=B;B=P(F(xc),v);h=Math.max(3.4,Math.min(14,Math.abs(F(xc)-fs)*0.38))*z}
       }
-      var dd="M"+pt(A)+" Q"+cx.toFixed(2)+","+cy.toFixed(2)+" "+pt(B);
-      shape='<path d="'+dd+'" fill="none" stroke="#000" stroke-opacity="0.28" stroke-width="'+(+sw+0.9).toFixed(2)+'" stroke-linecap="round" transform="translate(0 0.5)"/>'+
-        '<path d="'+dd+'" fill="none" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round"'+(inc?' stroke-opacity="0.85"':'')+'/>';
-      if(G){
-        var gd=G[0]>=B[0]?1:-1;
-        shape+='<circle cx="'+B[0].toFixed(2)+'" cy="'+B[1].toFixed(2)+'" r="'+(0.9*z).toFixed(2)+'" fill="'+col+'"/>'+
-          '<line x1="'+B[0].toFixed(2)+'" y1="'+B[1].toFixed(2)+'" x2="'+(G[0]-gd*1.6*z).toFixed(2)+'" y2="'+G[1].toFixed(2)+'" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round"/>'+arrow(G[0],G[1],gd,0,col,2.4*z);
-        B=G;
-      }
-      if(G){}
-      else if(inc){var s2=1.2*z;shape+='<path d="M'+(B[0]-s2)+","+(B[1]-s2)+" L"+(B[0]+s2)+","+(B[1]+s2)+" M"+(B[0]-s2)+","+(B[1]+s2)+" L"+(B[0]+s2)+","+(B[1]-s2)+'" stroke="'+col+'" stroke-width="'+sw+'"/>'}
-      else shape+=arrow(B[0],B[1],B[0]-cx,B[1]-cy,col,2.4*z);
+      var cx=(A[0]+B[0])/2, cy=(A[1]+B[1])/2-2*h;
+      shape=ribbon("M"+pt(A)+" Q"+cx.toFixed(2)+","+cy.toFixed(2)+" "+pt(B),col,w,inc);
+      if(G){var gd=G[0]>=B[0]?1:-1;shape+=ribbon("M"+pt(B)+" L"+(G[0]-gd*2*z).toFixed(2)+","+G[1].toFixed(2),col,w,false)+arrow(G[0],G[1],gd,0,col,3*z);B=G}
+      else if(inc){var s2=1.4*z;shape+='<path d="M'+(B[0]-s2)+","+(B[1]-s2)+" L"+(B[0]+s2)+","+(B[1]+s2)+" M"+(B[0]-s2)+","+(B[1]+s2)+" L"+(B[0]+s2)+","+(B[1]-s2)+'" stroke="'+col+'" stroke-width="'+(0.9*z).toFixed(2)+'" stroke-linecap="round"/>'}
+      else shape+=arrow(B[0],B[1],B[0]-cx,B[1]-cy,col,3*z);
     }else if(len>=1){
       var d=B[0]>=A[0]?1:-1;
-      shape='<line x1="'+A[0].toFixed(2)+'" y1="'+A[1].toFixed(2)+'" x2="'+(B[0]-d*1.6*z).toFixed(2)+'" y2="'+B[1].toFixed(2)+'" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round"'+dash+'/>'+arrow(B[0],B[1],d,0,col,2.4*z);
+      shape=ribbon("M"+pt(A)+" L"+(B[0]-d*2*z).toFixed(2)+","+B[1].toFixed(2),col,w,false)+arrow(B[0],B[1],d,0,col,3*z);
     }else{
-      shape='<circle cx="'+A[0].toFixed(2)+'" cy="'+A[1].toFixed(2)+'" r="'+(1.2*z).toFixed(2)+'" fill="none" stroke="'+col+'" stroke-width="'+(0.7*z).toFixed(2)+'"/>';
+      shape='<circle cx="'+A[0].toFixed(2)+'" cy="'+A[1].toFixed(2)+'" r="'+(1.3*z).toFixed(2)+'" fill="none" stroke="'+col+'" stroke-width="'+(0.8*z).toFixed(2)+'"/>';
     }
     var yds=r.kind==="play"?Math.round(r.e-r.s):null, lab=r.score||(inc?"inc":yds==null?"":(yds>0?"+":"")+yds);
-    ldir=B[0]>=A[0]?1:-1; lx=B[0]+ldir*1.9*z; var anchor=ldir>0?"start":"end";
-    if(lx>112||lx<8){lx=A[0]-ldir*1.9*z;anchor=ldir>0?"end":"start"}
-    var text=lab?'<text x="'+lx.toFixed(2)+'" y="'+(B[1]+1.3*z).toFixed(2)+'" font-size="'+(3.6*z).toFixed(2)+'" font-weight="700" text-anchor="'+anchor+'" fill="#fff" '+FT+'>'+esc(lab)+'</text>':'';
+    var ldir=B[0]>=A[0]?1:-1, lx=B[0]+ldir*2.2*z, anchor=ldir>0?"start":"end";
+    if(lx>113||lx<7){lx=A[0]-ldir*2.2*z;anchor=ldir>0?"end":"start"}
+    var text=lab?'<text x="'+lx.toFixed(2)+'" y="'+(B[1]+1.3*z).toFixed(2)+'" font-size="'+(3.8*z).toFixed(2)+'" font-weight="700" text-anchor="'+anchor+'" fill="#fff" stroke="rgba(0,0,0,.35)" stroke-width="0.25" paint-order="stroke" '+FT+'>'+esc(lab)+'</text>':'';
     g.push('<g><title>'+esc(t)+'</title>'+shape+text+'</g>');
+    if(i===n-1&&r.p)callout={p:r.p,x:B[0],y:B[1]};
   });
-  if(ball)g.push('<g transform="translate('+ball[0].toFixed(2)+' '+(ball[1]-1.6).toFixed(2)+')"><ellipse rx="2.6" ry="1.5" fill="#7a3b12" stroke="#fff" stroke-width="0.35"/><line x1="-1" y1="0" x2="1" y2="0" stroke="#fff" stroke-width="0.35"/><line x1="-0.5" y1="-0.5" x2="-0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0" y1="-0.5" x2="0" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0.5" y1="-0.5" x2="0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/></g>');
+  if(ball)g.push('<g transform="translate('+ball[0].toFixed(2)+' '+(ball[1]-1.4).toFixed(2)+')"><ellipse rx="2.8" ry="1.6" fill="#7a3b12" stroke="#fff" stroke-width="0.35"/><line x1="-1" y1="0" x2="1" y2="0" stroke="#fff" stroke-width="0.35"/><line x1="-0.5" y1="-0.5" x2="-0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0" y1="-0.5" x2="0" y2="0.5" stroke="#fff" stroke-width="0.25"/><line x1="0.5" y1="-0.5" x2="0.5" y2="0.5" stroke="#fff" stroke-width="0.25"/></g>');
+  /* Callout with the newest play, like Game Center's play bubble. */
+  if(callout){
+    var cp=callout.p, st0=cp.start||{}, c0=clockText(cp);
+    var headTx=[(st0.down>0?st0.shortDownDistanceText:""),st0.possessionText||""].filter(Boolean).join(" · ")+(c0.clk?" ("+c0.q+" "+c0.clk+")":"");
+    var words=cleanText(cp.text).split(" "), l1="", l2="";
+    words.forEach(function(wd){if((l1+" "+wd).trim().length<=44&&!l2)l1=(l1+" "+wd).trim();else l2=(l2+" "+wd).trim()});
+    if(l2.length>44)l2=l2.slice(0,42)+"…";
+    var bw=66, bh=l2?12.2:8.6, bx=Math.max(2,Math.min(118-bw,callout.x-bw/2)), by=2;
+    var px=Math.max(bx+3,Math.min(bx+bw-3,callout.x));
+    g.push('<g><line x1="'+px.toFixed(2)+'" y1="'+(by+bh).toFixed(2)+'" x2="'+callout.x.toFixed(2)+'" y2="'+(callout.y-1.2).toFixed(2)+'" stroke="#fff" stroke-width="0.4" stroke-opacity="0.9"/><circle cx="'+callout.x.toFixed(2)+'" cy="'+(callout.y-1.2).toFixed(2)+'" r="0.6" fill="#fff"/>'+
+      '<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+bw+'" height="'+bh+'" rx="1.4" fill="#fff" stroke="rgba(0,0,0,.18)" stroke-width="0.25"/>'+
+      '<text x="'+(bx+2.4).toFixed(2)+'" y="'+(by+3.9).toFixed(2)+'" font-size="3.1" font-weight="700" fill="#17201b" font-family="Inter,system-ui,sans-serif">'+esc(headTx)+'</text>'+
+      '<text x="'+(bx+2.4).toFixed(2)+'" y="'+(by+7.4).toFixed(2)+'" font-size="2.9" fill="#3c463f" font-family="Inter,system-ui,sans-serif">'+esc(l1)+'</text>'+
+      (l2?'<text x="'+(bx+2.4).toFixed(2)+'" y="'+(by+10.6).toFixed(2)+'" font-size="2.9" fill="#3c463f" font-family="Inter,system-ui,sans-serif">'+esc(l2)+'</text>':'')+'</g>');
+  }
   var nOwn=L.real.filter(function(p){return !isKick(p)}).length, own=L.rows.filter(function(r){return r.kind==="play"});
   var yds=own.length?Math.round(own[own.length-1].e-own[0].s):0, top_=driveTime(L);
   var stats=[nOwn+" play"+(nOwn===1?"":"s"),yds+" yds"].concat(top_?[top_]:[]).join(" · ");
   var used={}; L.rows.forEach(function(r){used[playKind(r)]=1});
-  var legend=Object.keys(PK).filter(function(k){return used[k]}).map(function(k){return '<span><i style="background:'+PK[k][0]+'"></i>'+PK[k][1]+'</span>'}).join("");
+  var legend='<span><svg width="18" height="8" viewBox="0 0 18 8"><path d="M2 7 Q9 -3 16 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Pass</span><span><svg width="18" height="8" viewBox="0 0 18 8"><path d="M2 4 L16 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Run</span><span><svg width="18" height="8" viewBox="0 0 18 8"><path d="M2 7 Q9 -3 16 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.01 3.4"/></svg>Incomplete</span>'+
+    (used.pen?'<span><i style="background:#ffd23f"></i>Penalty</span>':'')+(used.kick?'<span><i style="background:#f2f2f2"></i>Kick</span>':'');
   var tc=TC[L.off];
   return '<div class="chart"><div class="cap"><b>'+(L.done?"Last drive":"Current drive")+'</b><span><span class="badge"'+(tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'')+'>'+esc(L.offAb)+'</span> '+(L.done&&L.label?esc(L.label)+" · ":"")+esc(stats)+'</span></div>'+
-    '<svg viewBox="0 0 120 '+H.toFixed(1)+'" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" role="img" aria-label="'+esc(L.offAb)+' drive chart">'+g.join("")+'</svg>'+
-    '<div class="legend dk">'+legend+'</div></div>';
+    '<svg viewBox="0 0 120 '+H.toFixed(1)+'" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" role="img" aria-label="'+esc(L.offAb)+' drive chart" style="overflow:hidden;border-radius:6px">'+g.join("")+'</svg>'+
+    '<div class="legend gc">'+legend+'</div></div>';
 }
 
 function renderInfo(j){
