@@ -280,6 +280,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     <div class="opt"><div><b>Replay pause</b><small>How long each play's info box stays up when you replay a drive.</small></div><select id="linger" aria-label="Replay pause"><option value="0.5">0.5 s</option><option value="1">1 s</option><option value="1.5">1.5 s</option><option value="2">2 s</option><option value="3">3 s</option><option value="5">5 s</option></select></div>
   </div>
   <div class="sect">
+    <div class="opt"><div><b>Next play heads-up</b><small>During a live game, how long before the next snap the info box switches to the next down and distance.</small></div><select id="lead" aria-label="Next play heads-up"><option value="3">3 s</option><option value="5">5 s</option><option value="8">8 s</option><option value="10">10 s</option></select></div>
+  </div>
+  <div class="sect">
     <div class="opt"><div><b>Keep screen on</b><small id="wakeNote">Stops your phone from locking while this page is open.</small></div><button class="switch" id="wake" role="switch" aria-checked="false" aria-label="Keep screen on"></button></div>
   </div>
 </div></div>
@@ -293,7 +296,7 @@ var TEST3D=/[?&]chart=3d\b/.test(location.search);
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
-  delay:load("db_delay",45), linger:load("db_linger",1), view:"list", fav:load("db_fav",load("db_team","LAR")||""),
+  delay:load("db_delay",45), linger:load("db_linger",1), lead:load("db_lead",5), liveDone:{}, live:null, view:"list", fav:load("db_fav",load("db_team","LAR")||""),
   lagSamples:load("db_lag",[]), statTab:load("db_statTab","mine"), wantWake:load("db_wake",false),
   pick:"", eventId:null, sum:null, sumVer:0, state:"pre",
   seen:{}, estimated:{}, shownAt:{}, synced:{}, loaded:false, lastOk:0, nextPollAt:0, snaps:[], err:"", schedule:[],
@@ -596,7 +599,8 @@ function render(){
       :"Live · in sync";
   }
   var dk=S.sumVer+"|"+V.last+"|"+S.state+"|"+Math.floor(now/30000);
-  if(S.keys.drives!==dk&&!S.replay){S.keys.drives=dk;renderDrives(j,T,V,L)}
+  if(S.keys.drives!==dk&&!S.replay&&!(S.live&&S.live.attached)){S.keys.drives=dk;renderDrives(j,T,V,L)}
+  if(TEST3D)liveTick(j,T,V);
   if(S.keys.info!==S.sumVer){S.keys.info=S.sumVer;renderInfo(j)}
   renderStats(j,T,allShown);
 }
@@ -779,7 +783,7 @@ function fieldChart(L){
 }
 
 /* 3D test chart: turns the drive into a scene description for chart3d.js. */
-function fieldChart3D(L){
+function fieldChart3D(L,specOnly){
   var T=L.T, TC=L.TC||{}, offIsAway=!!(T.away&&T.away.id===L.off), odir=offIsAway?1:-1;
   var defT=offIsAway?T.home:T.away, offCol=(TC[L.off]||{}).bg||"#1d3f8f", defCol=(defT&&TC[defT.id]||{}).bg||"#8f1d1d";
   function F(x){return offIsAway?x:100-x}
@@ -970,6 +974,7 @@ function fieldChart3D(L){
   var start=first?{f:+F(first.s).toFixed(2),color:offCol,dir:odir,label:tbRow!=null?"Touchback":"Drive start",tb:tbRow!=null?{row:tbRow,from:rows[tbRow].fe}:null}:null;
   var spec={away:tm(T.away),home:tm(T.home),rows:rows,los:null,ltg:ltg,callout:callout,start:start,width:Math.round(cw*dpr),height:Math.round(cw*0.56*dpr)};
   var cm=location.search.match(/[?&]cam=([\d.,-]+)/); if(cm){var cv=cm[1].split(",").map(Number);spec.cam={fov:cv[0],y:cv[1],z:cv[2],ly:cv[3],lz:cv[4]}}
+  if(specOnly)return spec;
   var url="";
   try{url=window.Chart3D.render(spec)}catch(e){console.log("3D render failed",e);return fieldChart(L)}
   S.spec3d=spec;
@@ -1145,6 +1150,7 @@ var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",
 (function(){var f=$("fav");f.innerHTML='<option value="">None</option>'+Object.keys(NAMES).sort(function(a,b){return NAMES[a].localeCompare(NAMES[b])}).map(function(k){return '<option value="'+k+'">'+NAMES[k]+'</option>'}).join("");f.value=S.fav;
   f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);favChip();if(S.view==="list")renderList()}})();
 (function(){var l=$("linger");l.value=String(S.linger);if(!l.value){l.value="1"}l.onchange=function(){S.linger=+l.value||1;save("db_linger",S.linger)}})();
+(function(){var l=$("lead");l.value=String(S.lead);if(!l.value){l.value="5"}l.onchange=function(){S.lead=+l.value||5;save("db_lead",S.lead)}})();
 function favChip(){$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
 favChip();
 $("favChip").onclick=function(){sheet(true);setTimeout(function(){$("fav").focus()},50)};
@@ -1226,7 +1232,7 @@ function route(){
     window.scrollTo(0,0); render(); poll();
     return;
   }
-  S.view="list"; clearTimeout(timer); if(S.replay)stopReplay();
+  S.view="list"; clearTimeout(timer); if(S.replay)stopReplay(); if(S.live)endLive();
   $("gameView").hidden=true; $("listView").hidden=false;
   listHash=h;
   var wm=h.match(/^w-(\d{4})-(\d)-(\d{1,2})$/);
@@ -1249,10 +1255,61 @@ $("sheetDone").onclick=function(){sheet(false)};
 $("scrim").onclick=function(){sheet(false)};
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("sheet").hidden)sheet(false)});
 $("retry").onclick=function(){$("status").textContent="Retrying…";poll()};
+/* Live animation (3D test). Each new play is animated as it comes in:
+   - the previous result stays up until a few seconds (the heads-up setting) before the next snap,
+   - then the box switches to the next down and distance (previous result in grey),
+   - the snap text, ball and arrow run so the result lands exactly when the play is due on screen,
+   - then the chart settles back to the still picture.
+   The next play is already in the page (held back by the delay), so its timing is known. */
+function liveTick(j,T,V){
+  if(!window.Chart3D||!window.THREE||S.replay||S.view!=="game"||S.live||S.chartDrive)return;
+  var kP=-1,P=null;
+  for(var k=V.last+1;k<V.plays.length;k++){if(!isNonPlay(V.plays[k])){kP=k;P=V.plays[k];break}}
+  if(!P||S.liveDone[P.id])return;
+  var now=Date.now(), tReveal=playTime(P)+S.delay*1000;
+  if(now>=tReveal-400){S.liveDone[P.id]=1;return}          /* too late to animate: just show it */
+  if(now<tReveal-S.lead*1000-6000)return;                  /* not yet: prepare a few seconds ahead */
+  var ids={};for(var q=0;q<=kP;q++)ids[V.plays[q].id]=1;
+  var L2=latestDrive(j,T,{ids:ids,plays:V.plays,last:kP});
+  if(!L2||L2.vis.indexOf(P)<0){S.liveDone[P.id]=1;return}
+  var spec=fieldChart3D(L2,true), k0=-1, k1=-1;
+  L2.rows.forEach(function(r,i){if(r.p===P){if(k0<0)k0=i;k1=i}});
+  if(k0<0){S.liveDone[P.id]=1;return}
+  var tmp=document.createElement("div"), ctrl;
+  try{ctrl=window.Chart3D.replay(tmp,spec,{clock:true,linger:S.linger})}catch(e){console.log("3D live failed",e);S.liveDone[P.id]=1;return}
+  var g0=ctrl.timeline[k0], g1=ctrl.timeline[k1], F=g1.end-g0.snap;
+  var tSnap=tReveal-F, tPre=tSnap-S.lead*1000;
+  S.live={ctrl:ctrl,tmp:tmp,attached:false,id:P.id,tPre:tPre,tSnap:tSnap,t0:g0.t0,preEnd:g0.snap-1,snap:g0.snap,
+    freeze:Math.min(g1.holdEnd-30,g1.end+1800),settleAt:tReveal+1800};
+  requestAnimationFrame(liveFrame);
+}
+function liveFrame(){
+  var Lv=S.live; if(!Lv)return;
+  var now=Date.now();
+  if(now<Lv.tPre){setTimeout(function(){requestAnimationFrame(liveFrame)},150);return}
+  if(!Lv.attached){
+    var h=$("c3d"); if(!h||!Lv.tmp.firstChild){endLive();return}
+    var img=h.querySelector("img"); if(img)img.hidden=true;
+    h.appendChild(Lv.tmp.firstChild); Lv.attached=true;
+  }
+  var v=now<Lv.tSnap?Math.min(Lv.t0+(now-Lv.tPre),Lv.preEnd):Lv.snap+(now-Lv.tSnap);
+  Lv.ctrl.seek(Math.min(v,Lv.freeze));
+  if(now>=Lv.settleAt){endLive();render();return}
+  requestAnimationFrame(liveFrame);
+}
+function endLive(){
+  var Lv=S.live; if(!Lv)return;
+  S.liveDone[Lv.id]=1; S.live=null;
+  try{Lv.ctrl.stop()}catch(e){}
+  var img=document.querySelector("#c3d img"); if(img)img.hidden=false;
+  S.keys.drives=null;
+}
+
 /* Drive replay (3D test). */
 function stopReplay(){if(S.replay){S.replay.stop();S.replay=null}var img=document.querySelector("#c3d img");if(img)img.hidden=false;var b=$("replayBtn");if(b){b.textContent="▶ Replay drive";b.classList.remove("on")}S.keys.drives=null}
 function startReplay(){
   if(!window.Chart3D||!S.spec3d)return;
+  if(S.live){endLive();S.keys.drives="hold"}
   var holder=$("c3d"), img=holder&&holder.querySelector("img"), b=$("replayBtn"); if(!holder)return;
   if(img)img.hidden=true; b.textContent="■ Stop"; b.classList.add("on");
   try{S.replay=window.Chart3D.replay(holder,S.spec3d,{linger:S.linger,onDone:function(){setTimeout(function(){stopReplay();render()},Math.max(600,S.linger*1000))}})}
@@ -1261,6 +1318,7 @@ function startReplay(){
 $("drives").addEventListener("click",function(e){
   if(e.target.closest("#replayBtn")){if(S.replay){stopReplay();render()}else startReplay();return}
   if(S.replay&&e.target.closest("summary")){stopReplay()}
+  if(S.live&&e.target.closest("summary")){endLive()}
   var b=e.target.closest("[data-sync]");
   if(b){
     var id=b.getAttribute("data-sync"), at=S.shownAt[id];
