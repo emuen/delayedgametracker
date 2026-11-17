@@ -114,7 +114,7 @@
     if (spec.ltg != null) line(spec.ltg, 0xffd23f);
     if (spec.los != null) line(spec.los, 0x2f7cff);
 
-    var n = spec.rows.length, zFar = -21, zNear = 15, Y = 0.55, RAD = 0.62, CONE = 2.6;
+    var n = spec.rows.length, zFar = -21, zNear = 15, Y = 0.72, RAD = 0.62, CONE = 2.6;
     var V3 = THREE.Vector3, up = new V3(0, 1, 0), labels = [], calloutAt = null;
     function addTube(curve, m) {
       var t = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, RAD, 10, false), m);
@@ -139,25 +139,36 @@
       if (row.type === "dot") {
         var s = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.22, 8, 24), m); s.rotation.x = -Math.PI / 2; s.position.copy(A); scene.add(s);
       } else if (row.type === "air" || row.type === "inc" || row.type === "kick") {
-        var C = row.fc != null ? new V3(wx(row.fc), Y, z) : E;
-        var len = Math.abs(C.x - A.x), h = Math.max(3.2, Math.min(row.type === "kick" ? 17 : 13, len * (row.type === "kick" ? 0.34 : 0.4)));
-        var mid = new V3((A.x + C.x) / 2, Y + 2 * h, z);
-        var arc = new THREE.QuadraticBezierCurve3(A, mid, C);
+        /* Arc height follows the length of the throw, so short passes stay low and flat.
+           Every arrowhead lies flat on the turf, pointing the way the play went. */
+        var kick = row.type === "kick";
+        function arcH(len) { return Math.max(0.9, Math.min(kick ? 16 : 11, len * (kick ? 0.33 : 0.27))); }
+        var C = row.fc != null ? new V3(wx(row.fc), Y, z) : E, airLen = Math.abs(C.x - A.x);
+        var glen = row.fc != null ? Math.abs(E.x - C.x) : 0, hasRun = glen > CONE * 1.1;
         if (row.type === "inc") {
-          var pts = arc.getSpacedPoints(Math.max(6, Math.round(arc.getLength() / 1.7)));
+          var hi = arcH(airLen), arcI = new THREE.QuadraticBezierCurve3(A, new V3((A.x + C.x) / 2, Y + 2 * hi, z), C);
+          var pts = arcI.getSpacedPoints(Math.max(4, Math.round(arcI.getLength() / 1.7)));
           pts.forEach(function (p) { var b = new THREE.Mesh(new THREE.SphereGeometry(RAD * 0.9, 12, 10), m); b.position.copy(p); b.castShadow = true; scene.add(b); });
           addX(C.clone().setY(Y + 0.3), m); end = C;
-        } else if (row.fc != null && Math.abs(E.x - C.x) > 0.3) {
-          addTube(arc, m);
-          var g = E.x >= C.x ? 1 : -1, glen = Math.abs(E.x - C.x);
-          if (glen > CONE * 1.1) addTube(new THREE.LineCurve3(C, new V3(E.x - g * CONE * 0.9, Y, z)), m);
-          endDir = new V3(g, 0, 0); end = E;
+        } else if (airLen < 1) {
+          /* Thrown to the line of scrimmage: nothing to arc, show it on the ground. */
+          var dg = E.x >= A.x ? 1 : -1;
+          if (Math.abs(E.x - A.x) > CONE * 1.1) addTube(new THREE.LineCurve3(A, new V3(E.x - dg * CONE * 0.9, Y, z)), m);
+          addCone(E, new V3(dg, 0, 0), m); end = E;
+        } else if (hasRun) {
+          var h1 = arcH(airLen);
+          addTube(new THREE.QuadraticBezierCurve3(A, new V3((A.x + C.x) / 2, Y + 2 * h1, z), C), m);
+          var g = E.x >= C.x ? 1 : -1;
+          addTube(new THREE.LineCurve3(C, new V3(E.x - g * CONE * 0.9, Y, z)), m);
+          addCone(E, new V3(g, 0, 0), m); end = E;
         } else {
-          var cut = arc.getPointAt(0.97);
-          addTube(new THREE.QuadraticBezierCurve3(A, mid, cut), m);
-          endDir = C.clone().sub(arc.getPointAt(0.9)); end = C;
+          /* No (or a tiny) run after the catch: the arc lands just short and the arrowhead finishes on the turf. */
+          var tip = row.fc != null ? E : C, d2 = tip.x >= A.x ? 1 : -1, span = Math.abs(tip.x - A.x);
+          var land = new V3(tip.x - d2 * Math.min(CONE * 0.85, span * 0.35), Y, z);
+          var h2 = arcH(Math.abs(land.x - A.x));
+          addTube(new THREE.QuadraticBezierCurve3(A, new V3((A.x + land.x) / 2, Y + 2 * h2, z), land), m);
+          addCone(tip, new V3(d2, 0, 0), m); end = tip;
         }
-        if (endDir) addCone(end, endDir, m);
       } else {
         var d = E.x >= A.x ? 1 : -1, glen2 = Math.abs(E.x - A.x);
         if (glen2 > CONE * 1.1) addTube(new THREE.LineCurve3(A, new V3(E.x - d * CONE * 0.9, Y, z)), m);
