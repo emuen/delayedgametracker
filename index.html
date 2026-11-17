@@ -702,8 +702,9 @@ function fieldChart(L){
       /* Completed pass: arc to the catch, then yards after the catch along the ground. */
       var yac=(r.p||{}).yardsAfterCatch, G=null;
       if(k==="pass"&&!inc&&typeof yac==="number"&&yac>0&&r.kind==="play"){
-        var xc=r.e-yac, lo=Math.min(r.s,r.e), hi=Math.max(r.s,r.e);
-        if(xc>lo+0.5&&xc<hi-0.5){G=B;B=P(F(xc),v);h=Math.max(2.5,Math.min(13,Math.abs(F(xc)-fs)*0.35))*z;cx=(A[0]+B[0])/2;cy=(A[1]+B[1])/2-2*h}
+        /* The catch can be behind the line (screens): then yards after catch exceed the gain. */
+        var xc=r.e-yac;
+        if(Math.abs(r.e-xc)>=0.5){G=B;B=P(F(xc),v);h=Math.max(3.4,Math.min(13,Math.abs(F(xc)-fs)*0.35))*z;cx=(A[0]+B[0])/2;cy=(A[1]+B[1])/2-2*h}
       }
       var dd="M"+pt(A)+" Q"+cx.toFixed(2)+","+cy.toFixed(2)+" "+pt(B);
       shape='<path d="'+dd+'" fill="none" stroke="#000" stroke-opacity="0.28" stroke-width="'+(+sw+0.9).toFixed(2)+'" stroke-linecap="round" transform="translate(0 0.5)"/>'+
