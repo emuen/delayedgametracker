@@ -406,6 +406,17 @@
     r.setPixelRatio(1); r.setSize(W, H, false);
     var B = build(spec, W, H, r.capabilities.getMaxAnisotropy());
     B.rows.forEach(function (row) { B.reveal(row, 1); });
+    /* Drive in progress: earlier plays stay dimmed exactly as the animation leaves them. */
+    if (spec.dimFrom > 0) {
+      var grey = new THREE.Color(0x8d968f).convertSRGBToLinear(), dim = 0.85;
+      B.rows.forEach(function (row, k) {
+        if (k >= spec.dimFrom) return;
+        row.mats.concat(row.ghost ? [row.ghost.mat] : []).forEach(function (m) {
+          m.transparent = true; m.opacity = (1 - 0.5 * dim) * (row.ghost && m === row.ghost.mat ? 0.35 : 1);
+          m.color.lerp(grey, 0.35 * dim); m.emissive.multiplyScalar(1 - 0.6 * dim); m.needsUpdate = true;
+        });
+      });
+    }
     B.setLines(spec.los, spec.ltg);
     r.render(B.scene, B.cam);
     var out = cvs(W, H), o = out.getContext("2d");

@@ -1008,6 +1008,9 @@ function fieldChart3D(L,specOnly){
   var spec={away:tm(T.away),home:tm(T.home),rows:rows,los:null,ltg:ltg,callout:callout,start:start,width:Math.round(cw*dpr),height:Math.round(cw*0.56*dpr)};
   var cm=location.search.match(/[?&]cam=([\d.,-]+)/); if(cm){var cv=cm[1].split(",").map(Number);spec.cam={fov:cv[0],y:cv[1],z:cv[2],ly:cv[3],lz:cv[4]}}
   if(specOnly)return spec;
+  /* While the drive is still going (and it's the live drive, not one tapped from the list), keep
+     earlier plays dimmed like the animation does; the latest play stays in full colour. */
+  if(!L.done&&!S.chartDrive&&S.state==="in"&&n>1){var lp=L.rows[n-1].p,k0=n-1;while(k0>0&&L.rows[k0-1].p===lp)k0--;if(k0>0)spec.dimFrom=k0}
   var url="";
   try{url=window.Chart3D.render(spec)}catch(e){console.log("3D render failed",e);return fieldChart(L)}
   S.spec3d=spec;
@@ -1408,7 +1411,7 @@ wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");
 setInterval(render,1000);
 if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
-  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=18",function(){
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=19",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
   document.title="Delay Booth · 3D test";
 }
