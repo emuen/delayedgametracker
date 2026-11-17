@@ -182,7 +182,7 @@
       }
       labelOnly();
       function labelOnly() {
-        if (row.label) labels.push({ p: end.clone().setY(Y + 1.2), dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label });
+        if (row.label) labels.push({ p: end.clone().setY(Y), z: z, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label });
         if (spec.callout && spec.callout.row === i) calloutAt = end.clone().setY(Y + 1.6);
       }
     });
@@ -200,24 +200,22 @@
     function scr(p) { var v = p.clone().project(cam); return [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; }
     var u = W / 360;
     o.textBaseline = "middle"; o.lineJoin = "round";
-    /* Labels: try beside the arrow end, then the other side, then above; skip if every spot overlaps. */
-    var placed = [];
-    function hit(r) { return placed.some(function (q) { return r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1]; }); }
-    labels.slice().reverse().forEach(function (l) {
-      var s = scr(l.p), fs = Math.round(11.5 * u);
-      o.font = "700 " + fs + "px " + DISPLAY;
-      var w = o.measureText(l.text).width, hh = fs, tries = [
-        [s[0] + l.dir * 5 * u + (l.dir > 0 ? 0 : -w), s[1] - hh / 2],
-        [s[0] - l.dir * 5 * u + (l.dir > 0 ? -w : 0), s[1] - hh / 2],
-        [s[0] - w / 2, s[1] - hh * 1.7]];
-      for (var t = 0; t < tries.length; t++) {
-        var x0 = tries[t][0], y0 = tries[t][1], rect = [x0 - 2 * u, y0 - 1 * u, x0 + w + 2 * u, y0 + hh + 1 * u];
-        if (x0 < 4 * u || x0 + w > W - 4 * u || hit(rect)) continue;
-        placed.push(rect);
-        o.textAlign = "left"; o.strokeStyle = "rgba(0,0,0,0.55)"; o.lineWidth = 3 * u;
-        o.strokeText(l.text, x0, y0 + hh / 2); o.fillStyle = "#fff"; o.fillText(l.text, x0, y0 + hh / 2);
-        break;
-      }
+    /* Labels: always the same spot, just past the arrowhead in the direction of the play,
+       centred on the play's own lane, in a small pill. Size follows the perspective so
+       labels on neighbouring lanes don't run into each other. */
+    var laneGap = n > 1 ? (zNear - zFar) / (n - 1) : 10;
+    labels.forEach(function (l) {
+      var s0 = scr(l.p), s1 = scr(l.p.clone().setZ(l.z + laneGap));
+      var gapPx = Math.abs(s1[1] - s0[1]), fs = Math.max(8 * u, Math.min(12.5 * u, gapPx * 0.78));
+      o.font = "700 " + Math.round(fs) + "px " + DISPLAY;
+      var tw = o.measureText(l.text).width, ph = fs * 1.15, pw = tw + fs * 0.7, gap = 3.5 * u * fs / (12 * u);
+      var x0 = l.dir > 0 ? s0[0] + gap : s0[0] - gap - pw;
+      x0 = Math.max(2 * u, Math.min(W - pw - 2 * u, x0));
+      var y0 = s0[1] - ph / 2;
+      o.fillStyle = "rgba(10,25,15,0.72)"; o.beginPath();
+      if (o.roundRect) o.roundRect(x0, y0, pw, ph, ph / 2); else o.rect(x0, y0, pw, ph);
+      o.fill();
+      o.fillStyle = "#fff"; o.textAlign = "center"; o.fillText(l.text, x0 + pw / 2, s0[1] + fs * 0.04);
     });
     if (spec.callout && calloutAt) {
       var c = spec.callout, at = scr(calloutAt), pad = 8 * u, lh = 14 * u;
