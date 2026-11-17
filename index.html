@@ -282,6 +282,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 (function(){
 "use strict";
 var API="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
+/* Test mode for the 3D drive chart: add ?chart=3d to the address. */
+var TEST3D=/[?&]chart=3d\b/.test(location.search);
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
@@ -503,13 +505,14 @@ function scoreLabel(p){var t=(p.text||"")+" "+((p.type||{}).text||"");return /to
 
 /* The latest drive you're allowed to see, with chart rows and a one-line summary. */
 function latestDrive(j,T,V){
-  var drives=drivesOf(j), cur=(j.drives||{}).current, out=null;
+  var drives=drivesOf(j), cur=(j.drives||{}).current, last=null, chosen=null, pick=TEST3D?S.chartDrive:null;
   drives.forEach(function(d){
     var all=d.plays||[], vis=all.filter(function(p){return V.ids[p.id]});
     if(!vis.length)return;
-    var st=driveState(d,vis,all,cur);
-    out={d:d,vis:vis,done:st.ended,label:st.label};
+    var st=driveState(d,vis,all,cur), e={d:d,vis:vis,done:st.ended,label:st.label};
+    last=e; if(pick&&d.id===pick)chosen=e;
   });
+  var out=chosen||last;
   if(!out)return null;
   var d=out.d, off=String((d.team||{}).id||"");
   var offAb=(d.team&&d.team.abbreviation)||(T.byId[off]||{}).ab||"";
@@ -627,7 +630,7 @@ function renderDrives(j,T,V,L){
   if(!html.length){box.innerHTML='<div class="empty">'+(S.state==="pre"?"Kickoff soon. Start DAZN at kickoff, then match the first play using the delay buttons above.":"Holding plays back by "+fmtDelay(S.delay)+". The first one shows up when your stream reaches it.")+'</div>';return}
   var list=[], lastQ=null;
   html.reverse().forEach(function(x){if(x.q!==lastQ&&x.q){list.push('<h4 class="qhead">'+esc(qLabel(x.q))+'</h4>');lastQ=x.q}list.push(x.h)});
-  box.innerHTML=(L?fieldChart(L):"")+list.join("");
+  box.innerHTML=(L?(TEST3D&&window.Chart3D&&window.THREE?fieldChart3D(L):fieldChart(L)):"")+list.join("");
 }
 
 /* Drive chart in the style of the newer NFL Game Center: the field seen at an angle,
@@ -724,12 +727,15 @@ function fieldChart(L){
       }
       var cx=(A[0]+B[0])/2, cy=(A[1]+B[1])/2-2*h;
       shape=ribbon("M"+pt(A)+" Q"+cx.toFixed(2)+","+cy.toFixed(2)+" "+pt(B),col,w,inc);
-      if(G){var gd=G[0]>=B[0]?1:-1;shape+=ribbon("M"+pt(B)+" L"+(G[0]-gd*2*z).toFixed(2)+","+G[1].toFixed(2),col,w,false)+arrow(G[0],G[1],gd,0,col,3*z);B=G}
+      if(G){var gd=G[0]>=B[0]?1:-1;
+        /* Short run after the catch: just the arrowhead, flat, so it can't fold back. */
+        if(Math.abs(G[0]-B[0])>3.2*z)shape+=ribbon("M"+pt(B)+" L"+(G[0]-gd*2*z).toFixed(2)+","+G[1].toFixed(2),col,w,false);
+        shape+=arrow(G[0],G[1],gd,0,col,3*z);B=G}
       else if(inc){var s2=1.4*z;shape+='<path d="M'+(B[0]-s2)+","+(B[1]-s2)+" L"+(B[0]+s2)+","+(B[1]+s2)+" M"+(B[0]-s2)+","+(B[1]+s2)+" L"+(B[0]+s2)+","+(B[1]-s2)+'" stroke="'+col+'" stroke-width="'+(0.9*z).toFixed(2)+'" stroke-linecap="round"/>'}
       else shape+=arrow(B[0],B[1],B[0]-cx,B[1]-cy,col,3*z);
     }else if(len>=1){
       var d=B[0]>=A[0]?1:-1;
-      shape=ribbon("M"+pt(A)+" L"+(B[0]-d*2*z).toFixed(2)+","+B[1].toFixed(2),col,w,false)+arrow(B[0],B[1],d,0,col,3*z);
+      shape=(Math.abs(B[0]-A[0])>3.2*z?ribbon("M"+pt(A)+" L"+(B[0]-d*2*z).toFixed(2)+","+B[1].toFixed(2),col,w,false):"")+arrow(B[0],B[1],d,0,col,3*z);
     }else{
       shape='<circle cx="'+A[0].toFixed(2)+'" cy="'+A[1].toFixed(2)+'" r="'+(1.3*z).toFixed(2)+'" fill="none" stroke="'+col+'" stroke-width="'+(0.8*z).toFixed(2)+'"/>';
     }
@@ -766,6 +772,54 @@ function fieldChart(L){
   return '<div class="chart"><div class="cap"><b>'+(L.done?"Last drive":"Current drive")+'</b><span><span class="badge"'+(tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'')+'>'+esc(L.offAb)+'</span> '+(L.done&&L.label?esc(L.label)+" · ":"")+esc(stats)+'</span></div>'+
     '<svg viewBox="0 0 120 '+H.toFixed(1)+'" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" role="img" aria-label="'+esc(L.offAb)+' drive chart" style="overflow:hidden;border-radius:6px">'+g.join("")+'</svg>'+
     '<div class="legend gc">'+legend+'</div></div>';
+}
+
+/* 3D test chart: turns the drive into a scene description for chart3d.js. */
+function fieldChart3D(L){
+  var T=L.T, TC=L.TC||{}, offIsAway=!!(T.away&&T.away.id===L.off), odir=offIsAway?1:-1;
+  var defT=offIsAway?T.home:T.away, offCol=(TC[L.off]||{}).bg||"#1d3f8f", defCol=(defT&&TC[defT.id]||{}).bg||"#8f1d1d";
+  function F(x){return offIsAway?x:100-x}
+  function tm(t){var c=t&&TC[t.id];return {name:t?(t.nm||t.ab):"",bg:c?c.bg:"#1f5a29",ink:c?c.ink:"#fff"}}
+  var rows=[], n=L.rows.length;
+  L.rows.forEach(function(r,i){
+    var k=playKind(r), t=r.text||"", ty=((r.p||{}).type||{}).text||"";
+    var col=k==="pen"?"#ffd23f":k==="kick"?"#f2f2f2":(k==="ret"&&r.byOff===false)?defCol:offCol;
+    var inc=k==="pass"&&/incomplete/i.test(t);
+    var air=(k==="pass"&&!/sack|scramble/i.test(ty+" "+t))||(k==="to"&&/intercept/i.test(ty+" "+t));
+    var fs=F(r.s), fe=F(r.e), fc=null, type=k==="kick"?"kick":inc?"inc":air?"air":"ground";
+    if(inc){fe=fs+odir*(/deep/i.test(t)?18:9)}
+    var yac=(r.p||{}).yardsAfterCatch;
+    if(type==="air"&&typeof yac==="number"&&yac>0&&r.kind==="play"&&Math.abs(yac)>=0.5)fc=F(r.e-yac);
+    if(Math.abs(fe-fs)<0.8&&!inc)type="dot";
+    var yds=r.kind==="play"?Math.round(r.e-r.s):null;
+    rows.push({fs:+fs.toFixed(2),fe:+fe.toFixed(2),fc:fc==null?null:+fc.toFixed(2),type:type,color:col,label:r.score||(inc?"inc":yds==null?"":(yds>0?"+":"")+yds)});
+  });
+  var los=null, ltg=null, lastP=L.real[L.real.length-1];
+  if(!L.done&&lastP&&!lastP.scoringPlay){
+    var be=toPos(lastP.end,L.off,L.A);
+    if(be!=null&&be>=0&&be<=100){los=+F(be).toFixed(2);var dist=+((lastP.end||{}).distance)||0;if(dist&&lastP.end.down>0&&be+dist<100)ltg=+F(be+dist).toFixed(2)}
+  }
+  var callout=null, last=L.rows[n-1];
+  if(last&&last.p){
+    var cp=last.p, st0=cp.start||{}, c0=clockText(cp);
+    var head=[(st0.down>0?st0.shortDownDistanceText:""),st0.possessionText||""].filter(Boolean).join(" · ")+(c0.clk?"  ("+c0.q+" "+c0.clk+")":"");
+    var words=cleanText(cp.text).split(" "), l1="", l2="";
+    words.forEach(function(wd){if((l1+" "+wd).trim().length<=46&&!l2)l1=(l1+" "+wd).trim();else l2=(l2+" "+wd).trim()});
+    if(l2.length>46)l2=l2.slice(0,44)+"…";
+    callout={head:head,l1:l1,l2:l2,row:n-1};
+  }
+  var cw=Math.max(300,($("drives").clientWidth||360)-26), dpr=Math.min(3,Math.max(2,window.devicePixelRatio||2));
+  var spec={away:tm(T.away),home:tm(T.home),rows:rows,los:los,ltg:ltg,callout:callout,width:Math.round(cw*dpr),height:Math.round(cw*0.56*dpr)};
+  var cm=location.search.match(/[?&]cam=([\d.,-]+)/); if(cm){var cv=cm[1].split(",").map(Number);spec.cam={fov:cv[0],y:cv[1],z:cv[2],ly:cv[3],lz:cv[4]}}
+  var url="";
+  try{url=window.Chart3D.render(spec)}catch(e){console.log("3D render failed",e);return fieldChart(L)}
+  var nOwn=L.real.filter(function(p){return !isKick(p)}).length, own=L.rows.filter(function(r){return r.kind==="play"});
+  var yds2=own.length?Math.round(own[own.length-1].e-own[0].s):0, top_=driveTime(L);
+  var stats=[nOwn+" play"+(nOwn===1?"":"s"),yds2+" yds"].concat(top_?[top_]:[]).join(" · ");
+  var tc=TC[L.off];
+  return '<div class="chart"><div class="cap"><b>'+(L.done?"Drive":"Current drive")+'</b><span><span class="badge"'+(tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'')+'>'+esc(L.offAb)+'</span> '+(L.done&&L.label?esc(L.label)+" · ":"")+esc(stats)+'</span></div>'+
+    '<img src="'+url+'" alt="'+esc(L.offAb)+' drive chart" style="display:block;width:100%;height:auto;border-radius:6px">'+
+    '<div class="legend gc"><span>3D test · tap any drive below to chart it</span></div></div>';
 }
 
 function renderInfo(j){
@@ -1043,6 +1097,7 @@ $("drives").addEventListener("click",function(e){
   }
   var s=e.target.closest("summary"); if(!s)return;
   var d=s.parentNode; if(d&&d.dataset&&d.dataset.k!=null)S.openState[d.dataset.k]=!d.open;
+  if(TEST3D&&d&&d.dataset&&d.dataset.k!=null){S.chartDrive=d.dataset.k;S.keys.drives=null;setTimeout(function(){render();var c=document.querySelector(".chart");if(c)c.scrollIntoView({behavior:"smooth",block:"start"})},0)}
 });
 function tab(t){S.tab=t;$("drives").hidden=t!=="drives";$("stats").hidden=t!=="stats";
   $("tabDrives").setAttribute("aria-selected",t==="drives");$("tabStats").setAttribute("aria-selected",t==="stats");if(t==="stats")markScrolls()}
@@ -1081,6 +1136,12 @@ if(S.wantWake)wakeOn();
 wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");
 
 setInterval(render,1000);
+if(TEST3D){
+  var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=3",function(){
+    window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
+  document.title="Delay Booth · 3D test";
+}
 loadCrews(); setInterval(loadCrews,30*60000);
 tab("drives"); chips(); route();
 window.addEventListener("hashchange",route);
