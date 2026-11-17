@@ -91,6 +91,9 @@ button,select,input{font:inherit;color:inherit}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
 .legend i{display:inline-block;width:12px;height:5px;border-radius:3px;margin-right:4px;vertical-align:middle}
 .legend.gc{color:var(--muted);align-items:center}
+.legend.rp{justify-content:space-between}
+.replaybtn{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;font-size:13px;cursor:pointer}
+.replaybtn.on{background:none;color:var(--fg)}
 .legend.gc svg{display:inline-block;width:18px;height:8px;vertical-align:middle;margin-right:4px;color:var(--fg)}
 .chart .cap .badge{font-size:13px;padding:2px 6px;margin-right:2px;color:var(--tci,var(--bg))}
 details.drive{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--tc,var(--line));border-radius:10px;margin-bottom:8px;overflow:hidden}
@@ -274,6 +277,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     <p class="help">Quickest way: when a new play shows up before you see it on DAZN, wait for it on TV and tap "Just happened on TV" under it.</p>
   </div>
   <div class="sect">
+    <div class="opt"><div><b>Replay pause</b><small>How long each play's info box stays up when you replay a drive.</small></div><select id="linger" aria-label="Replay pause"><option value="0.5">0.5 s</option><option value="1">1 s</option><option value="1.5">1.5 s</option><option value="2">2 s</option><option value="3">3 s</option><option value="5">5 s</option></select></div>
+  </div>
+  <div class="sect">
     <div class="opt"><div><b>Keep screen on</b><small id="wakeNote">Stops your phone from locking while this page is open.</small></div><button class="switch" id="wake" role="switch" aria-checked="false" aria-label="Keep screen on"></button></div>
   </div>
 </div></div>
@@ -287,7 +293,7 @@ var TEST3D=/[?&]chart=3d\b/.test(location.search);
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
-  delay:load("db_delay",45), view:"list", fav:load("db_fav",load("db_team","LAR")||""),
+  delay:load("db_delay",45), linger:load("db_linger",1), view:"list", fav:load("db_fav",load("db_team","LAR")||""),
   lagSamples:load("db_lag",[]), statTab:load("db_statTab","mine"), wantWake:load("db_wake",false),
   pick:"", eventId:null, sum:null, sumVer:0, state:"pre",
   seen:{}, estimated:{}, shownAt:{}, synced:{}, loaded:false, lastOk:0, nextPollAt:0, snaps:[], err:"", schedule:[],
@@ -590,7 +596,7 @@ function render(){
       :"Live · in sync";
   }
   var dk=S.sumVer+"|"+V.last+"|"+S.state+"|"+Math.floor(now/30000);
-  if(S.keys.drives!==dk){S.keys.drives=dk;renderDrives(j,T,V,L)}
+  if(S.keys.drives!==dk&&!S.replay){S.keys.drives=dk;renderDrives(j,T,V,L)}
   if(S.keys.info!==S.sumVer){S.keys.info=S.sumVer;renderInfo(j)}
   renderStats(j,T,allShown);
 }
@@ -797,12 +803,10 @@ function fieldChart3D(L){
     var be=toPos(lastP.end,L.off,L.A);
     if(be!=null&&be>=0&&be<=100){los=+F(be).toFixed(2);var dist=+((lastP.end||{}).distance)||0;if(dist&&lastP.end.down>0&&be+dist<100)ltg=+F(be+dist).toFixed(2)}
   }
-  var callout=null, last=L.rows[n-1];
-  if(last&&last.p){
-    var cp=last.p, st0=cp.start||{}, c0=clockText(cp);
+  /* Callout text for any play (used for the newest play, and for each play in a replay). */
+  function calloutOf(cp,row){
+    var st0=cp.start||{}, c0=clockText(cp);
     var head=[(st0.down>0?st0.shortDownDistanceText:""),st0.possessionText||""].filter(Boolean).join(" · ")+(c0.clk?"  ("+c0.q+" "+c0.clk+")":"");
-    /* Yardage phrase highlighted inline; kept on one line by joining it with no-break spaces. */
-    /* Yardage in bold; key moments (turnovers, scores) bold and coloured. */
     var txt=cleanText(cp.text), hls=[];
     function mark(re,kind){var m;re.lastIndex=0;while((m=re.exec(txt))){var t=m[0].replace(/ /g,"\u00a0");txt=txt.slice(0,m.index)+t+txt.slice(m.index+m[0].length);hls.push({t:t,k:kind});re.lastIndex=m.index+t.length}}
     mark(/\bfor (?:a loss of )?-?\d+ yards?\b|\bfor no gain\b|\bincomplete\b/gi,"yd");
@@ -811,20 +815,31 @@ function fieldChart3D(L){
     var words=txt.split(" "), l1="", l2="";
     words.forEach(function(wd){if((l1+" "+wd).trim().length<=46&&!l2)l1=(l1+" "+wd).trim();else l2=(l2+" "+wd).trim()});
     if(l2.length>46)l2=l2.slice(0,44)+"…";
-    callout={head:head,l1:l1,l2:l2,row:n-1,hls:hls};
+    return {head:head,l1:l1,l2:l2,hls:hls,row:row};
   }
+  /* Where each play started, for the replay's line of scrimmage and line to gain. */
+  L.rows.forEach(function(r,i){
+    var row=rows[i]; if(!row)return;
+    row.los=row.fs; row.ltg=null;
+    var st=(r.p||{}).start||{};
+    if(r.kind==="play"&&st.down>0&&+st.distance&&r.s+(+st.distance)<100)row.ltg=+F(r.s+(+st.distance)).toFixed(2);
+    if(r.p&&(r.kind==="play"||i===0||L.rows[i-1].p!==r.p))row.callout=calloutOf(r.p,i);
+    else if(i>0&&rows[i-1].callout)row.callout=Object.assign({},rows[i-1].callout,{row:i});
+  });
+  var last=L.rows[n-1], callout=last&&last.p?calloutOf(last.p,n-1):null;
   var cw=Math.max(300,($("drives").clientWidth||360)-26), dpr=Math.min(3,Math.max(2,window.devicePixelRatio||2));
   var spec={away:tm(T.away),home:tm(T.home),rows:rows,los:los,ltg:ltg,callout:callout,width:Math.round(cw*dpr),height:Math.round(cw*0.56*dpr)};
   var cm=location.search.match(/[?&]cam=([\d.,-]+)/); if(cm){var cv=cm[1].split(",").map(Number);spec.cam={fov:cv[0],y:cv[1],z:cv[2],ly:cv[3],lz:cv[4]}}
   var url="";
   try{url=window.Chart3D.render(spec)}catch(e){console.log("3D render failed",e);return fieldChart(L)}
+  S.spec3d=spec;
   var nOwn=L.real.filter(function(p){return !isKick(p)}).length, own=L.rows.filter(function(r){return r.kind==="play"});
   var yds2=own.length?Math.round(own[own.length-1].e-own[0].s):0, top_=driveTime(L);
   var stats=[nOwn+" play"+(nOwn===1?"":"s"),yds2+" yds"].concat(top_?[top_]:[]).join(" · ");
   var tc=TC[L.off];
   return '<div class="chart"><div class="cap"><b>'+(L.done?"Drive":"Current drive")+'</b><span><span class="badge"'+(tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'')+'>'+esc(L.offAb)+'</span> '+(L.done&&L.label?esc(L.label)+" · ":"")+esc(stats)+'</span></div>'+
-    '<img src="'+url+'" alt="'+esc(L.offAb)+' drive chart" style="display:block;width:100%;height:auto;border-radius:6px">'+
-    '<div class="legend gc"><span>3D test · tap any drive below to chart it</span></div></div>';
+    '<div id="c3d"><img src="'+url+'" alt="'+esc(L.offAb)+' drive chart" style="display:block;width:100%;height:auto;border-radius:6px"></div>'+
+    '<div class="legend gc rp"><button class="replaybtn" id="replayBtn">▶ Replay drive</button><span>Tap any drive below to chart it</span></div></div>';
 }
 
 function renderInfo(j){
@@ -989,6 +1004,7 @@ function recordOf(t,opp,st){
 var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",BUF:"Buffalo Bills",CAR:"Carolina Panthers",CHI:"Chicago Bears",CIN:"Cincinnati Bengals",CLE:"Cleveland Browns",DAL:"Dallas Cowboys",DEN:"Denver Broncos",DET:"Detroit Lions",GB:"Green Bay Packers",HOU:"Houston Texans",IND:"Indianapolis Colts",JAX:"Jacksonville Jaguars",KC:"Kansas City Chiefs",LV:"Las Vegas Raiders",LAC:"Los Angeles Chargers",LAR:"Los Angeles Rams",MIA:"Miami Dolphins",MIN:"Minnesota Vikings",NE:"New England Patriots",NO:"New Orleans Saints",NYG:"New York Giants",NYJ:"New York Jets",PHI:"Philadelphia Eagles",PIT:"Pittsburgh Steelers",SF:"San Francisco 49ers",SEA:"Seattle Seahawks",TB:"Tampa Bay Buccaneers",TEN:"Tennessee Titans",WSH:"Washington Commanders"};
 (function(){var f=$("fav");f.innerHTML='<option value="">None</option>'+Object.keys(NAMES).sort(function(a,b){return NAMES[a].localeCompare(NAMES[b])}).map(function(k){return '<option value="'+k+'">'+NAMES[k]+'</option>'}).join("");f.value=S.fav;
   f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);favChip();if(S.view==="list")renderList()}})();
+(function(){var l=$("linger");l.value=String(S.linger);if(!l.value){l.value="1"}l.onchange=function(){S.linger=+l.value||1;save("db_linger",S.linger)}})();
 function favChip(){$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
 favChip();
 $("favChip").onclick=function(){sheet(true);setTimeout(function(){$("fav").focus()},50)};
@@ -1070,7 +1086,7 @@ function route(){
     window.scrollTo(0,0); render(); poll();
     return;
   }
-  S.view="list"; clearTimeout(timer);
+  S.view="list"; clearTimeout(timer); if(S.replay)stopReplay();
   $("gameView").hidden=true; $("listView").hidden=false;
   listHash=h;
   var wm=h.match(/^w-(\d{4})-(\d)-(\d{1,2})$/);
@@ -1093,7 +1109,18 @@ $("sheetDone").onclick=function(){sheet(false)};
 $("scrim").onclick=function(){sheet(false)};
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("sheet").hidden)sheet(false)});
 $("retry").onclick=function(){$("status").textContent="Retrying…";poll()};
+/* Drive replay (3D test). */
+function stopReplay(){if(S.replay){S.replay.stop();S.replay=null}var img=document.querySelector("#c3d img");if(img)img.hidden=false;var b=$("replayBtn");if(b){b.textContent="▶ Replay drive";b.classList.remove("on")}S.keys.drives=null}
+function startReplay(){
+  if(!window.Chart3D||!S.spec3d)return;
+  var holder=$("c3d"), img=holder&&holder.querySelector("img"), b=$("replayBtn"); if(!holder)return;
+  if(img)img.hidden=true; b.textContent="■ Stop"; b.classList.add("on");
+  try{S.replay=window.Chart3D.replay(holder,S.spec3d,{linger:S.linger,onDone:function(){setTimeout(function(){stopReplay();render()},Math.max(600,S.linger*1000))}})}
+  catch(err){console.log("3D replay failed",err);S.replay=null;stopReplay()}
+}
 $("drives").addEventListener("click",function(e){
+  if(e.target.closest("#replayBtn")){if(S.replay){stopReplay();render()}else startReplay();return}
+  if(S.replay&&e.target.closest("summary")){stopReplay()}
   var b=e.target.closest("[data-sync]");
   if(b){
     var id=b.getAttribute("data-sync"), at=S.shownAt[id];
@@ -1143,7 +1170,7 @@ wakeBtn.setAttribute("aria-checked",S.wantWake?"true":"false");
 setInterval(render,1000);
 if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
-  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=10",function(){
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=11",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
   document.title="Delay Booth · 3D test";
 }
