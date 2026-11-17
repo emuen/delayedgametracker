@@ -136,8 +136,13 @@
       var z = n === 1 ? (zFar + zNear) / 2 : zFar + (zNear - zFar) * i / (n - 1);
       var m = mat(row.color), A = new V3(wx(row.fs), Y, z), E = new V3(wx(row.fe), Y, z);
       var end = E, endDir;
+      /* No gain: a short stub coming from behind the line, stopped at the line of scrimmage. */
+      function stub(at, d) {
+        addTube(new THREE.LineCurve3(new V3(at.x - d * 3.4, Y, z), new V3(at.x - d * CONE * 0.9, Y, z)), m);
+        addCone(at, new V3(d, 0, 0), m);
+      }
       if (row.type === "dot") {
-        var s = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.22, 8, 24), m); s.rotation.x = -Math.PI / 2; s.position.copy(A); scene.add(s);
+        stub(A, row.dir || 1); end = A;
       } else if (row.type === "air" || row.type === "inc" || row.type === "kick") {
         /* Arc height follows the length of the throw, so short passes stay low and flat.
            Every arrowhead lies flat on the turf, pointing the way the play went. */
@@ -164,6 +169,7 @@
         } else {
           /* No (or a tiny) run after the catch: the arc lands just short and the arrowhead finishes on the turf. */
           var tip = row.fc != null ? E : C, d2 = tip.x >= A.x ? 1 : -1, span = Math.abs(tip.x - A.x);
+          if (span < 1) { stub(tip, row.dir || 1); end = tip; return labelOnly(); }
           var land = new V3(tip.x - d2 * Math.min(CONE * 0.85, span * 0.35), Y, z);
           var h2 = arcH(Math.abs(land.x - A.x));
           addTube(new THREE.QuadraticBezierCurve3(A, new V3((A.x + land.x) / 2, Y + 2 * h2, z), land), m);
@@ -174,8 +180,11 @@
         if (glen2 > CONE * 1.1) addTube(new THREE.LineCurve3(A, new V3(E.x - d * CONE * 0.9, Y, z)), m);
         addCone(E, new V3(d, 0, 0), m);
       }
-      if (row.label) labels.push({ p: end.clone().setY(Y + 1.2), dir: end.x >= A.x ? 1 : -1, text: row.label });
-      if (spec.callout && spec.callout.row === i) calloutAt = end.clone().setY(Y + 1.6);
+      labelOnly();
+      function labelOnly() {
+        if (row.label) labels.push({ p: end.clone().setY(Y + 1.2), dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label });
+        if (spec.callout && spec.callout.row === i) calloutAt = end.clone().setY(Y + 1.6);
+      }
     });
     if (spec.los != null) {
       var ball = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 18), new THREE.MeshStandardMaterial({ color: new THREE.Color(0x7a3b12).convertSRGBToLinear(), roughness: 0.6 }));
