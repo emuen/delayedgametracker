@@ -190,13 +190,8 @@
       var sx = wx(spec.start.f), scol = lin(spec.start.color || "#ffffff");
       var stripe = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, FIELD_W), new THREE.MeshBasicMaterial({ color: scol }));
       stripe.position.set(sx, 0.035, 0); scene.add(stripe);
-      var pz = FIELD_W / 2 - 1.5;
-      var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 11, 10), new THREE.MeshStandardMaterial({ color: lin(0xf2f2f2), roughness: 0.5 }));
-      pole.position.set(sx, 5.5, pz); pole.castShadow = true; scene.add(pole);
-      var fs = new THREE.Shape(); fs.moveTo(0, 0); fs.lineTo(6 * (spec.start.dir || 1), -1.8); fs.lineTo(0, -3.6); fs.lineTo(0, 0);
-      var flag = new THREE.Mesh(new THREE.ShapeGeometry(fs), new THREE.MeshStandardMaterial({ color: scol, side: THREE.DoubleSide, roughness: 0.5, emissive: scol.clone().multiplyScalar(0.15) }));
-      flag.position.set(sx, 11, pz); flag.castShadow = true; scene.add(flag);
-      startAt = new V3(sx, 12.6, pz);
+      /* Label sits at the near end of the stripe; no flag. */
+      startAt = new V3(sx, 0.2, FIELD_W / 2 - 0.5);
       var tb = spec.start.tb;
       if (tb && tb.row != null && rows[tb.row]) {
         var tz = rows[tb.row].z, fx = wx(tb.from), dir = sx >= fx ? 1 : -1, len = Math.abs(sx - fx), dash = 1.4, gap = 1;
@@ -252,7 +247,7 @@
       o.fillStyle = "#fff"; o.textAlign = "center"; o.fillText(l.text, x0 + pw / 2, s0[1] + fs * 0.04);
     });
     if (B.startAt && B.startLabel) {
-      var sp = scr(B.startAt), sfs = Math.round(11 * u);
+      var sp = scr(B.startAt), sfs = Math.round(10 * u); sp[1] += sfs * 1.55;
       o.font = "700 " + sfs + "px " + DISPLAY;
       var sw = o.measureText(B.startLabel).width + sfs * 0.8, sh = sfs * 1.3;
       var sx0 = Math.max(2 * u, Math.min(W - sw - 2 * u, sp[0] - sw / 2));
