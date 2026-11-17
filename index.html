@@ -84,6 +84,13 @@ button,select,input{font:inherit;color:inherit}
 .seg button{flex:1;min-height:44px;border:0;border-bottom:2px solid transparent;background:none;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;margin-bottom:-1px}
 .seg button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
 .chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+/* Phones: the chart runs edge to edge; caption and buttons keep the page margins. */
+@media (max-width:700px){
+  .chart{margin-left:calc(-1 * max(14px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(14px,env(safe-area-inset-right,0px)));border-radius:0;border-left:0;border-right:0;padding:10px 0}
+  .chart .cap,.chart .legend{padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+  .chart .legend.dk,.chart .legend.gc{margin-left:max(14px,env(safe-area-inset-left,0px));margin-right:max(14px,env(safe-area-inset-right,0px));padding-left:0;padding-right:0}
+  #c3d img,#c3d>div,.chart>svg{border-radius:0!important}
+}
 .chart .cap{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;margin-bottom:6px}
 .chart .cap b{font:700 15px var(--display);letter-spacing:.05em;white-space:nowrap}
 .chart .cap span{color:var(--muted);text-align:right;min-width:0}
@@ -1001,7 +1008,7 @@ function fieldChart3D(L,specOnly){
     else if(i>0&&rows[i-1].callout)row.callout=Object.assign({},rows[i-1].callout,{row:i});
   });
   var last=L.rows[n-1], callout=last&&last.p?calloutOf(last.p,n-1):null;
-  var cw=Math.max(300,($("drives").clientWidth||360)-26), dpr=Math.min(3,Math.max(2,window.devicePixelRatio||2));
+  var narrow=window.innerWidth<=700, cw=narrow?Math.max(300,document.documentElement.clientWidth||window.innerWidth):Math.max(300,($("drives").clientWidth||360)-26), dpr=Math.min(3,Math.max(2,window.devicePixelRatio||2));
   /* Drive start: where the offense's first snap was; after a touchback, label it so and connect it to the end zone. */
   var first=null, tbRow=null;
   L.rows.forEach(function(r,i){if(!first&&r.kind==="play")first=r;if(tbRow==null&&r.kind==="kick"&&/touchback/i.test(r.text||""))tbRow=i});
