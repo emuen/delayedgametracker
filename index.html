@@ -106,17 +106,18 @@ details.drive>summary::-webkit-details-marker{display:none}
 .dr.sc{font-weight:700;color:var(--fg)}
 .dr::after{content:" ▸";color:var(--muted)}
 details[open] .dr::after{content:" ▾"}
-ol.plays{list-style:none;margin:0;padding:0 12px 10px;border-top:1px solid var(--line)}
-ol.plays li{padding:9px 0;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:5.2em 1fr auto;gap:8px;font-size:14px;align-items:start}
-ol.plays li:last-child{border-bottom:0}
-.pc{font:500 13px var(--display);color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.25}
-.pc b{display:block;color:var(--fg);font-weight:600}
-.yd{font:700 15px var(--display);font-variant-numeric:tabular-nums;text-align:right;min-width:2.6em}
-.yd.g{color:var(--score)} .yd.l{color:var(--warn)} .yd.z{color:var(--muted)}
-li.spt .tx{font-weight:700}
-li.np .tx{color:var(--muted);font-style:italic}
-.tx{min-width:0;overflow-wrap:anywhere}
-.tvsync{grid-column:2/4;justify-self:start;margin-top:2px;min-height:36px;border:1px dashed var(--accent);background:none;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
+ol.plays{list-style:none;margin:0;padding:4px 12px 10px;border-top:1px solid var(--line)}
+ol.plays li{margin:10px 0;padding:1px 0 1px 10px;border-left:3px solid var(--tc,var(--line));font-size:14px}
+.ptitle{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;line-height:1.3}
+.ptitle b{font-weight:700}
+.ptitle small{font-size:13px;color:var(--muted);font-weight:500}
+.ptitle small::before{content:"· ";}
+.picon{width:16px;height:16px;flex:none;color:var(--fg)}
+.pdesc{margin-top:3px;line-height:1.4;overflow-wrap:anywhere}
+.pdesc .pm{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+li.np .ptitle b,li.np .pdesc{color:var(--muted)}
+li.np{border-left-color:var(--line)}
+.tvsync{margin-top:6px;min-height:36px;border:1px dashed var(--accent);background:none;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
 .empty{padding:28px 12px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 12px;margin-bottom:10px}
@@ -501,6 +502,41 @@ function kickRows(p,off,A,s,e){
   if(!/touchback|fair catch|downed|out of bounds/i.test(t)&&e!=null&&Math.abs(e-land)>0.8)rows.push({s:land,e:e,kind:"ret",text:t,byOff:!kickerOff});
   return rows;
 }
+/* One-line summary of a play, like "8 Yard Pass", and an icon kind. */
+function playTitle(p){
+  var ty=((p.type||{}).text)||"", t=p.text||"", y=typeof p.statYardage==="number"?p.statYardage:null;
+  function yd(n,w){return n===0?"No Gain "+w.replace(/^Yard /,""):n+" Yard "+w}
+  var per=((p.period||{}).number)||0;
+  if(isNonPlay(p))return [/two-minute/i.test(ty+" "+t)?"Two-Minute Warning":/timeout/i.test(ty+" "+t)?"Timeout":/end/i.test(ty+" "+t)?(per===2?"End of Half":per>=4&&/game/i.test(ty+" "+t)?"End of Game":"End of Quarter"):ty||"Stoppage","none"];
+  if(/\bspiked\b/i.test(t))return ["Spike","pass"];
+  if(/touchdown/i.test(ty)){
+    var base=/pass/i.test(ty)?"Pass":/rush/i.test(ty)?"Run":/interception/i.test(ty)?"Interception Return":/fumble/i.test(ty)?"Fumble Return":/kickoff|punt/i.test(ty)?"Return":"";
+    return [(base&&y!=null?yd(y,base)+", ":"")+"Touchdown",/interception|fumble/i.test(ty)?"to":/pass/i.test(ty)?"pass":"run"];
+  }
+  if(/interception/i.test(ty)||/\bintercepted\b/i.test(t))return ["Interception","to"];
+  if(/fumble recovery \(opponent\)|fumble return/i.test(ty))return ["Fumble, Lost","to"];
+  if(/incompletion/i.test(ty)||/pass incomplete/i.test(t))return ["Pass Incomplete","pass"];
+  if(/sack/i.test(ty))return [y!=null?yd(y,"Sack"):"Sack","pass"];
+  if(/penalty/i.test(ty))return [y!=null?yd(y,"Penalty"):"Penalty","pen"];
+  if(/field goal/i.test(ty)){var m=t.match(/(\d+) yard field goal/i);return [(m?m[1]+" Yard ":"")+"Field Goal"+(/good/i.test(ty)?"":/block/i.test(ty)?", Blocked":", Missed"),"kick"]}
+  if(/extra point/i.test(ty))return [/good/i.test(ty)?"Extra Point Good":"Extra Point Missed","kick"];
+  if(/two.?point|2pt/i.test(ty))return ["Two-Point Try","run"];
+  if(/kickoff/i.test(ty)){if(/touchback/i.test(t))return ["Kickoff, Touchback","kick"];var r=t.match(/ for (-?\d+) yards?/i);return [r?"Kickoff, "+r[1]+" Yard Return":"Kickoff","kick"]}
+  if(/punt/i.test(ty)){var m2=t.match(/punts (\d+) yards?/i);return [(m2?m2[1]+" Yard ":"")+"Punt","kick"]}
+  if(/safety/i.test(ty))return ["Safety","to"];
+  if(/pass/i.test(ty))return [y!=null?yd(y,"Pass"):"Pass","pass"];
+  if(/rush|run/i.test(ty))return [y!=null?yd(y,"Run"):"Run","run"];
+  return [ty||"Play","none"];
+}
+var PICON={
+  pass:'<svg class="picon" viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="10" cy="6" rx="5" ry="2.8" transform="rotate(-35 10 6)" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8.6 7.4l2.8-2.8M1.5 14.5l4-4M1 11l3-3M4.5 15l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  run:'<svg class="picon" viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="10.5" cy="8" rx="4.8" ry="2.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M9 8h3M1 6h3.5M2 10h3M1 8h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  pen:'<svg class="picon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 15V2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 2.5h8l-2 3 2 3h-8z" fill="#f2c200" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>',
+  kick:'<svg class="picon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13c3-8 9-8 12 0" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.6" stroke-linecap="round"/><ellipse cx="13" cy="12" rx="2.2" ry="1.4" fill="currentColor"/></svg>',
+  to:'<svg class="picon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5h8l-2-2M13 11H5l2 2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  none:'<svg class="picon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.3l2 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+};
+function formationOf(t){var m=String(t||"").match(/^\s*\(([^)]*)\)/);return m&&/shotgun|huddle|under center|pistol/i.test(m[1])?m[1]:""}
 function scoreLabel(p){var t=(p.text||"")+" "+((p.type||{}).text||"");return /touchdown/i.test(t)?"TD":/field goal/i.test(t)?"FG":/safety/i.test(t)?"SAFETY":/extra point|two-point|conversion/i.test(t)?"PAT":"PTS"}
 
 /* The latest drive you're allowed to see, with chart rows and a one-line summary. */
@@ -617,12 +653,12 @@ function renderDrives(j,T,V,L){
     var tc=TC[String((d.team||{}).id)], style=tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'';
     var q=((d.start||{}).period||{}).number||((vis[0]||{}).period||{}).number||0;
     var items=vis.slice().reverse().map(function(p){
-      var c=clockText(p), dd=((p.start||{}).down>0&&!isNonPlay(p))?((p.start||{}).shortDownDistanceText||""):"", yd="";
-      var y=p.statYardage, ty=((p.type||{}).text||"");
-      if(typeof y==="number"&&!NOYARD.test(ty)&&!isKick(p))yd='<span class="yd '+(y>0?"g":y<0?"l":"z")+'">'+(y>0?"+":"")+y+'</span>';
-      else yd='<span></span>';
+      var c=clockText(p), st=p.start||{}, np=isNonPlay(p), ti=playTitle(p);
+      var dd=(st.down>0&&!np)?(st.downDistanceText||st.shortDownDistanceText||""):"";
+      var meta=[c.q+" "+c.clk].concat(formationOf(p.text)?[formationOf(p.text)]:[]).join(" · ");
       var btn=p.id===syncId?'<button class="tvsync" data-sync="'+esc(p.id)+'">Just happened on TV</button>':'';
-      return '<li class="'+(p.scoringPlay?"spt":"")+(isNonPlay(p)?" np":"")+'"><div class="pc"><b>'+esc(c.q+" "+c.clk)+'</b>'+esc(dd)+'</div><div class="tx">'+esc(cleanText(p.text)||ty)+'</div>'+yd+btn+'</li>';
+      return '<li class="'+(p.scoringPlay?"spt":"")+(np?" np":"")+'"><div class="ptitle">'+PICON[ti[1]]+'<b>'+esc(ti[0])+'</b>'+(dd?'<small>'+esc(dd)+'</small>':'')+'</div>'+
+        '<div class="pdesc"><span class="pm">'+esc(meta)+'</span> — '+esc(cleanText(p.text)||((p.type||{}).text)||"")+'</div>'+btn+'</li>';
     }).join("");
     html.push({q:q,h:'<details class="drive'+(sc?" sc":"")+'" data-k="'+esc(d.id)+'"'+style+(open?" open":"")+'><summary><span class="dt">'+esc(tm)+'</span><span class="dd">'+esc(desc)+(startTx?"<br>"+esc(startTx):"")+'</span><span class="dr'+(done?(sc?" sc":""):" live")+'">'+esc(res)+'</span></summary><ol class="plays">'+items+'</ol></details>'});
   });
