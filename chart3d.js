@@ -219,7 +219,7 @@
     });
     if (spec.callout && calloutAt) {
       var c = spec.callout, at = scr(calloutAt), pad = 8 * u, lh = 14 * u;
-      var TEXT = "#3c463f", KIND = { yd: TEXT, to: "#b4381f", sc: "#9a6a00" };
+      var TEXT = "#3c463f", KIND = { yd: TEXT, to: TEXT, sc: TEXT };
       var FB = Math.round(11 * u) + "px Inter, system-ui, sans-serif", FH = "700 " + Math.round(11 * u) + "px Inter, system-ui, sans-serif";
       o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif";
       var w1 = o.measureText(c.head).width;
