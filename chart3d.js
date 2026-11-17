@@ -112,9 +112,9 @@
     var lace = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     lace.position.y = 0.88; ball.add(lace);
     ball.position.set(0, 0.95, FIELD_W / 2 - 3); ball.visible = false; scene.add(ball);
+    /* Only the line to gain is drawn: the line of scrimmage is where the previous arrow ended. */
     function setLines(los, ltg) {
-      losM.visible = los != null; ltgM.visible = ltg != null; ball.visible = los != null;
-      if (los != null) { losM.position.x = wx(los); ball.position.x = wx(los); }
+      losM.visible = false; ball.visible = false; ltgM.visible = ltg != null;
       if (ltg != null) ltgM.position.x = wx(ltg);
     }
 
@@ -183,6 +183,30 @@
       }
       rows.push({ parts: parts, z: z, A: A, end: end, label: row.label ? { p: end.clone().setY(Y), z: z, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null, at: end.clone().setY(Y + 1.6) });
     });
+    /* Drive start: a stripe across the field and a flag in the offense's colour on the near side.
+       After a touchback, a dashed line runs from the end zone to the start line. */
+    var startAt = null;
+    if (spec.start && spec.start.f != null) {
+      var sx = wx(spec.start.f), scol = lin(spec.start.color || "#ffffff");
+      var stripe = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, FIELD_W), new THREE.MeshBasicMaterial({ color: scol }));
+      stripe.position.set(sx, 0.035, 0); scene.add(stripe);
+      var pz = FIELD_W / 2 - 1.5;
+      var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 11, 10), new THREE.MeshStandardMaterial({ color: lin(0xf2f2f2), roughness: 0.5 }));
+      pole.position.set(sx, 5.5, pz); pole.castShadow = true; scene.add(pole);
+      var fs = new THREE.Shape(); fs.moveTo(0, 0); fs.lineTo(6 * (spec.start.dir || 1), -1.8); fs.lineTo(0, -3.6); fs.lineTo(0, 0);
+      var flag = new THREE.Mesh(new THREE.ShapeGeometry(fs), new THREE.MeshStandardMaterial({ color: scol, side: THREE.DoubleSide, roughness: 0.5, emissive: scol.clone().multiplyScalar(0.15) }));
+      flag.position.set(sx, 11, pz); flag.castShadow = true; scene.add(flag);
+      startAt = new V3(sx, 12.6, pz);
+      var tb = spec.start.tb;
+      if (tb && tb.row != null && rows[tb.row]) {
+        var tz = rows[tb.row].z, fx = wx(tb.from), dir = sx >= fx ? 1 : -1, len = Math.abs(sx - fx), dash = 1.4, gap = 1;
+        var dm = new THREE.MeshBasicMaterial({ color: lin(0xffffff), transparent: true, opacity: 0.9 });
+        for (var dd = 0; dd + dash <= len; dd += dash + gap) {
+          var piece = new THREE.Mesh(new THREE.BoxGeometry(dash, 0.06, 0.35), dm);
+          piece.position.set(fx + dir * (dd + dash / 2), 0.06, tz); scene.add(piece);
+        }
+      }
+    }
     /* Show a fraction (0..1) of one play, revealed along its path. */
     function reveal(r, frac) {
       var total = r.parts.reduce(function (s, p) { return s + p.len; }, 0) || 1, done = frac * total;
@@ -198,7 +222,7 @@
       });
     }
     return {
-      scene: scene, cam: cam, rows: rows, reveal: reveal, setLines: setLines,
+      scene: scene, cam: cam, rows: rows, reveal: reveal, setLines: setLines, startAt: startAt, startLabel: spec.start && spec.start.label,
       laneGap: n > 1 ? (zNear - zFar) / (n - 1) : 10,
       dispose: function () {
         scene.traverse(function (obj) {
@@ -227,8 +251,18 @@
       o.fill();
       o.fillStyle = "#fff"; o.textAlign = "center"; o.fillText(l.text, x0 + pw / 2, s0[1] + fs * 0.04);
     });
-    if (!callout || !at) return;
-    var c = callout, p0 = scr(at), pad = 8 * u, lh = 14 * u, TEXT = "#3c463f";
+    if (B.startAt && B.startLabel) {
+      var sp = scr(B.startAt), sfs = Math.round(11 * u);
+      o.font = "700 " + sfs + "px " + DISPLAY;
+      var sw = o.measureText(B.startLabel).width + sfs * 0.8, sh = sfs * 1.3;
+      var sx0 = Math.max(2 * u, Math.min(W - sw - 2 * u, sp[0] - sw / 2));
+      o.fillStyle = "rgba(10,25,15,0.72)"; o.beginPath();
+      if (o.roundRect) o.roundRect(sx0, sp[1] - sh, sw, sh, sh / 2); else o.rect(sx0, sp[1] - sh, sw, sh);
+      o.fill(); o.fillStyle = "#fff"; o.textAlign = "center"; o.fillText(B.startLabel, sx0 + sw / 2, sp[1] - sh / 2);
+    }
+    if (!callout) return;
+    /* The info box always sits in the same place, across the top. */
+    var c = callout, pad = 8 * u, lh = 14 * u, TEXT = "#3c463f";
     var FB = Math.round(11 * u) + "px Inter, system-ui, sans-serif", FH = "700 " + Math.round(11 * u) + "px Inter, system-ui, sans-serif";
     o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif";
     var w1 = o.measureText(c.head).width;
@@ -246,11 +280,7 @@
     }
     function widthOf(line) { return pieces(line).reduce(function (w, p) { o.font = p[1]; return w + o.measureText(p[0]).width; }, 0); }
     var w2 = Math.max(widthOf(c.l1), widthOf(c.l2));
-    var bw = Math.min(W - 12 * u, Math.max(w1, w2) + pad * 2), bh = pad * 2 + lh * (c.l2 ? 3 : 2) - 4 * u;
-    var bx = Math.max(6 * u, Math.min(W - bw - 6 * u, p0[0] - bw / 2)), by = 8 * u;
-    o.strokeStyle = "rgba(255,255,255,0.95)"; o.lineWidth = 1.5 * u;
-    o.beginPath(); o.moveTo(Math.max(bx + 10 * u, Math.min(bx + bw - 10 * u, p0[0])), by + bh); o.lineTo(p0[0], p0[1]); o.stroke();
-    o.fillStyle = "#fff"; o.beginPath(); o.arc(p0[0], p0[1], 2.5 * u, 0, Math.PI * 2); o.fill();
+    var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u;
     o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 8 * u; o.shadowOffsetY = 2 * u;
     o.fillStyle = "#fff"; o.beginPath();
     if (o.roundRect) o.roundRect(bx, by, bw, bh, 5 * u); else o.rect(bx, by, bw, bh);
