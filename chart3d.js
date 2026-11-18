@@ -119,21 +119,23 @@
       if (ltg != null) ltgM.position.x = wx(ltg);
     }
 
-    var n = spec.rows.length, zFar = -21, zNear = 15, Y = 0.72, RAD = 0.62, CONE = 2.6;
+    /* Lanes at a fixed step (drivecore LANES): the newest play just inside the near sideline. Each
+       play is built at z = 0 inside its own group, which is moved to its lane. */
+    var n = spec.rows.length, zNear = 19, STEP = 3.5, Y = 0.72, RAD = 0.62, CONE = 2.6;
     var V3 = THREE.Vector3, up = new V3(0, 1, 0), rows = [];
     spec.rows.forEach(function (row, i) {
-      var z = n === 1 ? (zFar + zNear) / 2 : zFar + (zNear - zFar) * i / (n - 1);
+      var z = 0, grp = new THREE.Group(); scene.add(grp);
       var m = mat(row.color), A = new V3(wx(row.fs), Y, z), E = new V3(wx(row.fe), Y, z);
       var parts = [], end = E, mats = [m], intCross = null, split = null;
       function tube(curve) {
         var t = new THREE.Mesh(new THREE.TubeGeometry(curve, SEG, RAD, RADS, false), m);
-        t.castShadow = true; scene.add(t); parts.push({ kind: "tube", mesh: t, len: curve.getLength(), curve: curve });
+        t.castShadow = true; grp.add(t); parts.push({ kind: "tube", mesh: t, len: curve.getLength(), curve: curve });
       }
       function cone(tip, dir) {
         dir = dir.clone().normalize();
         var c = new THREE.Mesh(new THREE.ConeGeometry(RAD * 2, CONE, 18), m);
         c.position.copy(tip.clone().sub(dir.clone().multiplyScalar(CONE / 2)));
-        c.quaternion.setFromUnitVectors(up, dir); c.castShadow = true; scene.add(c);
+        c.quaternion.setFromUnitVectors(up, dir); c.castShadow = true; grp.add(c);
         parts.push({ kind: "end", mesh: c, len: CONE * 0.6, from: tip.clone().sub(dir.clone().multiplyScalar(CONE)), to: tip.clone() });
       }
       function cross(p) {
@@ -141,7 +143,7 @@
         [Math.PI / 4, -Math.PI / 4].forEach(function (a) {
           var b = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.35, 0.35), m); b.rotation.z = a; g.add(b);
         });
-        g.position.copy(p); scene.add(g); parts.push({ kind: "end", mesh: g, len: 1, from: p.clone(), to: p.clone() });
+        g.position.copy(p); grp.add(g); parts.push({ kind: "end", mesh: g, len: 1, from: p.clone(), to: p.clone() });
       }
       function stub(at, d) {
         tube(new THREE.LineCurve3(new V3(at.x - d * 3.4, Y, z), new V3(at.x - d * CONE * 0.9, Y, z)));
@@ -170,7 +172,7 @@
         var glen = row.fc != null ? Math.abs(E.x - C.x) : 0, hasRun = glen > CONE * 1.1;
         if (row.type === "inc") {
           var ai = arc(A, C), pts = ai.getSpacedPoints(Math.max(4, Math.round(ai.getLength() / 1.7))), dots = [];
-          pts.forEach(function (p) { var b = new THREE.Mesh(new THREE.SphereGeometry(RAD * 0.9, 12, 10), m); b.position.copy(p); b.castShadow = true; scene.add(b); dots.push(b); });
+          pts.forEach(function (p) { var b = new THREE.Mesh(new THREE.SphereGeometry(RAD * 0.9, 12, 10), m); b.position.copy(p); b.castShadow = true; grp.add(b); dots.push(b); });
           parts.push({ kind: "dots", list: dots, len: ai.getLength(), curve: ai });
           cross(C.clone().setY(Y + 0.3)); end = C;
         } else if (airLen < 1) {
@@ -205,7 +207,7 @@
         /* An incomplete pass flies as a solid arc; it turns dotted only when the ball arrives. */
         var sm = m.clone(); sm.transparent = true;
         var sMesh = new THREE.Mesh(new THREE.TubeGeometry(ai, SEG, RAD, RADS, false), sm);
-        sMesh.castShadow = true; sMesh.visible = false; scene.add(sMesh); solid = { mesh: sMesh, mat: sm };
+        sMesh.castShadow = true; sMesh.visible = false; grp.add(sMesh); solid = { mesh: sMesh, mat: sm };
       }
       if (row.prePlay) {
         /* Penalty: the snap that happened before the flag, drawn first, then the walk-off. */
@@ -213,7 +215,7 @@
         parts = []; m = mat(row.ghostColor || "#1d3f8f"); m.transparent = true;
         if (pp.type === "inc") {
           var ga = arc(A, G), gpts = ga.getSpacedPoints(Math.max(4, Math.round(ga.getLength() / 1.7))), gdots = [];
-          gpts.forEach(function (p) { var b = new THREE.Mesh(new THREE.SphereGeometry(RAD * 0.9, 12, 10), m); b.position.copy(p); scene.add(b); gdots.push(b); });
+          gpts.forEach(function (p) { var b = new THREE.Mesh(new THREE.SphereGeometry(RAD * 0.9, 12, 10), m); b.position.copy(p); grp.add(b); gdots.push(b); });
           parts.push({ kind: "dots", list: gdots, len: ga.getLength(), curve: ga }); cross(G.clone().setY(Y + 0.3));
         } else if (Math.abs(pp.len) < 1) stub(A, gd);
         else {
@@ -224,16 +226,16 @@
         ghost = { parts: parts, A: A, mat: m, inc: pp.type === "inc", end: G };
         if (pp.type === "inc") {
           var gsm = m.clone(), gs = new THREE.Mesh(new THREE.TubeGeometry(ga, SEG, RAD, RADS, false), gsm);
-          gs.visible = false; scene.add(gs); ghost.solid = { mesh: gs, mat: gsm };
+          gs.visible = false; grp.add(gs); ghost.solid = { mesh: gs, mat: gsm };
         }
         hide(parts); parts = keepP; m = keepM;
       }
       if (row.fgMiss) {
         var xm = mat("#d32f2f"); missX = new THREE.Group();
         [Math.PI / 4, -Math.PI / 4].forEach(function (a) { var b = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.45, 0.45), xm); b.rotation.z = a; missX.add(b); });
-        missX.position.copy(E).setY(Y + 2.5); missX.visible = false; scene.add(missX);
+        missX.position.copy(E).setY(Y + 2.5); missX.visible = false; grp.add(missX);
       }
-      rows.push({ parts: parts, z: z, A: A, end: end, mat: m, mats: mats, split: split, intCross: intCross, solid: solid, ghost: ghost, missX: missX, label: row.label ? { p: end.clone().setY(Y), z: z, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null, at: end.clone().setY(Y + 1.6) });
+      rows.push({ grp: grp, parts: parts, z: z, A: A, end: end, mat: m, mats: mats, split: split, intCross: intCross, solid: solid, ghost: ghost, missX: missX, label: row.label ? { p: end.clone().setY(Y), z: z, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null, at: end.clone().setY(Y + 1.6) });
     });
     /* Drive start: a stripe across the field and a flag in the offense's colour on the near side.
        After a touchback, a dashed line runs from the end zone to the start line. */
@@ -246,11 +248,11 @@
       startAt = new V3(sx, 0.2, FIELD_W / 2 - 0.5);
       var tb = spec.start.tb;
       if (tb && tb.row != null && rows[tb.row]) {
-        var tz = rows[tb.row].z, fx = wx(tb.from), dir = sx >= fx ? 1 : -1, len = Math.abs(sx - fx), dash = 1.4, gap = 1;
+        var tz = 0, tbg = rows[tb.row].grp, fx = wx(tb.from), dir = sx >= fx ? 1 : -1, len = Math.abs(sx - fx), dash = 1.4, gap = 1;
         var dm = new THREE.MeshBasicMaterial({ color: lin(0xffffff), transparent: true, opacity: 0.9 });
         for (var dd = 0; dd + dash <= len; dd += dash + gap) {
           var piece = new THREE.Mesh(new THREE.BoxGeometry(dash, 0.06, 0.35), dm);
-          piece.position.set(fx + dir * (dd + dash / 2), 0.06, tz); scene.add(piece);
+          piece.position.set(fx + dir * (dd + dash / 2), 0.06, tz); tbg.add(piece);
         }
       }
     }
@@ -284,10 +286,21 @@
     }
     return {
       scene: scene, cam: cam, rows: rows, reveal: reveal, tipAt: tipAt, ball: ball, ltgM: ltgM, wx: wx, setLines: setLines, startAt: startAt, startLabel: spec.start && spec.start.label,
-      laneGap: n > 1 ? (zNear - zFar) / (n - 1) : 10,
+      laneGap: STEP,
+      /* Put play k on its lane (depth 0 = nearest); returns how visible it is (fades past the far lane). */
+      place: function (k, depth) {
+        var r = rows[k], a = K.laneAlpha(depth); r.z = zNear - depth * STEP; r.alpha = a;
+        r.grp.position.z = r.z; r.grp.visible = a > 0; return a;
+      },
+      /* A play's local point (built at z = 0) where it is now. */
+      world: function (k, v) { return v.clone().setZ(v.z + rows[k].z); },
+      labelOf: function (k) {
+        var r = rows[k], l = r.label; if (!l || !(r.alpha > 0)) return null;
+        return { p: l.p.clone().setZ(r.z), z: r.z, dir: l.dir, text: l.text, a: r.alpha };
+      },
       /* For the shared overlay: world point -> screen, and a label's point one lane nearer. */
       scr: function (p, W2, H2) { var v = p.clone().project(cam); return [(v.x + 1) / 2 * W2, (1 - v.y) / 2 * H2]; },
-      laneShift: function (l) { return l.p.clone().setZ(l.z + (n > 1 ? (zNear - zFar) / (n - 1) : 10)); },
+      laneShift: function (l) { return l.p.clone().setZ(l.z + STEP); },
       dispose: function () {
         scene.traverse(function (obj) {
           if (obj.geometry) obj.geometry.dispose();
@@ -304,7 +317,7 @@
     var W = Math.round(spec.width), H = Math.round(spec.height), r = renderer();
     r.setPixelRatio(1); r.setSize(W, H, false);
     var B = build(spec, W, H, r.capabilities.getMaxAnisotropy());
-    B.rows.forEach(function (row) { B.reveal(row, 1); });
+    B.rows.forEach(function (row, k) { B.place(k, B.rows.length - 1 - k); B.reveal(row, 1); });
     /* Drive in progress: earlier plays stay dimmed exactly as the animation leaves them. */
     if (spec.dimFrom > 0) {
       var grey = new THREE.Color(0x8d968f).convertSRGBToLinear(), dim = 0.85;
@@ -321,7 +334,7 @@
     var out = cvs(W, H), o = out.getContext("2d");
     o.drawImage(r.domElement, 0, 0);
     var ci = spec.callout ? spec.callout.row : -1;
-    drawOverlay(o, W, H, B, B.rows.map(function (x) { return x.label; }).filter(Boolean), spec.callout, ci >= 0 && B.rows[ci] ? B.rows[ci].at : null);
+    drawOverlay(o, W, H, B, B.rows.map(function (x, k) { return B.labelOf(k); }).filter(Boolean), spec.callout, null);
     B.dispose();
     var url = out.toDataURL("image/jpeg", 0.9);
     var keys = Object.keys(cache); if (keys.length > 20) delete cache[keys[0]];
@@ -376,9 +389,12 @@
       var undim = outro ? EASE.out(ramp(t, P.outro, 400)) : 0;
       segs.forEach(function (sg, k) {
         var row = B.rows[k], f = k < cur ? 1 : k === cur ? fracOf(sg, t) : 0;
+        /* Earlier plays slide one lane back as each new play is spotted. */
+        var la = B.place(k, K.laneDepth(segs, k, cur, t));
+        if (k > cur) row.grp.visible = false;   /* not played yet */
         B.reveal(row, f);
         var dim = K.dimOf(segs, k, cur, t, undim);
-        row.mats.forEach(function (m) { setDim(m, dim); });
+        row.mats.forEach(function (m) { setDim(m, dim, la); });
         /* Arrowheads / X pop in with a slight overshoot; the interception X flashes at the catch. */
         row.parts.forEach(function (p) {
           if (p.kind !== "end") return;
@@ -393,10 +409,10 @@
           if (k === cur && t < sg.end) {
             dots.list.forEach(function (b) { b.visible = false; });
             row.solid.mesh.visible = f > 0; row.solid.mesh.geometry.setDrawRange(0, Math.round(f * SEG) * RADS * 6);
-            setDim(row.solid.mat, 0); row.solid.mat.opacity = 1;
+            setDim(row.solid.mat, 0); row.solid.mat.opacity = la;
           } else if (k === cur && t < sg.end + 150) {
             row.solid.mesh.visible = true; row.solid.mesh.geometry.setDrawRange(0, Infinity);
-            row.solid.mat.opacity = 1 - (t - sg.end) / 150;
+            row.solid.mat.opacity = (1 - (t - sg.end) / 150) * la;
           } else row.solid.mesh.visible = false;
         }
         /* Penalty: the underlying snap draws first, then fades back behind the walk-off. */
@@ -404,19 +420,19 @@
           var gf = k === cur ? fracOf(sg, t, "g") : k < cur ? 1 : 0;
           B.reveal(row.ghost, gf);
           var fade = k < cur || t >= sg.walkAt ? 0.35 + 0.65 * (1 - ramp(t, sg.walkAt, 250)) : 1;
-          setDim(row.ghost.mat, dim, fade * (1 - undim));
+          setDim(row.ghost.mat, dim, fade * (1 - undim) * la);
           row.ghost.parts.forEach(function (p) { if (p.kind === "end") p.mesh.scale.setScalar(k === cur && t >= sg.ghostEnd ? backOut((t - sg.ghostEnd) / 240) : 1); });
           var gso = row.ghost.solid;
           if (gso) {   /* same rule as any incomplete: solid in flight, dotted once it lands */
             if (k === cur && t < sg.ghostEnd) {
               row.ghost.parts[0].list.forEach(function (b) { b.visible = false; });
-              gso.mesh.visible = gf > 0; gso.mesh.geometry.setDrawRange(0, Math.round(gf * SEG) * RADS * 6); setDim(gso.mat, 0, 1);
+              gso.mesh.visible = gf > 0; gso.mesh.geometry.setDrawRange(0, Math.round(gf * SEG) * RADS * 6); setDim(gso.mat, 0, la);
             } else if (k === cur && t < sg.ghostEnd + 150) {
-              gso.mesh.visible = true; gso.mesh.geometry.setDrawRange(0, Infinity); setDim(gso.mat, 0, 1 - (t - sg.ghostEnd) / 150);
+              gso.mesh.visible = true; gso.mesh.geometry.setDrawRange(0, Infinity); setDim(gso.mat, 0, (1 - (t - sg.ghostEnd) / 150) * la);
             } else gso.mesh.visible = false;
           }
         }
-        if (row.missX) { row.missX.visible = k < cur || (k === cur && t >= sg.end); row.missX.scale.setScalar(k === cur ? backOut(ramp(t, sg.end, 240)) : 1); }
+        if (row.missX) { row.missX.visible = la > 0.5 && (k < cur || (k === cur && t >= sg.end)); row.missX.scale.setScalar(k === cur ? backOut(ramp(t, sg.end, 240)) : 1); }
       });
       /* Line to gain glides to the new spot during the pre-snap beat. */
       var L = B.ltgM;
@@ -435,10 +451,11 @@
       ball.visible = false;
       if (g && !outro) {
         ball.visible = true; ball.rotation.set(0, 0, 0);
-        var lift = 0.35, sc = 1, pos;
+        var lift = 0.35, sc = 1, pos, isWorld = false;
         if (t < g.snap) {
-          var prev = cur > 0 ? B.rows[cur - 1].end : null, m = cur === 0 || g.cont ? 1 : EASE.out(ramp(t, g.t0, 260));
-          pos = prev && !g.cont ? prev.clone().lerp(row.A, m) : row.A.clone();
+          /* Hop from where the last play ended (that play is sliding back) to the new spot on the near lane. */
+          var prev = cur > 0 ? B.world(cur - 1, B.rows[cur - 1].end) : null, m = cur === 0 || g.cont ? 1 : EASE.out(ramp(t, g.t0, 260));
+          pos = prev && !g.cont ? prev.clone().lerp(B.world(cur, row.A), m) : B.world(cur, row.A); isWorld = true;
           if (prev && !g.cont) pos.y += Math.sin(Math.PI * m) * 1.2;
           if (cur === 0) sc *= backOut(ramp(t, g.t0 + 150, 300));
         } else if (row.ghost && t < g.walkAt) {
@@ -458,6 +475,7 @@
           if (flying) ball.rotation.x = (t - g.snap) / 40;
           if (g.kind === "inc" && t >= g.end) { sc *= 1 - ramp(t, g.end, 260); pos.y -= 0.6 * ramp(t, g.end, 260); }
         }
+        if (!isWorld) pos = B.world(cur, pos);
         ball.position.copy(pos).setY(pos.y + lift);
         /* Never smaller than ~6 px on a 360 px wide chart. */
         var dist = B.cam.position.distanceTo(ball.position), ppu = H / (2 * Math.tan(B.cam.fov * Math.PI / 360) * dist);
@@ -478,8 +496,8 @@
     function drawState(t, cur, g, s, outro) {
       o.clearRect(0, 0, W, H);
       var st = K.overlayState(t, cur, g, s, outro, segs, spec,
-        function (k) { return B.rows[k].label; },
-        function (k, sg) { var e = B.rows[k]; return (sg.type === "dot" ? e.A : e.end).clone().setY(1.4); });
+        function (k) { return B.labelOf(k); },
+        function (k, sg) { var e = B.rows[k]; return B.world(k, (sg.type === "dot" ? e.A : e.end).clone().setY(1.4)); });
       drawOverlay(o, W, H, B, st.labels, st.co, null, st.fx);
     }
 

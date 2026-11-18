@@ -28,11 +28,13 @@
     var u = W / 360, k = W / 390, s = W / 120, boxB = 60 * u, yT = boxB + 34 * u, yB = H - 18 * k, sF = 0.76, sN = 1.0;
     function sc(v) { return sF + (sN - sF) * v; }
     function P(f, v) { f = Math.max(-10, Math.min(110, f)); return { x: W / 2 + (f - 50) * s * sc(v), y: yT + (yB - yT) * v }; }
-    var n = spec.rows.length, rows = [];
-    function laneV(i) { return n === 1 ? 0.45 : 0.06 + 0.84 * i / (n - 1); }
-    var laneGapPx = n > 1 ? (yB - yT) * 0.84 / (n - 1) : (yB - yT) * 0.3;
-    spec.rows.forEach(function (row, i) {
-      var v = laneV(i), z = sc(v), yd = s * z;            /* px per yard on this lane */
+    /* Lanes at a fixed step (drivecore LANES): depth 0, the newest play, just inside the near sideline;
+       the LANES-th lane at the far side. A play's drawing is rebuilt for the lane it's on. */
+    var n = spec.rows.length, rows = [], vNear = 0.9, vStep = 0.84 / (K.LANES - 1);
+    function vOf(depth) { return vNear - depth * vStep; }
+    var laneGapPx = (yB - yT) * vStep;
+    function makeRow(row, i, v) {
+      var z = sc(v), yd = s * z;            /* px per yard on this lane */
       var w = Math.max(3.5 * k, Math.min(1.25 * yd, laneGapPx * 0.9)), headL = w * 1.7;
       var A = P(row.fs, v), E = P(row.fe, v), col = rgb(row.color);
       var parts = [], end = E, intCross = null, split = null;
@@ -109,14 +111,23 @@
         parts = keep;
       }
       if (row.fgMiss) missX = { at: [E.x, E.y - 2.5 * yd * 0.62], size: w * 1.6, w: w * 1.2 };
-      rows.push({ parts: parts, A: A, end: end, v: v, yd: yd, w: w, col: col, split: split, intCross: intCross, solid: solid, ghost: ghost, missX: missX,
-        label: row.label ? { p: { x: end.x, y: end.y }, z: v, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null });
-    });
-    var startAt = null, tbLine = null;
-    if (spec.start && spec.start.f != null) {
-      startAt = P(spec.start.f, 0.99);
-      var tb = spec.start.tb;
-      if (tb && tb.row != null && rows[tb.row]) tbLine = { a: P(tb.from, rows[tb.row].v), b: P(spec.start.f, rows[tb.row].v) };
+      return { parts: parts, A: A, end: end, v: v, yd: yd, w: w, col: col, split: split, intCross: intCross, solid: solid, ghost: ghost, missX: missX, alpha: 1,
+        label: row.label ? { p: { x: end.x, y: end.y }, z: v, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null };
+    }
+    /* Built on the near lane first: that's where each play is animated (the plan reads split etc. from it). */
+    spec.rows.forEach(function (row, i) { rows.push(makeRow(row, i, vOf(0))); });
+    /* Put play k on its lane (depth 0 = nearest); returns how visible it is (fades past the far lane). */
+    function place(k, depth) {
+      var a = K.laneAlpha(depth), v = vOf(depth);
+      if (Math.abs(rows[k].v - v) > 1e-6) rows[k] = makeRow(spec.rows[k], k, v);
+      rows[k].alpha = a; rows[k].depth = depth; return a;
+    }
+    var startAt = null, tb = spec.start && spec.start.tb && spec.start.tb.row != null && rows[spec.start.tb.row] ? spec.start.tb : null;
+    if (spec.start && spec.start.f != null) startAt = P(spec.start.f, 0.99);
+    /* Touchback dashes ride on the kick's lane. */
+    function tbLine(shown) {
+      if (!tb || !shown) return null; var r = rows[tb.row]; if (!(r.alpha > 0)) return null;
+      return { a: P(tb.from, r.v), b: P(spec.start.f, r.v), alpha: r.alpha };
     }
     /* A fraction (0..1) of one play, revealed along its path (same share-by-length rule as 3D). */
     function reveal(r, frac) {
@@ -144,7 +155,8 @@
     }
     return {
       W: W, H: H, u: u, k: k, s: s, P: P, bannerY: (boxB + yT) / 2 / H, bannerScale: 0.9, sc: sc, yT: yT, yB: yB, rows: rows, reveal: reveal, tipAt: tipAt, along: along,
-      startAt: startAt, startLabel: spec.start && spec.start.label, tbLine: tbLine,
+      startAt: startAt, startLabel: spec.start && spec.start.label, tbLine: tbLine, place: place, tbRow: tb ? tb.row : -1,
+      labelOf: function (k) { var r = rows[k], l = r.label; if (!l || !(r.alpha > 0)) return null; return { p: l.p, z: l.z, dir: l.dir, text: l.text, a: r.alpha }; },
       scr: function (p) { return [p.x, p.y]; },
       laneShift: function (l) { return { x: l.p.x, y: l.p.y + laneGapPx }; }
     };
@@ -238,12 +250,13 @@
     x.save(); x.globalAlpha = alpha; x.lineCap = "round"; x.lineJoin = "round";
     ribbonPath(x, so, f); x.strokeStyle = mix(so.col, 0); x.lineWidth = r.w; x.stroke(); x.restore();
   }
-  function drawStart(x, spec, B) {
+  function drawStart(x, spec, B, tbShown) {
     if (!spec.start || spec.start.f == null) return;
     fieldLine(x, B, spec.start.f, mix(rgb(spec.start.color || "#ffffff"), 0), 0.9);
-    if (B.tbLine) {
-      var a = B.tbLine.a, b = B.tbLine.b, L = Math.abs(b.x - a.x), dir = b.x >= a.x ? 1 : -1, dash = 1.4 * B.s * 0.8, gap = 1 * B.s * 0.8;
-      x.save(); x.strokeStyle = "rgba(255,255,255,0.9)"; x.lineWidth = Math.max(1.2 * B.u, 0.35 * B.s); x.setLineDash([dash, gap]);
+    var tl = B.tbLine(tbShown !== false);
+    if (tl) {
+      var a = tl.a, b = tl.b, L = Math.abs(b.x - a.x), dir = b.x >= a.x ? 1 : -1, dash = 1.4 * B.s * 0.8, gap = 1 * B.s * 0.8;
+      x.save(); x.globalAlpha = tl.alpha; x.strokeStyle = "rgba(255,255,255,0.9)"; x.lineWidth = Math.max(1.2 * B.u, 0.35 * B.s); x.setLineDash([dash, gap]);
       x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(a.x + dir * L, b.y); x.stroke(); x.restore();
     }
   }
@@ -261,23 +274,26 @@
     var key = JSON.stringify(spec);
     if (cache[key]) return cache[key];
     var W = Math.round(spec.width), H = Math.round(spec.height), B = build(spec, W, H), out = cvs(W, H), x = out.getContext("2d");
+    /* Newest play nearest; each earlier play one lane further. */
+    for (var k = 0; k < B.rows.length; k++) B.place(k, B.rows.length - 1 - k);
     x.drawImage(background(spec, B), 0, 0);
     drawStart(x, spec, B);
     if (spec.ltg != null) fieldLine(x, B, spec.ltg, "#ffd23f", 0.45);
     /* Drive in progress: earlier plays stay dimmed exactly as the animation leaves them. */
     B.rows.forEach(function (r, k) {
+      if (!(r.alpha > 0)) return;
       var dim = spec.dimFrom > 0 && k < spec.dimFrom ? 0.85 : 0;
-      B.reveal(r, 1); drawParts(x, r, r.parts, dim, 1);
-      if (r.missX) drawX(x, r, dim, 1);
+      B.reveal(r, 1); drawParts(x, r, r.parts, dim, r.alpha);
+      if (r.missX) drawX(x, r, dim, 1, r.alpha);
     });
-    K.drawOverlay(x, W, H, B, B.rows.map(function (r) { return r.label; }).filter(Boolean), spec.callout, null);
+    K.drawOverlay(x, W, H, B, B.rows.map(function (r, k) { return B.labelOf(k); }).filter(Boolean), spec.callout, null);
     var url = out.toDataURL("image/jpeg", 0.9);
     var keys = Object.keys(cache); if (keys.length > 20) delete cache[keys[0]];
     cache[key] = url;
     return url;
   }
-  function drawX(x, r, dim, sc) {
-    var m = r.missX; x.save(); x.globalAlpha = 1 - 0.35 * dim; x.translate(m.at[0], m.at[1]); x.scale(sc, sc);
+  function drawX(x, r, dim, sc, alpha) {
+    var m = r.missX; x.save(); x.globalAlpha = (1 - 0.35 * dim) * (alpha == null ? 1 : alpha); x.translate(m.at[0], m.at[1]); x.scale(sc, sc);
     var h = m.size * 0.5; x.strokeStyle = mix(rgb("#d32f2f"), 0.35 * dim); x.lineWidth = m.w * 0.6; x.lineCap = "round";
     x.beginPath(); x.moveTo(-h, -h); x.lineTo(h, h); x.moveTo(-h, h); x.lineTo(h, -h); x.stroke(); x.restore();
   }
@@ -298,6 +314,8 @@
     function renderAt(t) {
       var cur = K.activeAt(segs, t), g = segs[cur], s = spec.rows[cur], outro = t >= P.outro;
       var undim = outro ? EASE.out(ramp(t, P.outro, 400)) : 0;
+      /* Earlier plays slide one lane back as each new play is spotted. */
+      for (var q = 0; q <= cur && q < B.rows.length; q++) B.place(q, K.laneDepth(segs, q, cur, t));
       x.drawImage(bg, 0, 0);
       /* End-zone tint on a touchdown / good field goal: ~25 %, ~300 ms. */
       if (g && !outro && (g.kind === "td" || (g.kind === "fg" && !g.miss)) && t >= g.end) {
@@ -307,7 +325,7 @@
           x.save(); x.globalAlpha = 0.25 * env; x.fillStyle = s.color; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.lineTo(c.x, c.y); x.lineTo(d.x, d.y); x.closePath(); x.fill(); x.restore();
         }
       }
-      drawStart(x, spec, B);
+      drawStart(x, spec, B, B.tbRow >= 0 && B.tbRow <= cur);
       /* Line to gain glides to the new spot during the pre-snap beat. */
       if (outro) { if (spec.ltg != null) fieldLine(x, B, spec.ltg, "#ffd23f", 0.45); }
       else if (g) {
@@ -315,7 +333,9 @@
         if (to != null) { var e = from == null ? 1 : EASE.out(ramp(t, g.t0, 320)); fieldLine(x, B, from == null ? to : from + (to - from) * e, "#ffd23f", 0.45); }
       }
       segs.forEach(function (sg, k) {
-        var row = B.rows[k], f = k < cur ? 1 : k === cur ? fracOf(sg, t) : 0;
+        if (k > cur) return;
+        var row = B.rows[k], f = k < cur ? 1 : k === cur ? fracOf(sg, t) : 0, la = row.alpha;
+        if (!(la > 0)) return;
         B.reveal(row, f);
         var dim = K.dimOf(segs, k, cur, t, undim);
         /* Penalty: the underlying snap draws first, then fades back behind the walk-off. */
@@ -323,20 +343,19 @@
           var gf = k === cur ? fracOf(sg, t, "g") : 1;
           B.reveal(row.ghost, gf);
           var fade = k < cur || t >= sg.walkAt ? 0.35 + 0.65 * (1 - ramp(t, sg.walkAt, 250)) : 1, gso = row.ghost.solid, gparts = row.ghost.parts;
-          if (gso && k === cur && t < sg.ghostEnd) { gparts = gparts.filter(function (p) { return p.kind !== "dots"; }); drawSolid(x, row, gso, gf, 1); }
-          else if (gso && k === cur && t < sg.ghostEnd + 150) drawSolid(x, row, gso, 1, 1 - (t - sg.ghostEnd) / 150);
-          drawParts(x, row, gparts, dim, fade * (1 - undim), function (p) { return k === cur && t >= sg.ghostEnd ? backOut((t - sg.ghostEnd) / 240) : 1; });
+          if (gso && k === cur && t < sg.ghostEnd) { gparts = gparts.filter(function (p) { return p.kind !== "dots"; }); drawSolid(x, row, gso, gf, la); }
+          else if (gso && k === cur && t < sg.ghostEnd + 150) drawSolid(x, row, gso, 1, (1 - (t - sg.ghostEnd) / 150) * la);
+          drawParts(x, row, gparts, dim, fade * (1 - undim) * la, function (p) { return k === cur && t >= sg.ghostEnd ? backOut((t - sg.ghostEnd) / 240) : 1; });
         }
-        if (k > cur) return;
         var parts = row.parts;
         /* Incomplete: solid arc in flight, dotted + X once the ball arrives (150 ms crossfade). */
-        if (row.solid && k === cur && t < sg.end) { parts = parts.filter(function (p) { return p.kind !== "dots"; }); drawSolid(x, row, row.solid, f, 1); }
-        else if (row.solid && k === cur && t < sg.end + 150) drawSolid(x, row, row.solid, 1, 1 - (t - sg.end) / 150);
-        drawParts(x, row, parts, dim, 1, function (p) {
+        if (row.solid && k === cur && t < sg.end) { parts = parts.filter(function (p) { return p.kind !== "dots"; }); drawSolid(x, row, row.solid, f, la); }
+        else if (row.solid && k === cur && t < sg.end + 150) drawSolid(x, row, row.solid, 1, (1 - (t - sg.end) / 150) * la);
+        drawParts(x, row, parts, dim, la, function (p) {
           if (p === row.intCross) { var ca = sg.catchAt != null ? sg.catchAt : sg.end; return k === cur ? backOut(ramp(t, ca, 200)) * (1 + 0.6 * (1 - ramp(t, ca + 200, 350))) : 1; }
           return k === cur && t >= sg.end ? backOut((t - sg.end) / 240) : 1;
         });
-        if (row.missX && (k < cur || t >= sg.end)) drawX(x, row, dim, k === cur ? backOut(ramp(t, sg.end, 240)) : 1);
+        if (row.missX && (k < cur || t >= sg.end)) drawX(x, row, dim, k === cur ? backOut(ramp(t, sg.end, 240)) : 1, la);
       });
       /* Ball: spotted at the start, rides the tip of the arrow, rests where the play ended. */
       if (g && !outro) {
@@ -370,7 +389,7 @@
         if (sc > 0.01) drawBall(x, B, pos, ang, sc, lift, yd);
       }
       var st = K.overlayState(t, cur, g, s, outro, segs, spec,
-        function (k) { return B.rows[k].label; },
+        function (k) { return B.labelOf(k); },
         function (k, sg) {
           var e = B.rows[k], p = sg.type === "dot" ? e.A : e.end, f = sg.type === "dot" ? spec.rows[k].fs : spec.rows[k].fe;
           var nudge = f >= 95 ? -10 * B.k : f <= 5 ? 10 * B.k : 0;   /* off the end-zone lettering */

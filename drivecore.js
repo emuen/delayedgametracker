@@ -183,6 +183,8 @@
     var u = W / 360;
     o.textBaseline = "middle"; o.lineJoin = "round";
     labels.forEach(function (l) {
+      if (l.a != null && l.a <= 0) return;
+      o.save(); if (l.a != null) o.globalAlpha = l.a;
       var s0 = scr(l.p), s1 = scr(B.laneShift(l));
       var gapPx = Math.abs(s1[1] - s0[1]), fs = Math.max(8 * u, Math.min(12.5 * u, gapPx * 0.78));
       o.font = "700 " + Math.round(fs) + "px " + DISPLAY;
@@ -193,6 +195,7 @@
       if (o.roundRect) o.roundRect(x0, s0[1] - ph / 2, pw, ph, ph / 2); else o.rect(x0, s0[1] - ph / 2, pw, ph);
       o.fill();
       o.fillStyle = "#fff"; o.textAlign = "center"; o.textBaseline = "alphabetic"; o.fillText(l.text, x0 + pw / 2, s0[1] + capMid(o)); o.textBaseline = "middle";
+      o.restore();
     });
     if (B.startAt && B.startLabel) {
       var sp = scr(B.startAt), sfs = Math.round(10 * u); sp[1] += sfs * 1.55;
@@ -262,6 +265,16 @@
     }
     return v == null ? 0 : v;
   }
+  /* Lanes: every play gets the same lane spacing whatever the drive's length. The newest play is on
+     the lane nearest the viewer (depth 0); each earlier play is one step further away. When a play
+     is spotted (its pre-snap beat), the earlier plays slide one step back over 300 ms. LANES lanes
+     are fully visible; the next one fades out over that last step, and anything further is not drawn. */
+  var LANES = 13, SLIDE = 300;
+  function laneDepth(segs, k, cur, t) {
+    if (k >= cur) return 0;
+    return (cur - 1 - k) + EASE.out(ramp(t, segs[cur].t0, SLIDE));
+  }
+  function laneAlpha(depth) { return clamp(LANES - depth, 0, 1); }
   function activeAt(segs, t) { for (var k = segs.length - 1; k >= 0; k--) if (t >= segs[k].t0) return k; return -1; }
   /* How dimmed a finished play is: it fades as the next snap (after a kick's return) is spotted. */
   function dimOf(segs, k, cur, t, undim) {
@@ -316,6 +329,6 @@
     });
   }
   window.DriveCore = { DISPLAY: DISPLAY, bez: bez, EASE: EASE, backOut: backOut, clamp: clamp, ramp: ramp, plan: plan, newChars: newChars,
-    chipFor: chipFor, fracOf: fracOf, activeAt: activeAt, dimOf: dimOf, overlayState: overlayState, timelineOf: timelineOf,
+    chipFor: chipFor, fracOf: fracOf, activeAt: activeAt, LANES: LANES, laneDepth: laneDepth, laneAlpha: laneAlpha, dimOf: dimOf, overlayState: overlayState, timelineOf: timelineOf,
     pill: pill, drawOverlay: drawOverlay };
 })();
