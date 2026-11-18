@@ -113,22 +113,25 @@
     return res.length - k;
   }
   function chipFor(s, g) {
-    var y = g.yds, sg = (y > 0 ? "+" : y < 0 ? "−" : "") + Math.abs(y), GREY = "rgba(60,60,60,0.86)";
+    /* Chips in words: "18 yards", "-4 yards", "TD, 5 yards", "22 yard return". */
+    var y = g.yds, GREY = "rgba(60,60,60,0.86)";
+    function yards(n) { var a = Math.abs(n); return (n < 0 ? "\u2212" : "") + a + (a === 1 ? " yard" : " yards"); }
+    function yardOf(n) { return (n < 0 ? "\u2212" : "") + Math.abs(n) + " yard"; }
     switch (g.kind) {
-      case "kick": return { text: Math.round(Math.abs(s.fe - s.fs)) + " yd kick" };
-      case "ret": return { text: sg + " return" };
+      case "kick": return { text: Math.round(Math.abs(s.fe - s.fs)) + " yard kick" };
+      case "ret": return { text: yardOf(y) + " return" };
       case "inc": return { text: "Incomplete", bg: GREY };
       case "spike": return { text: "Spike", bg: GREY };
       case "nogain": return { text: "No gain", bg: GREY };
-      case "sack": return { text: "Sack " + sg, bg: "#b4441d" };
-      case "pen": return { text: sg + " penalty", bg: "#ffd23f", fg: "#17201b" };
+      case "sack": return { text: "Sack, " + yards(y), bg: "#b4441d" };
+      case "pen": return { text: yardOf(y) + " penalty", bg: "#ffd23f", fg: "#17201b" };
       case "to":
-        if (s.intAt != null) { var ry = Math.round(Math.abs(s.fe - s.intAt)); return { text: ry >= 1 ? ry + " yd return" : "No return", bg: s.retColor || "#8f1d1d" }; }
+        if (s.intAt != null) { var ry = Math.round(Math.abs(s.fe - s.intAt)); return { text: ry >= 1 ? ry + " yard return" : "No return", bg: s.retColor || "#8f1d1d" }; }
         return null;
       case "safety": return null;
       case "fg": return g.miss ? { text: "No good", bg: "#c62828" } : null;
-      case "td": return { text: "TD " + sg, bg: s.color, big: true, td: true };
-      default: return y < 0 ? { text: sg, bg: "#b4441d" } : y === 0 ? { text: "No gain", bg: GREY } : g.big ? { text: sg, bg: "#ffd23f", fg: "#17201b", big: true } : { text: sg };
+      case "td": return { text: "TD, " + yards(y), bg: s.color, big: true, td: true };
+      default: return y < 0 ? { text: yards(y), bg: "#b4441d" } : y === 0 ? { text: "No gain", bg: GREY } : g.big ? { text: yards(y), bg: "#ffd23f", fg: "#17201b", big: true } : { text: yards(y) };
     }
   }
 
@@ -196,7 +199,8 @@
     if (!callout) return;
     /* The info box always sits in the same place, across the top. */
     var c = callout, pad = 8 * u, lh = 14 * u, TEXT = fx && c.muted ? "#8b958e" : "#3c463f";
-    var HLC = fx ? { to: "#c62828", sc: "#1d6b3f", yd: "#17201b", loss: "#b4441d", fum: "#b4441d" } : {};
+    /* Highlighted words are bold in the normal text colour (same as the still picture). */
+    var HLC = {};
     var FB = Math.round(11 * u) + "px Inter, system-ui, sans-serif", FH = "700 " + Math.round(11 * u) + "px Inter, system-ui, sans-serif";
     o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif";
     var w1 = o.measureText(c.head).width;
