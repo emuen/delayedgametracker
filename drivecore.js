@@ -118,7 +118,7 @@
     function yards(n) { var a = Math.abs(n); return (n < 0 ? "\u2212" : "") + a + (a === 1 ? " yard" : " yards"); }
     function yardOf(n) { return (n < 0 ? "\u2212" : "") + Math.abs(n) + " yard"; }
     switch (g.kind) {
-      case "kick": return { text: Math.round(Math.abs(s.fe - s.fs)) + " yard kick" };
+      case "kick": return { text: Math.round(Math.abs(s.fe - s.fs)) + (s.punt ? " yard punt" : " yard kick") };
       case "ret": return { text: yardOf(y) + " return" };
       case "inc": return { text: "Incomplete", bg: GREY };
       case "spike": return { text: "Spike", bg: GREY };

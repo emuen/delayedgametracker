@@ -339,16 +339,16 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
   </div>
 </div></div>
 
-<script src="drivecore.js?v=8"></script>
+<script src="drivecore.js?v=9"></script>
 <script src="chart2d.js?v=10"></script>
 <script>
 (function(){
 "use strict";
 var API="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
-/* Simulation: add ?sim=1 (optionally &speed=1|2|4 and &from=1..4) to replay a finished game as if
+/* Simulation: add ?sim=1 (optionally &speed=1|2|4|16 and &from=1..4) to replay a finished game as if
    it were live. Plays are released one by one, spaced like the real game (breaks capped at 40 s),
    so the delay, heads-up and live animation behave as in a real game. Stats are hidden (final). */
-var SIM=/[?&]sim=1\b/.test(location.search)?{speed:+((location.search.match(/[?&]speed=(\d)/)||[])[1]||2),from:+((location.search.match(/[?&]from=(\d)/)||[])[1]||1)}:null;
+var SIM=/[?&]sim=1\b/.test(location.search)?{speed:+((location.search.match(/[?&]speed=(\d+)/)||[])[1]||2),from:+((location.search.match(/[?&]from=(\d)/)||[])[1]||1)}:null;
 function simView(full){
   if(full){
     var plays=[];
@@ -905,7 +905,7 @@ function fieldChart3D(L,specOnly){
     rows.push({fs:+fs.toFixed(2),fe:+fe.toFixed(2),fc:fc==null?null:+fc.toFixed(2),type:type,dir:odir,color:col,label:r.score||"",
       /* Replay-only hints (the still image ignores them). */
       kind:k,yds:yds,td:r.score==="TD",fg:/field goal/i.test(ty+" "+t)&&r.kind==="play",to:k==="to",sack:/sack/i.test(ty+" "+t),
-      spike:/spike/i.test(t),safety:safety,defTD:r.score==="TD"&&k==="to",retColor:k==="to"?defCol:undefined,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
+      spike:/spike/i.test(t),safety:safety,punt:k==="kick"&&/punt/i.test(ty+" "+t),defTD:r.score==="TD"&&k==="to",retColor:k==="to"?defCol:undefined,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
     var row=rows[rows.length-1], ct=cleanText(t), m;
     /* Interception: where the ball was caught, so the pass flies forward and the return comes back in the defence's colour. */
     if(k==="to"&&(m=/INTERCEPTED by \S+ at ([A-Z]{2,4} -?\d+|50)\b/.exec(ct.replace(/\s*\([^)]*\)/g,"")))){var ia=parseSpot(m[1],L.A);if(ia!=null){row.intAt=+F(ia).toFixed(2);row.retColor=defCol}}
@@ -1338,7 +1338,7 @@ function route(){
     if(SIM){
       var lm=(location.search.match(/[?&]lanes=(\w+)/)||[])[1], base=location.pathname+"?sim=1"+(lm?"&lanes="+lm:"")+(/[?&]chart=2d\b/.test(location.search)?"&chart=2d":""), sb=$("simbar");
       function lk(sp,fr,txt,on){return '<a href="'+base+"&speed="+sp+"&from="+fr+location.hash+'"'+(on?' class="on"':'')+'>'+txt+'</a>'}
-      sb.innerHTML='<b>Simulated live</b><span>Speed '+[1,2,4].map(function(v){return lk(v,SIM.from,v+"×",v===SIM.speed)}).join(" ")+'</span><span>Start '+[1,2,3,4].map(function(v){return lk(SIM.speed,v,"Q"+v,v===SIM.from)}).join(" ")+'</span>';
+      sb.innerHTML='<b>Simulated live</b><span>Speed '+[1,2,4,16].map(function(v){return lk(v,SIM.from,v+"×",v===SIM.speed)}).join(" ")+'</span><span>Start '+[1,2,3,4].map(function(v){return lk(SIM.speed,v,"Q"+v,v===SIM.from)}).join(" ")+'</span>';
       sb.hidden=false;
       sb.onclick=function(e){var a=e.target.closest("a");if(a){e.preventDefault();location.href=a.getAttribute("href")}};
     }
