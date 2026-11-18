@@ -214,6 +214,23 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .simbar b{color:var(--accent)}
 .simbar a{color:var(--fg);text-decoration:none;padding:2px 6px;border-radius:6px;border:1px solid var(--line)}
 .simbar a.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+/* Score alerts ("dong") from other games */
+.dong{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-140%);width:min(520px,calc(100% - 24px));
+  display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-left:5px solid var(--tc,var(--accent));
+  border-radius:12px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer;transition:transform .35s cubic-bezier(.2,.8,.3,1);text-align:left;font:inherit}
+.dong.show{transform:translate(-50%,0)}
+.dong .dk{font:700 13px var(--display);letter-spacing:.06em;background:var(--tc,var(--fg));color:var(--tci,var(--bg));border-radius:6px;padding:3px 7px}
+.dong .dt2{font-weight:600;font-variant-numeric:tabular-nums;min-width:0}
+.dong .dt2 small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.dong .dgo{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.dong{transition:none}}
+.dongview{position:fixed;inset:0;z-index:31;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.dongview .dvin{width:min(640px,100%);background:var(--surface);border-radius:0 0 14px 14px;padding:10px 0 12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+@media (min-width:701px){.dongview .dvin{border-radius:14px;padding:10px 12px 12px}}
+.dongview .dvh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 max(14px,env(safe-area-inset-left,0px)) 8px}
+.dongview .dvh b{font:700 17px var(--display);letter-spacing:.03em}
+.dongview .dvh small{display:block;color:var(--muted);font-size:12px}
+.dongview .dvh button{min-height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -268,6 +285,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 </main>
 </div>
 
+<button class="dong" id="dong" hidden aria-live="polite"></button>
+<div class="dongview" id="dongView" hidden role="dialog" aria-modal="true" aria-labelledby="dvTitle"><div class="dvin">
+  <div class="dvh"><div><b id="dvTitle">Scoring drive</b><small id="dvSub"></small></div><button id="dvClose">Close</button></div>
+  <div id="dvChart"></div>
+</div></div>
 <div class="scrim" id="scrim" hidden></div>
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="in">
   <div class="sheethead"><h2 id="sheetTitle">Settings</h2><button id="sheetDone">Done</button></div>
@@ -292,6 +314,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     <div class="opt"><div><b>Replay pause</b><small>How long each play's info box stays up when you replay a drive.</small></div><select id="linger" aria-label="Replay pause"><option value="0.5">0.5 s</option><option value="1">1 s</option><option value="1.5">1.5 s</option><option value="2">2 s</option><option value="3">3 s</option><option value="5">5 s</option></select></div>
   </div>
   <div class="sect">
+    <div class="opt"><div><b>Scores in other games</b><small>An alert (and chime) when another game scores, timed to your delay. Tap it to watch the scoring drive.</small></div><select id="dongMode" aria-label="Scores in other games"><option value="sound">Alert + chime</option><option value="quiet">Alert only</option><option value="off">Off</option></select></div>
+  </div>
+  <div class="sect">
     <div class="opt"><div><b>Next play heads-up</b><small>During a live game, how long before the next snap the info box switches to the next down and distance.</small></div><select id="lead" aria-label="Next play heads-up"><option value="3">3 s</option><option value="5">5 s</option><option value="8">8 s</option><option value="10">10 s</option></select></div>
   </div>
   <div class="sect">
@@ -299,7 +324,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
   </div>
 </div></div>
 
-<script src="drivecore.js?v=7"></script>
+<script src="drivecore.js?v=8"></script>
 <script src="chart2d.js?v=7"></script>
 <script>
 (function(){
@@ -341,7 +366,7 @@ var LANEMODE=(function(m){m=m&&m[1];return m==="fade"?null:m||"off"})(location.s
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
-  delay:load("db_delay",45), linger:load("db_linger",1), lead:load("db_lead",5), liveDone:{}, live:null, view:"list", fav:load("db_fav",load("db_team","LAR")||""),
+  delay:load("db_delay",45), dongMode:load("db_dong","sound"), linger:load("db_linger",1), lead:load("db_lead",5), liveDone:{}, live:null, view:"list", fav:load("db_fav",load("db_team","LAR")||""),
   lagSamples:load("db_lag",[]), statTab:load("db_statTab","mine"), wantWake:load("db_wake",false),
   pick:"", eventId:null, sum:null, sumVer:0, state:"pre",
   seen:{}, estimated:{}, shownAt:{}, synced:{}, loaded:false, lastOk:0, nextPollAt:0, snaps:[], err:"", schedule:[],
@@ -361,7 +386,7 @@ function poll(){
   var id=S.pick;
   Promise.resolve().then(function(){
     if(id!==S.eventId){S.eventId=id;S.sum=null;S.seen={};S.estimated={};S.shownAt={};S.synced={};S.loaded=false;S.snaps=[];S.openState={};S.keys={}}
-    if(SIM&&SIM.src&&SIM.id===id)return simView();
+    if(SIM&&SIM.src&&SIM.id===id){if(!DG.sim)dongSimSetup(SIM.src);return simView()}
     return getJSON(API+"/summary?event="+id).then(function(j){if(!SIM)return j;SIM.src=null;SIM.id=id;SIM.t0=Date.now();return simView(j)});
   }).then(function(j){
     if(id!==S.pick)return;
@@ -704,7 +729,7 @@ var PK={run:["#ffffff","Run"],pass:["#7fd4ff","Pass"],pen:["#ffd23f","Penalty"],
 function playKind(r){
   if(r.kind==="kick")return "kick"; if(r.kind==="ret")return "ret";
   var ty=((r.p||{}).type||{}).text||"", t=(r.p||{}).text||"";
-  if(/interception|fumble recovery \(opponent\)|fumble return/i.test(ty)||/\bintercepted\b/i.test(t))return "to";
+  if(/interception|fumble recovery \(opponent\)|fumble return|opp fumble/i.test(ty)||/\bintercepted\b/i.test(t))return "to";
   if(/penalty/i.test(ty))return "pen";
   if(/pass|sack|scramble/i.test(ty+" "+t))return "pass";
   return "run";
@@ -865,7 +890,7 @@ function fieldChart3D(L,specOnly){
     rows.push({fs:+fs.toFixed(2),fe:+fe.toFixed(2),fc:fc==null?null:+fc.toFixed(2),type:type,dir:odir,color:col,label:r.score||"",
       /* Replay-only hints (the still image ignores them). */
       kind:k,yds:yds,td:r.score==="TD",fg:/field goal/i.test(ty+" "+t)&&r.kind==="play",to:k==="to",sack:/sack/i.test(ty+" "+t),
-      spike:/spike/i.test(t),safety:safety,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
+      spike:/spike/i.test(t),safety:safety,defTD:r.score==="TD"&&k==="to",retColor:k==="to"?defCol:undefined,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
     var row=rows[rows.length-1], ct=cleanText(t), m;
     /* Interception: where the ball was caught, so the pass flies forward and the return comes back in the defence's colour. */
     if(k==="to"&&(m=/INTERCEPTED by \S+ at ([A-Z]{2,4} -?\d+|50)\b/.exec(ct.replace(/\s*\([^)]*\)/g,"")))){var ia=parseSpot(m[1],L.A);if(ia!=null){row.intAt=+F(ia).toFixed(2);row.retColor=defCol}}
@@ -1216,6 +1241,7 @@ var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",
   f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);favChip();if(S.view==="list")renderList()}})();
 (function(){var l=$("linger");l.value=String(S.linger);if(!l.value){l.value="1"}l.onchange=function(){S.linger=+l.value||1;save("db_linger",S.linger)}})();
 (function(){var l=$("lead");l.value=String(S.lead);if(!l.value){l.value="5"}l.onchange=function(){S.lead=+l.value||5;save("db_lead",S.lead)}})();
+(function(){var d=$("dongMode");d.value=S.dongMode;if(!d.value)d.value="sound";d.onchange=function(){S.dongMode=d.value;save("db_dong",S.dongMode);if(S.dongMode==="off"){DG.queue=[];dongHide()}}})();
 function favChip(){$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
 favChip();
 $("favChip").onclick=function(){sheet(true);setTimeout(function(){$("fav").focus()},50)};
@@ -1304,7 +1330,7 @@ function route(){
     window.scrollTo(0,0); render(); poll();
     return;
   }
-  S.view="list"; clearTimeout(timer); if(S.replay)stopReplay(); if(S.live)endLive();
+  S.view="list"; clearTimeout(timer); if(S.replay)stopReplay(); if(S.live)endLive(); DG.queue=[]; DG.scores=null; DG.sim=null; dongClose(); if(DG.showing)dongHide();
   $("gameView").hidden=true; $("listView").hidden=false;
   listHash=h;
   var wm=h.match(/^w-(\d{4})-(\d)-(\d{1,2})$/);
@@ -1377,6 +1403,129 @@ function endLive(){
   var img=document.querySelector("#c3d img"); if(img)img.hidden=false;
   S.keys.drives=null;
 }
+
+/* ---------- Scores in other games ("dong") ----------
+   Live: the week's scoreboard is checked every 15 s. When another game's score changes, its
+   scoring play is looked up and an alert is shown after your delay, as TV would at that point
+   of your stream. Simulation: other games in the same time slot are replayed alongside, and
+   their scores alert when the simulated game reaches the same game time.
+   Tapping an alert replays the scoring drive (for a defensive score, the drive of the team that
+   had the ball, which is where ESPN files that play). */
+var DG={scores:null,seen:{},queue:[],showing:null,timer:null,audio:null,sim:null,view:null};
+function isScore(p){var ty=((p.type||{}).text||"");return !!p.scoringPlay&&!/extra point|two.?point|2pt|conversion/i.test(ty)}
+/* Who scored: the team whose score went up on this play (works for pick-sixes, kick returns,
+   own-fumble recoveries in the end zone and safeties alike). */
+function scorerOf(j,p){
+  var T=teamsOf(j), plays=allPlays(j), k=plays.indexOf(p), h=+p.homeScore||0, a=+p.awayScore||0, ph=0, pa=0;
+  for(var i=k-1;i>=0;i--){if(plays[i].homeScore!=null){ph=+plays[i].homeScore||0;pa=+plays[i].awayScore||0;break}}
+  return h-ph>a-pa?T.home:a-pa>h-ph?T.away:null;
+}
+function scoreKind(p,scorer){var ty=((p.type||{}).text||""), off=teamIdOf(p.start);
+  if(/safety/i.test(ty))return "SAFETY"; if(/field goal/i.test(ty))return "FG";
+  return scorer&&off&&scorer.id!==off&&/interception|fumble|blocked/i.test(ty)?"DEF TD":"TD"}
+function gameSecs(p){var per=((p.period||{}).number)||0,m=String(((p.clock||{}).displayValue)||"").match(/^(\d+):(\d+)$/);return per?(per-1)*900+(m?900-(+m[1]*60+(+m[2])):0):0}
+function dongEnqueue(j,p,at){
+  if(DG.seen[p.id])return; DG.seen[p.id]=1;
+  DG.queue.push({j:j,p:p,at:at}); DG.queue.sort(function(a,b){return a.at-b.at});
+}
+function dongTick(){
+  if(S.dongMode==="off"||S.view!=="game")return;
+  if(!DG.showing&&DG.queue.length&&DG.queue[0].at<=Date.now())dongShow(DG.queue.shift());
+}
+function dongPollLive(){
+  if(S.dongMode==="off"||S.view!=="game"||SIM)return;
+  getJSON(API+"/scoreboard").then(function(sb){
+    var first=!DG.scores; DG.scores=DG.scores||{};
+    (sb.events||[]).forEach(function(e){
+      var c=(e.competitions||[])[0]||{}, tot=(c.competitors||[]).reduce(function(a,x){return a+(+x.score||0)},0);
+      var prev=DG.scores[e.id]; DG.scores[e.id]=tot;
+      if(first||e.id===S.pick||prev==null||tot<=prev)return;
+      var seenAt=Date.now();
+      getJSON(API+"/summary?event="+e.id).then(function(j){
+        allPlays(j).forEach(function(p){
+          if(isScore(p)&&(+p.homeScore||0)+(+p.awayScore||0)>prev)dongEnqueue(j,p,seenAt+S.delay*1000);
+        });
+      }).catch(function(){});
+    });
+  }).catch(function(){});
+}
+/* Simulation: other games kicking off in the same window as the simulated one. */
+function dongSimSetup(j){
+  if(DG.sim)return; DG.sim={games:[],ready:false};
+  var h=j.header||{}, wk=h.week, yr=(h.season||{}).year, ty=(h.season||{}).type, kick=Date.parse(hdrComp(j).date||"");
+  if(!wk||!yr)return;
+  getJSON(API+"/scoreboard?dates="+yr+"&seasontype="+(ty||2)+"&week="+wk).then(function(sb){
+    var ids=(sb.events||[]).filter(function(e){return e.id!==S.pick&&Math.abs(Date.parse(e.date)-kick)<=75*60000}).map(function(e){return e.id});
+    return Promise.all(ids.map(function(id){return getJSON(API+"/summary?event="+id).then(function(g){return g},function(){return null})}));
+  }).then(function(gs){
+    if(!DG.sim)return;
+    DG.sim.games=(gs||[]).filter(Boolean);
+    var cur=dongSimNow();
+    DG.sim.games.forEach(function(g){allPlays(g).forEach(function(p){if(isScore(p)&&gameSecs(p)<=cur)DG.seen[p.id]=1})});
+    DG.sim.ready=true;
+  }).catch(function(){});
+}
+function dongSimNow(){if(!S.sum)return 0;var V=visibleIds(S.sum),p=V.plays[V.last];return p?gameSecs(p):0}
+function dongSimTick(){
+  if(!SIM||!DG.sim||!DG.sim.ready||S.dongMode==="off"||S.view!=="game")return;
+  var cur=dongSimNow(), now=Date.now();
+  DG.sim.games.forEach(function(g){allPlays(g).forEach(function(p){if(isScore(p)&&gameSecs(p)<=cur)dongEnqueue(g,p,now)})});
+}
+/* The "dong": a two-tone chime made by the page itself. */
+function dongChime(){
+  if(S.dongMode!=="sound")return;
+  try{
+    var A=DG.audio; if(!A||A.state==="closed")return;
+    if(A.resume)A.resume();
+    var t=A.currentTime+0.02;
+    [[659.25,0],[523.25,0.42]].forEach(function(n){
+      var o=A.createOscillator(),g=A.createGain(),o2=A.createOscillator(),g2=A.createGain();
+      o.type="sine";o.frequency.value=n[0];o2.type="sine";o2.frequency.value=n[0]*2.01;
+      g.gain.setValueAtTime(0.0001,t+n[1]);g.gain.exponentialRampToValueAtTime(0.32,t+n[1]+0.015);g.gain.exponentialRampToValueAtTime(0.0001,t+n[1]+1.3);
+      g2.gain.setValueAtTime(0.0001,t+n[1]);g2.gain.exponentialRampToValueAtTime(0.07,t+n[1]+0.01);g2.gain.exponentialRampToValueAtTime(0.0001,t+n[1]+0.6);
+      o.connect(g);g.connect(A.destination);o2.connect(g2);g2.connect(A.destination);
+      o.start(t+n[1]);o2.start(t+n[1]);o.stop(t+n[1]+1.4);o2.stop(t+n[1]+0.7);
+    });
+  }catch(e){}
+}
+/* Phones only allow sound after a tap: the first tap anywhere unlocks the chime. */
+document.addEventListener("pointerdown",function(){
+  if(DG.audio)return;
+  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume()}}catch(e){}
+},true);
+function dongShow(item){
+  var j=item.j,p=item.p,T=teamsOf(j),TC=teamColors(j,T),scorer=scorerOf(j,p),kind=scoreKind(p,scorer),c=clockText(p);
+  var col=scorer&&TC[scorer.id],el=$("dong");
+  var line=(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:"");
+  el.innerHTML='<span class="dk">'+esc(kind)+'</span><span class="dt2">'+esc(line)+'<small>'+esc((scorer?scorer.ab+" · ":"")+c.q+" "+c.clk)+'</small></span><span class="dgo">Watch ▸</span>';
+  el.style.cssText=col?"--tc:"+col.bg+";--tci:"+col.ink:"";
+  el.hidden=false;DG.showing=item;el.onclick=function(){dongHide();dongOpen(item)};
+  requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add("show")})});
+  dongChime();
+  clearTimeout(DG.hideT);DG.hideT=setTimeout(dongHide,7000);
+}
+function dongHide(){
+  var el=$("dong");el.classList.remove("show");clearTimeout(DG.hideT);
+  setTimeout(function(){if(!el.classList.contains("show")){el.hidden=true;DG.showing=null}},380);
+}
+function dongOpen(item){
+  var j=item.j,p=item.p,T=teamsOf(j),plays=allPlays(j),k=plays.indexOf(p);if(k<0)return;
+  var ids={};for(var q=0;q<=k;q++)ids[plays[q].id]=1;
+  var keep=S.chartDrive;S.chartDrive=null;
+  var L=latestDrive(j,T,{ids:ids,plays:plays,last:k});S.chartDrive=keep;
+  if(!L)return;
+  var E=(S.engine==="3d"&&window.Chart3D&&window.THREE)?window.Chart3D:window.Chart2D;if(!E||!window.DriveCore)return;
+  var spec=fieldChart3D(L,true),kind=scoreKind(p,scorerOf(j,p));
+  $("dvTitle").textContent=L.offAb+" drive · "+(kind==="FG"?"field goal":kind==="SAFETY"?"safety":kind==="DEF TD"?"defensive touchdown":"touchdown");
+  $("dvSub").textContent=(T.away?T.away.ab:"")+" at "+(T.home?T.home.ab:"")+" · "+(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:"");
+  var holder=$("dvChart");holder.innerHTML="";$("dongView").hidden=false;
+  try{DG.view=E.replay(holder,spec,{linger:S.linger})}catch(e){console.log("Scoring drive failed",e);dongClose()}
+}
+function dongClose(){if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dongView").hidden=true}
+$("dvClose").onclick=dongClose;
+$("dongView").addEventListener("click",function(e){if(e.target===this)dongClose()});
+setInterval(function(){dongTick();dongSimTick()},1000);
+setInterval(dongPollLive,15000);
 
 /* Drive replay (3D or flat chart). */
 function stopReplay(){if(S.replay){S.replay.stop();S.replay=null}var img=document.querySelector("#c3d img");if(img)img.hidden=false;var b=$("replayBtn");if(b){b.textContent="▶ Replay drive";b.classList.remove("on")}S.keys.drives=null}

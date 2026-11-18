@@ -130,7 +130,7 @@
         return null;
       case "safety": return null;
       case "fg": return g.miss ? { text: "No good", bg: "#c62828" } : null;
-      case "td": return { text: "TD, " + yards(y), bg: s.color, big: true, td: true };
+      case "td": return s.defTD ? { text: "Defensive TD", bg: s.retColor || "#8f1d1d", big: true, td: true } : { text: "TD, " + yards(y), bg: s.color, big: true, td: true };
       default: return y < 0 ? { text: yards(y), bg: "#b4441d" } : y === 0 ? { text: "No gain", bg: GREY } : g.big ? { text: yards(y), bg: "#ffd23f", fg: "#17201b", big: true } : { text: yards(y) };
     }
   }
