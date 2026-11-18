@@ -224,6 +224,16 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .dong .dt2 small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
 .dong .dgo{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.dong{transition:none}}
+.dongpill{position:fixed;z-index:29;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:8px;
+  min-height:44px;padding:0 16px;border-radius:999px;border:0;background:var(--fg);color:var(--bg);font:600 15px var(--body,inherit);box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer;white-space:nowrap}
+.dongpill i{font-style:normal;min-width:22px;height:22px;border-radius:11px;background:var(--accent);color:#fff;display:inline-grid;place-items:center;font-size:13px;padding:0 6px}
+.dlist{list-style:none;margin:0;padding:0 max(10px,env(safe-area-inset-left,0px));max-height:70vh;overflow:auto}
+.dlist li{margin:0 0 8px}
+.dlist button{width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;text-align:left;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-left:5px solid var(--tc,var(--accent));border-radius:12px;padding:10px 12px;cursor:pointer}
+.dlist .dk{font:700 13px var(--display);letter-spacing:.06em;background:var(--tc,var(--fg));color:var(--tci,var(--bg));border-radius:6px;padding:3px 7px}
+.dlist b{font-weight:600;font-variant-numeric:tabular-nums}.dlist small{display:block;color:var(--muted);font-size:12px}
+.dlist .new{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.05em}
+.dlist .seen{opacity:.7}
 .dongview{position:fixed;inset:0;z-index:31;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:calc(10px + env(safe-area-inset-top,0px))}
 .dongview .dvin{width:min(640px,100%);background:var(--surface);border-radius:0 0 14px 14px;padding:10px 0 12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 @media (min-width:701px){.dongview .dvin{border-radius:14px;padding:10px 12px 12px}}
@@ -286,8 +296,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 </div>
 
 <button class="dong" id="dong" hidden aria-live="polite"></button>
+<button class="dongpill" id="dongPill" hidden></button>
 <div class="dongview" id="dongView" hidden role="dialog" aria-modal="true" aria-labelledby="dvTitle"><div class="dvin">
   <div class="dvh"><div><b id="dvTitle">Scoring drive</b><small id="dvSub"></small></div><button id="dvClose">Close</button></div>
+  <ul class="dlist" id="dvList" hidden></ul>
   <div id="dvChart"></div>
 </div></div>
 <div class="scrim" id="scrim" hidden></div>
@@ -1330,7 +1342,7 @@ function route(){
     window.scrollTo(0,0); render(); poll();
     return;
   }
-  S.view="list"; clearTimeout(timer); if(S.replay)stopReplay(); if(S.live)endLive(); DG.queue=[]; DG.scores=null; DG.sim=null; dongClose(); if(DG.showing)dongHide();
+  S.view="list"; clearTimeout(timer); if(S.replay)stopReplay(); if(S.live)endLive(); DG.queue=[]; DG.scores=null; DG.sim=null; DG.log=[]; dongClose(); if(DG.showing)dongHide();
   $("gameView").hidden=true; $("listView").hidden=false;
   listHash=h;
   var wm=h.match(/^w-(\d{4})-(\d)-(\d{1,2})$/);
@@ -1430,6 +1442,9 @@ function dongEnqueue(j,p,at){
 }
 function dongTick(){
   if(S.dongMode==="off"||S.view!=="game")return;
+  /* While a scoring drive (or the list) is open, new scores wait: no banner and no chime over it.
+     They are shown when it's closed, and are always kept in the list behind the pill. */
+  if(!$("dongView").hidden)return;
   if(!DG.showing&&DG.queue.length&&DG.queue[0].at<=Date.now())dongShow(DG.queue.shift());
 }
 function dongPollLive(){
@@ -1493,22 +1508,53 @@ document.addEventListener("pointerdown",function(){
   if(DG.audio)return;
   try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume()}}catch(e){}
 },true);
+/* Every score that has been announced stays in DG.log; ones not yet watched count on the pill. */
+DG.log=[];
+function dongBadge(item){
+  var j=item.j,p=item.p,T=teamsOf(j),TC=teamColors(j,T),scorer=scorerOf(j,p),c=clockText(p);
+  return {kind:scoreKind(p,scorer),col:scorer&&TC[scorer.id],
+    line:(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:""),
+    sub:(scorer?scorer.ab+" · ":"")+c.q+" "+c.clk};
+}
+function dongPill(){
+  var n=DG.log.filter(function(x){return !x.watched}).length, el=$("dongPill");
+  if(!n||S.view!=="game"||!$("dongView").hidden){el.hidden=true;return}
+  el.innerHTML="<i>"+n+"</i>"+(n===1?"Score elsewhere":"Scores elsewhere");
+  el.hidden=false;
+}
+$("dongPill").onclick=function(){dongList()};
+function dongList(){
+  var ul=$("dvList"); ul.innerHTML="";
+  DG.log.slice().reverse().forEach(function(item){
+    var b=dongBadge(item), li=document.createElement("li"), bt=document.createElement("button");
+    bt.className=item.watched?"seen":""; if(b.col)bt.style.cssText="--tc:"+b.col.bg+";--tci:"+b.col.ink;
+    bt.innerHTML='<span class="dk">'+esc(b.kind)+'</span><span><b>'+esc(b.line)+'</b><small>'+esc(b.sub)+'</small></span><span class="'+(item.watched?"":"new")+'">'+(item.watched?"Watch again ▸":"NEW ▸")+'</span>';
+    bt.onclick=function(){dongOpen(item,true)};
+    li.appendChild(bt); ul.appendChild(li);
+  });
+  if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}
+  $("dvChart").innerHTML=""; ul.hidden=false;
+  $("dvTitle").textContent="Scores elsewhere"; $("dvSub").textContent=DG.log.length+" this session · newest first"; $("dvClose").textContent="Close"; DG.fromList=false;
+  $("dongView").hidden=false; dongPill();
+}
 function dongShow(item){
+  if(DG.log.indexOf(item)<0){DG.log.push(item);if(DG.log.length>30)DG.log.shift()}
   var j=item.j,p=item.p,T=teamsOf(j),TC=teamColors(j,T),scorer=scorerOf(j,p),kind=scoreKind(p,scorer),c=clockText(p);
   var col=scorer&&TC[scorer.id],el=$("dong");
   var line=(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:"");
   el.innerHTML='<span class="dk">'+esc(kind)+'</span><span class="dt2">'+esc(line)+'<small>'+esc((scorer?scorer.ab+" · ":"")+c.q+" "+c.clk)+'</small></span><span class="dgo">Watch ▸</span>';
   el.style.cssText=col?"--tc:"+col.bg+";--tci:"+col.ink:"";
-  el.hidden=false;DG.showing=item;el.onclick=function(){dongHide();dongOpen(item)};
+  el.hidden=false;DG.showing=item;el.onclick=function(){dongHide();dongOpen(item)};dongPill();
   requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add("show")})});
   dongChime();
   clearTimeout(DG.hideT);DG.hideT=setTimeout(dongHide,7000);
 }
 function dongHide(){
   var el=$("dong");el.classList.remove("show");clearTimeout(DG.hideT);
-  setTimeout(function(){if(!el.classList.contains("show")){el.hidden=true;DG.showing=null}},380);
+  setTimeout(function(){if(!el.classList.contains("show")){el.hidden=true;DG.showing=null;dongPill()}},380);
 }
-function dongOpen(item){
+function dongOpen(item,fromList){
+  item.watched=true; DG.fromList=!!fromList; $("dvList").hidden=true; $("dvClose").textContent=fromList?"Back":"Close";
   var j=item.j,p=item.p,T=teamsOf(j),plays=allPlays(j),k=plays.indexOf(p);if(k<0)return;
   var ids={};for(var q=0;q<=k;q++)ids[plays[q].id]=1;
   var keep=S.chartDrive;S.chartDrive=null;
@@ -1521,8 +1567,8 @@ function dongOpen(item){
   var holder=$("dvChart");holder.innerHTML="";$("dongView").hidden=false;
   try{DG.view=E.replay(holder,spec,{linger:S.linger})}catch(e){console.log("Scoring drive failed",e);dongClose()}
 }
-function dongClose(){if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dongView").hidden=true}
-$("dvClose").onclick=dongClose;
+function dongClose(){if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dongView").hidden=true;DG.fromList=false;dongPill()}
+$("dvClose").onclick=function(){if(DG.fromList)dongList();else dongClose()};
 $("dongView").addEventListener("click",function(e){if(e.target===this)dongClose()});
 setInterval(function(){dongTick();dongSimTick()},1000);
 setInterval(dongPollLive,15000);
