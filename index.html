@@ -335,8 +335,9 @@ function simView(full){
 /* The 3D drive chart is the default; ?chart=2d forces the flat chart. If 3D can't load, the
    flat chart is used automatically. (The name TEST3D is kept from the test-page days.) */
 var TEST3D=!/[?&]chart=2d\b/.test(location.search);
-/* Long-drive lane modes (prototype): ?lanes=summary or ?lanes=off; the default keeps fading the oldest lane. */
-var LANEMODE=(location.search.match(/[?&]lanes=(summary|off)\b/)||[])[1]||null;
+/* Long drives: by default older plays keep sliding back past the far sideline ("off").
+   ?lanes=fade (oldest lanes fade at the far sideline) and ?lanes=summary remain for comparison. */
+var LANEMODE=(function(m){m=m&&m[1];return m==="fade"?null:m||"off"})(location.search.match(/[?&]lanes=(summary|off|fade)\b/));
 function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
@@ -504,7 +505,8 @@ function endOf(p){
 function driveState(d,vis,all,cur){
   var isCur=cur&&d.id===cur.id&&S.state!=="post";
   var espnDone=vis.length===all.length&&!isCur, endLabel=null;
-  vis.forEach(function(p){if(!endLabel&&!isNonPlay(p))endLabel=endOf(p)});
+  /* The deciding play is the last one that ends a drive; plays wiped out by a penalty don't count. */
+  vis.forEach(function(p){if(isNonPlay(p)||/\bNo Play\b|nullified/i.test(p.text||""))return;var e=endOf(p);if(e)endLabel=e});
   var ended=espnDone||!!endLabel;
   var label=espnDone?(d.displayResult||d.result||endLabel||"Done"):endLabel;
   var scored=espnDone&&d.isScore!=null?!!d.isScore:/^(Touchdown|Field goal)$/.test(label||"");
@@ -561,7 +563,7 @@ function scoreLabel(p){var t=(p.text||"")+" "+((p.type||{}).text||"");return /to
 function latestDrive(j,T,V){
   var drives=drivesOf(j), cur=(j.drives||{}).current, last=null, chosen=null, pick=S.chartDrive||null;
   drives.forEach(function(d){
-    var all=d.plays||[], vis=all.filter(function(p){return V.ids[p.id]});
+    var all=(d.plays||[]).filter(function(p){return !isOfficialTO(p)}), vis=all.filter(function(p){return V.ids[p.id]});
     if(!vis.length)return;
     var st=driveState(d,vis,all,cur), e={d:d,vis:vis,done:st.ended,label:st.label};
     last=e; if(pick&&d.id===pick)chosen=e;
