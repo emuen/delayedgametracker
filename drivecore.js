@@ -140,6 +140,13 @@
     o.beginPath(); if (o.roundRect) o.roundRect(x, y, w, h, h / 2); else o.rect(x, y, w, h);
   }
   /* Replay-only extras: result chips at the end of a play and a full-width banner (TD, turnover). */
+  /* Baseline that centres text on cap/digit height, so letters hanging below the line (y, g, p)
+     don't make the text look pushed down. Use with textBaseline "alphabetic". */
+  function capMid(o) {
+    var m = o.measureText("H0"), a = m.actualBoundingBoxAscent;
+    if (!(a > 0)) a = parseFloat(o.font.replace(/^.*?(\d+(?:\.\d+)?)px.*$/, "$1")) * 0.7 || 0;
+    return a / 2;
+  }
   function drawFx(o, W, H, B, fx, u, scr) {
     (fx.chips || []).forEach(function (c) {
       if (!(c.a > 0) || !(c.s > 0)) return;
@@ -152,8 +159,8 @@
       o.shadowColor = "rgba(0,0,0,0.3)"; o.shadowBlur = 4 * u;
       o.fillStyle = c.bg || "rgba(10,25,15,0.86)"; pill(o, -pw / 2, -ph / 2, pw, ph); o.fill(); o.shadowBlur = 0;
       if (c.ring) { o.lineWidth = 1.6 * u; o.strokeStyle = c.ring; o.stroke(); }
-      o.fillStyle = c.fg || "#fff"; o.textAlign = "center"; o.textBaseline = "middle";
-      o.fillText(c.text, 0, fs * 0.05);
+      o.fillStyle = c.fg || "#fff"; o.textAlign = "center"; o.textBaseline = "alphabetic";
+      o.fillText(c.text, 0, capMid(o));
       o.restore();
     });
     var b = fx.banner;
@@ -164,8 +171,9 @@
       var bw = o.measureText(b.text).width + bfs * 1.2, bh = bfs * 1.25;
       o.shadowColor = "rgba(0,0,0,0.35)"; o.shadowBlur = 10 * u; o.shadowOffsetY = 3 * u;
       o.fillStyle = b.bg; o.fillRect(-bw / 2, -bh / 2, bw, bh); o.shadowColor = "transparent";
-      o.fillStyle = b.fg || "#fff"; o.textAlign = "center"; o.textBaseline = "middle";
-      o.fillText(b.text, 0, bfs * 0.05);
+      o.fillStyle = b.fg || "#fff"; o.textAlign = "center"; o.textBaseline = "alphabetic";
+      o.fillText(b.text, 0, capMid(o));
+      o.textBaseline = "middle";
       if (b.sub) { o.font = "700 " + Math.round(bfs * 0.36) + "px " + DISPLAY; o.fillText(b.sub, 0, bh / 2 + bfs * 0.32); }
       o.restore();
     }
@@ -184,7 +192,7 @@
       o.fillStyle = "rgba(10,25,15,0.72)"; o.beginPath();
       if (o.roundRect) o.roundRect(x0, s0[1] - ph / 2, pw, ph, ph / 2); else o.rect(x0, s0[1] - ph / 2, pw, ph);
       o.fill();
-      o.fillStyle = "#fff"; o.textAlign = "center"; o.fillText(l.text, x0 + pw / 2, s0[1] + fs * 0.04);
+      o.fillStyle = "#fff"; o.textAlign = "center"; o.textBaseline = "alphabetic"; o.fillText(l.text, x0 + pw / 2, s0[1] + capMid(o)); o.textBaseline = "middle";
     });
     if (B.startAt && B.startLabel) {
       var sp = scr(B.startAt), sfs = Math.round(10 * u); sp[1] += sfs * 1.55;
@@ -193,7 +201,7 @@
       var sx0 = Math.max(2 * u, Math.min(W - sw - 2 * u, sp[0] - sw / 2));
       o.fillStyle = "rgba(10,25,15,0.72)"; o.beginPath();
       if (o.roundRect) o.roundRect(sx0, sp[1] - sh, sw, sh, sh / 2); else o.rect(sx0, sp[1] - sh, sw, sh);
-      o.fill(); o.fillStyle = "#fff"; o.textAlign = "center"; o.fillText(B.startLabel, sx0 + sw / 2, sp[1] - sh / 2);
+      o.fill(); o.fillStyle = "#fff"; o.textAlign = "center"; o.textBaseline = "alphabetic"; o.fillText(B.startLabel, sx0 + sw / 2, sp[1] - sh / 2 + capMid(o)); o.textBaseline = "middle";
     }
     if (fx) drawFx(o, W, H, B, fx, u, scr);
     if (!callout) return;
