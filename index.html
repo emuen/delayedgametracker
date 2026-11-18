@@ -575,6 +575,14 @@ function latestDrive(j,T,V){
     if(kr){kr.forEach(function(r,i){r.p=p;r.score=p.scoringPlay&&i===kr.length-1?scoreLabel(p):"";rows.push(r)});return}
     if(s==null&&e==null)return;
     if(s==null)s=e; if(e==null)e=s;
+    /* ESPN's end spot is sometimes wrong (an 18-yard touchdown pass once ended "at the offense's
+       own goal line"). For ordinary offensive plays trust the play itself: an offensive touchdown
+       ends at the goal line, and otherwise the end is start + yards gained when the two disagree. */
+    var pty=((p.type||{}).text||""), ptx=p.text||"";
+    var offTD=/passing touchdown|rushing touchdown/i.test(pty)||(p.scoringPlay&&/TOUCHDOWN/.test(ptx)&&!/intercept|fumble|kick|punt|return|safety|blocked/i.test(pty)&&!/INTERCEPTED|FUMBLES/.test(ptx));
+    var plainPlay=!/penalty|intercept|fumble|kick|punt|safety|field goal|extra point|two.?point|timeout|end of|end period/i.test(pty)&&!/\bPENALTY\b|\bFUMBLES\b|\bINTERCEPTED\b|\bLaterals?\b/i.test(ptx);
+    if(offTD)e=100;
+    else if(plainPlay&&typeof p.statYardage==="number"&&Math.abs(e-(s+p.statYardage))>5)e=s+p.statYardage;
     rows.push({s:s,e:e,kind:"play",score:p.scoringPlay?scoreLabel(p):"",text:p.text||"",p:p});
   });
   var own=rows.filter(function(r){return r.kind==="play"});
