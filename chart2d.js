@@ -305,8 +305,9 @@
     /* Drive in progress: earlier plays stay dimmed exactly as the animation leaves them. */
     B.rows.forEach(function (r, k) {
       if (!(r.alpha > 0)) return;
-      var dim = spec.dimFrom > 0 && k < spec.dimFrom ? 0.85 : 0;
-      B.reveal(r, 1); drawParts(x, r, r.parts, dim, r.alpha);
+      var dim = spec.focus != null && spec.focus >= 0 ? (k === spec.focus ? 0 : 0.85) : spec.dimFrom > 0 && k < spec.dimFrom ? 0.85 : 0;
+      var foc = spec.focus != null && spec.focus >= 0 && k !== spec.focus;
+      B.reveal(r, 1); drawParts(x, r, r.parts, foc ? 1 : dim, foc ? r.alpha * 0.55 : r.alpha);
       if (r.missX) drawX(x, r, dim, 1, r.alpha);
     });
     var sumLabel = B.summaryDraw(x, K.summaryState(spec, nR - 1, 1));
@@ -323,6 +324,15 @@
   }
 
   /* ---------- Replay (same timeline and beats as the 3D chart) ---------- */
+  /* Where each play sits on screen in the still image, so a tap can be matched to a lane. */
+  function hits(spec) {
+    var W = Math.round(spec.width), H = Math.round(spec.height), B = build(spec, W, H), nR = B.rows.length;
+    for (var k = 0; k < nR; k++) {
+      if (spec.laneMode) { var ls = K.laneState(spec, k, nR - 1, 1, B.cap); B.place(k, ls.depth, ls.alpha); }
+      else B.place(k, nR - 1 - k);
+    }
+    return B.rows.map(function (r, k) { return r.alpha > 0 ? { k: k, a: [r.A.x, r.A.y], b: [r.end.x, r.end.y] } : null; });
+  }
   function replay(holder, spec, opts) {
     opts = opts || {};
     var W = Math.round(spec.width), H = Math.round(spec.height), u = W / 360;
@@ -452,5 +462,5 @@
     };
   }
 
-  window.Chart2D = { render: render, replay: replay, ready: function () { return fontsReady; }, onReady: null };
+  window.Chart2D = { render: render, replay: replay, hits: hits, ready: function () { return fontsReady; }, onReady: null };
 })();

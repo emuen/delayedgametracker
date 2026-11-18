@@ -361,13 +361,15 @@
     });
     var sumLabel = B.setSummary(K.summaryState(spec, nR - 1, 1));
     /* Drive in progress: earlier plays stay dimmed exactly as the animation leaves them. */
-    if (spec.dimFrom > 0) {
+    /* spec.focus: one play picked by tapping its lane; every other play is dimmed. */
+    var hasFocus = spec.focus != null && spec.focus >= 0;
+    if (spec.dimFrom > 0 || hasFocus) {
       var grey = new THREE.Color(0x8d968f).convertSRGBToLinear(), dim = 0.85;
       B.rows.forEach(function (row, k) {
-        if (k >= spec.dimFrom) return;
+        if (hasFocus ? k === spec.focus : k >= spec.dimFrom) return;
         row.mats.concat(row.ghost ? [row.ghost.mat] : []).forEach(function (m) {
-          m.transparent = true; m.opacity = (1 - 0.5 * dim) * (row.ghost && m === row.ghost.mat ? 0.35 : 1);
-          m.color.lerp(grey, 0.35 * dim); m.emissive.multiplyScalar(1 - 0.6 * dim); m.needsUpdate = true;
+          m.transparent = true; m.opacity = (hasFocus ? 0.3 : 1 - 0.5 * dim) * (row.ghost && m === row.ghost.mat ? 0.35 : 1);
+          m.color.lerp(grey, (hasFocus ? 0.6 : 0.35) * dim); m.emissive.multiplyScalar(1 - 0.6 * dim); m.needsUpdate = true;
         });
       });
     }
@@ -382,6 +384,24 @@
     var keys = Object.keys(cache); if (keys.length > 20) delete cache[keys[0]];
     cache[key] = url;
     return url;
+  }
+
+  /* Where each play sits on screen in the still image (pixels of spec.width x spec.height),
+     so a tap can be matched to a lane. */
+  function hits(spec) {
+    var W = Math.round(spec.width), H = Math.round(spec.height), B = build(spec, W, H, 1), nR = B.rows.length, out = [];
+    B.rows.forEach(function (row, k) {
+      if (spec.laneMode) { var ls = K.laneState(spec, k, nR - 1, 1, B.cap); B.place(k, ls.depth, ls.alpha); }
+      else B.place(k, nR - 1 - k);
+    });
+    B.cam.updateMatrixWorld(); B.cam.updateProjectionMatrix && B.cam.updateProjectionMatrix();
+    B.rows.forEach(function (row, k) {
+      if (!(row.alpha > 0)) { out.push(null); return; }
+      var a = B.scr(B.world(k, row.A), W, H), e = B.scr(B.world(k, row.end || row.A), W, H);
+      out.push({ k: k, a: a, b: e });
+    });
+    B.dispose();
+    return out;
   }
 
   /* ---------- Replay ----------
@@ -577,5 +597,5 @@
     };
   }
 
-  window.Chart3D = { render: render, replay: replay, ready: function () { return fontsReady; }, onReady: null };
+  window.Chart3D = { render: render, replay: replay, hits: hits, ready: function () { return fontsReady; }, onReady: null };
 })();

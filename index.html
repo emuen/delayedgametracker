@@ -239,6 +239,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 @media (min-width:701px){.dongview .dvin{border-radius:14px;padding:10px 12px 12px}}
 .dongview .dvh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 max(14px,env(safe-area-inset-left,0px)) 8px}
 .dongview .dvh b{font:700 17px var(--display);letter-spacing:.03em}
+.dongview .dvhint{display:block;text-align:center;color:var(--muted);font-size:12px;padding-top:8px}
+.dongview #dvChart{cursor:pointer}
 .dongview .dvh small{display:block;color:var(--muted);font-size:12px}
 .dongview .dvh button{min-height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer}
 [hidden]{display:none!important}
@@ -301,6 +303,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
   <div class="dvh"><div><b id="dvTitle">Scoring drive</b><small id="dvSub"></small></div><button id="dvClose">Close</button></div>
   <ul class="dlist" id="dvList" hidden></ul>
   <div id="dvChart"></div>
+  <small id="dvHint" class="dvhint" hidden>Tap a play on the field to see it</small>
 </div></div>
 <div class="scrim" id="scrim" hidden></div>
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="in">
@@ -337,7 +340,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 </div></div>
 
 <script src="drivecore.js?v=8"></script>
-<script src="chart2d.js?v=8"></script>
+<script src="chart2d.js?v=10"></script>
 <script>
 (function(){
 "use strict";
@@ -1524,6 +1527,7 @@ function dongPill(){
 }
 $("dongPill").onclick=function(){dongList()};
 function dongList(){
+  DG.cur=null; $("dvHint").hidden=true;
   var ul=$("dvList"); ul.innerHTML="";
   DG.log.slice().reverse().forEach(function(item){
     var b=dongBadge(item), li=document.createElement("li"), bt=document.createElement("button");
@@ -1563,11 +1567,44 @@ function dongOpen(item,fromList){
   var E=(S.engine==="3d"&&window.Chart3D&&window.THREE)?window.Chart3D:window.Chart2D;if(!E||!window.DriveCore)return;
   var spec=fieldChart3D(L,true),kind=scoreKind(p,scorerOf(j,p));
   $("dvTitle").textContent=L.offAb+" drive · "+(kind==="FG"?"field goal":kind==="SAFETY"?"safety":kind==="DEF TD"?"defensive touchdown":"touchdown");
-  $("dvSub").textContent=(T.away?T.away.ab:"")+" at "+(T.home?T.home.ab:"")+" · "+(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:"");
-  var holder=$("dvChart");holder.innerHTML="";$("dongView").hidden=false;
+  /* Recap as on your own drives: "5 plays, 13 yards, 2:40 · From ARI 35 · Q4 12:15". */
+  var d=null; drivesOf(j).forEach(function(x){if((x.plays||[]).some(function(q){return q.id===p.id}))d=x});
+  var recap="";
+  if(d){
+    var n=(d.plays||[]).filter(function(q){return !isNonPlay(q)&&!isOfficialTO(q)}).length, st=d.start||{}, sc=clockText(st);
+    recap=[d.description||(n+" play"+(n===1?"":"s")), st.text?"From "+st.text:"", sc.q?sc.q+" "+sc.clk:""].filter(Boolean).join(" · ");
+  }
+  var score=(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:"");
+  $("dvSub").innerHTML=(recap?esc(recap)+"<br>":"")+esc(score);
+  var holder=$("dvChart");holder.innerHTML="";$("dongView").hidden=false;$("dvHint").hidden=false;
+  DG.cur={E:E,spec:spec,hits:null,focus:null};
   try{DG.view=E.replay(holder,spec,{linger:S.linger,fromLast:true})}catch(e){console.log("Scoring drive failed",e);dongClose()}
 }
-function dongClose(){if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dongView").hidden=true;DG.fromList=false;dongPill()}
+/* Tap a lane in the scoring drive: that play is highlighted (the rest dimmed) with its own info box. */
+$("dvChart").addEventListener("click",function(ev){
+  var C=DG.cur; if(!C||!C.E.hits)return;
+  var r=this.getBoundingClientRect(); if(!r.width)return;
+  var W=C.spec.width, H=C.spec.height, x=(ev.clientX-r.left)/r.width*W, y=(ev.clientY-r.top)/r.height*H;
+  if(!C.hits){try{C.hits=C.E.hits(C.spec)}catch(e){console.log("lane hits failed",e);return}}
+  var best=-1, bd=1e9;
+  C.hits.forEach(function(h){
+    if(!h)return; var ax=h.a[0],ay=h.a[1],bx=h.b[0],by=h.b[1],dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;
+    var t=L2?Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/L2)):0, px=ax+t*dx, py=ay+t*dy, dd=Math.hypot(x-px,(y-py)*1.6);
+    if(dd<bd){bd=dd;best=h.k}
+  });
+  if(best<0||bd>H*0.14)return;
+  dongFocus(best);
+});
+function dongFocus(k){
+  var C=DG.cur; if(!C)return;
+  if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}
+  var row=C.spec.rows[k]||{}, sp=Object.assign({},C.spec,{focus:k,dimFrom:0,callout:row.callout||C.spec.callout,ltg:row.ltg!=null?row.ltg:C.spec.ltg});
+  var url; try{url=C.E.render(sp)}catch(e){console.log("focus render failed",e);return}
+  if(!url)return;
+  C.focus=k;
+  $("dvChart").innerHTML='<img alt="Play '+(k+1)+' of the drive" style="display:block;width:100%;border-radius:6px" src="'+url+'">';
+}
+function dongClose(){DG.cur=null;if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dongView").hidden=true;DG.fromList=false;dongPill()}
 $("dvClose").onclick=function(){if(DG.fromList)dongList();else dongClose()};
 $("dongView").addEventListener("click",function(e){if(e.target===this)dongClose()});
 setInterval(function(){dongTick();dongSimTick()},1000);
@@ -1638,7 +1675,7 @@ setInterval(render,1000);
 if(window.Chart2D)window.Chart2D.onReady=function(){S.keys.drives=null;render()};
 if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
-  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=26",function(){
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=28",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
 
 }
