@@ -121,7 +121,7 @@
 
     /* Lanes at a fixed step (drivecore LANES): the newest play just inside the near sideline. Each
        play is built at z = 0 inside its own group, which is moved to its lane. */
-    var n = spec.rows.length, zNear = 19, STEP = 3.5, Y = 0.72, RAD = 0.62, CONE = 2.6;
+    var n = spec.rows.length, zNear = 13, STEP = 3.3,   /* nearest lane clear of the yard numbers */ Y = 0.72, RAD = 0.62, CONE = 2.6;
     var V3 = THREE.Vector3, up = new V3(0, 1, 0), rows = [];
     spec.rows.forEach(function (row, i) {
       var z = 0, grp = new THREE.Group(); scene.add(grp);

@@ -30,7 +30,7 @@
     function P(f, v) { f = Math.max(-10, Math.min(110, f)); return { x: W / 2 + (f - 50) * s * sc(v), y: yT + (yB - yT) * v }; }
     /* Lanes at a fixed step (drivecore LANES): depth 0, the newest play, just inside the near sideline;
        the LANES-th lane at the far side. A play's drawing is rebuilt for the lane it's on. */
-    var n = spec.rows.length, rows = [], vNear = 0.9, vStep = 0.84 / (K.LANES - 1);
+    var n = spec.rows.length, rows = [], vNear = 0.8, vStep = 0.74 / (K.LANES - 1);   /* nearest lane clear of the yard numbers */
     function vOf(depth) { return vNear - depth * vStep; }
     var laneGapPx = (yB - yT) * vStep;
     function makeRow(row, i, v) {
