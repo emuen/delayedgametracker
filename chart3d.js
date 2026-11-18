@@ -550,7 +550,12 @@
     function check(t) { if (!done && t >= P.total) { done = true; if (opts.onDone) opts.onDone(); } }
     function frame(ts) {
       if (stopped) return;
-      if (start == null) start = ts;
+      if (start == null) {
+        /* opts.fromLast: begin at the last play (the scoring play, for score alerts); earlier plays are already drawn. */
+        var off = 0;
+        if (opts.fromLast && segs.length) { var li = segs.length - 1; while (li > 0 && segs[li].cont) li--; off = segs[li].t0; }
+        start = ts - off;
+      }
       var t = Math.min(ts - start, P.total);
       renderAt(t);
       if (t >= P.total) { check(t); return; }

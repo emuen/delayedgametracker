@@ -337,7 +337,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 </div></div>
 
 <script src="drivecore.js?v=8"></script>
-<script src="chart2d.js?v=7"></script>
+<script src="chart2d.js?v=8"></script>
 <script>
 (function(){
 "use strict";
@@ -1565,7 +1565,7 @@ function dongOpen(item,fromList){
   $("dvTitle").textContent=L.offAb+" drive · "+(kind==="FG"?"field goal":kind==="SAFETY"?"safety":kind==="DEF TD"?"defensive touchdown":"touchdown");
   $("dvSub").textContent=(T.away?T.away.ab:"")+" at "+(T.home?T.home.ab:"")+" · "+(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:"");
   var holder=$("dvChart");holder.innerHTML="";$("dongView").hidden=false;
-  try{DG.view=E.replay(holder,spec,{linger:S.linger})}catch(e){console.log("Scoring drive failed",e);dongClose()}
+  try{DG.view=E.replay(holder,spec,{linger:S.linger,fromLast:true})}catch(e){console.log("Scoring drive failed",e);dongClose()}
 }
 function dongClose(){if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dongView").hidden=true;DG.fromList=false;dongPill()}
 $("dvClose").onclick=function(){if(DG.fromList)dongList();else dongClose()};
@@ -1638,7 +1638,7 @@ setInterval(render,1000);
 if(window.Chart2D)window.Chart2D.onReady=function(){S.keys.drives=null;render()};
 if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
-  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=25",function(){
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=26",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
 
 }
