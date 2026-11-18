@@ -28,6 +28,10 @@
     var u = W / 360, k = W / 390, s = W / 120, boxB = 60 * u, yT = boxB + 34 * u, yB = H - 18 * k, sF = 0.76, sN = 1.0;
     function sc(v) { return sF + (sN - sF) * v; }
     function P(f, v) { f = Math.max(-10, Math.min(110, f)); return { x: W / 2 + (f - 50) * s * sc(v), y: yT + (yB - yT) * v }; }
+    function P2(f, v) { return { x: W / 2 + (f - 50) * s * sc(v), y: yT + (yB - yT) * v }; }   /* unclamped (a kick past the posts) */
+    /* A point h yards above the field, for the goal posts and a field goal's flight (a little taller
+       than the ball's height scale elsewhere, so the posts read at phone size). */
+    function Ph(f, v, h) { var g = P2(f, v); return { x: g.x, y: g.y - h * 0.95 * s * sc(v), gx: g.x, gy: g.y }; }
     /* Lanes at a fixed step (drivecore LANES): depth 0, the newest play, just inside the near sideline;
        the LANES-th lane at the far side. A play's drawing is rebuilt for the lane it's on. */
     var n = spec.rows.length, rows = [], vNear = 0.8, vStep = 0.74 / (K.LANES - 1);   /* nearest lane clear of the yard numbers */
@@ -61,8 +65,31 @@
       function arcH(len) { return Math.max(1.6, Math.min(kick ? 17 : 12, len * (kick ? 0.36 : 0.3))) * yd * 0.85; }
       function arc(p, q, c) { return curve(p, q, arcH(Math.abs(q.x - p.x) / yd), c); }
       function X(f) { return P(f, v); }
-      var aiPt = null;
-      if (row.intAt != null && row.type === "air") {
+      var aiPt = null, contact = null, labelP = null, chipPt = null, tapEnd = null;
+      if (row.type === "fg" || row.blocked) {
+        /* Field goal (or blocked kick): same flight as the 3D chart, from the play's lane to the
+           posts' centre; a miss ends in a red X, a doink adds the carom off the upright. */
+        var fp = K.fgPath(row), tipQ = null, cPt = null;
+        function fq(q) { var vv = v + q.b * (0.5 - v) + q.zo / 53.3; return Ph(q.f, vv, q.h); }
+        fp.pieces.forEach(function (pts, pi) {
+          var pt = measure({ kind: "tube", pts: pts.map(function (q) { var h = fq(q); return [h.x, h.y, h.gx, h.gy]; }), col: col, arc: true });
+          var lastP = pt.pts[pt.pts.length - 1]; tipQ = lastP; if (pi === 0 && fp.contact) cPt = { x: lastP[0], y: lastP[1] };
+          /* The path stops short of the arrowhead / X so neither is buried in the ribbon. */
+          var gap2 = pi < fp.pieces.length - 1 ? 0 : fp.end === "cone" ? headL * 0.9 : w * 1.1;
+          if (gap2 && pt.len > gap2 * 1.6) {
+            var L0 = pt.len - gap2, keep2 = [];
+            for (var j = 0; j < pt.pts.length && pt.cum[j] <= L0; j++) keep2.push(pt.pts[j]);
+            var cutP = along(pt, L0 / pt.len); keep2.push([cutP.x, cutP.y, cutP.gx, cutP.gy]);
+            tube({ kind: "tube", pts: keep2, col: col, arc: true });
+            if (fp.end === "cone") parts.push({ kind: "end", tip: [lastP[0], lastP[1]], dir: [1, 0], ang: Math.atan2(lastP[1] - cutP.y, lastP[0] - cutP.x), len: headL * 0.6, col: col, size: headL, w: w, from: [cutP.x, cutP.y], to: [lastP[0], lastP[1]] });
+          } else parts.push(pt);
+        });
+        if (fp.end === "cross") { cross({ x: tipQ[0], y: tipQ[1] }, rgb("#d32f2f")); var xp = parts[parts.length - 1]; xp.size = w * 1.9; xp.outline = true; }
+        end = { x: tipQ[0], y: tipQ[1] }; labelP = { x: tipQ[2], y: tipQ[3] };
+        var lf = fp.pieces[0][fp.pieces[0].length - 1].f; tapEnd = P(lf, v);   /* tap target stays on the lane */
+        if (fp.chip) { var cq = fq(fp.chip); chipPt = { x: cq.x, y: cq.y }; }
+        if (fp.contact && fp.pieces.length > 1) { contact = cPt; split = parts[0].len / (parts.reduce(function (a2, p2) { return a2 + p2.len; }, 0) || 1); }
+      } else if (row.intAt != null && row.type === "air") {
         var I = X(row.intAt);
         if (Math.abs(row.intAt - row.fs) >= 1) tube(arc(A, I));
         cross({ x: I.x, y: I.y - 0.3 * yd }, rgb("#d32f2f")); intCross = parts[parts.length - 1];
@@ -110,9 +137,9 @@
         ghost = Object.assign(ghost || {}, { parts: parts, A: A, inc: pp.type === "inc", end: G, col: gcol });
         parts = keep;
       }
-      if (row.fgMiss) missX = { at: [E.x, E.y - 2.5 * yd * 0.62], size: w * 1.6, w: w * 1.2 };
-      return { parts: parts, A: A, end: end, v: v, yd: yd, w: w, col: col, split: split, intCross: intCross, solid: solid, ghost: ghost, missX: missX, alpha: 1,
-        label: row.label ? { p: { x: end.x, y: end.y }, z: v, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null };
+      if (row.fgMiss && row.type !== "fg" && !row.blocked) missX = { at: [E.x, E.y - 2.5 * yd * 0.62], size: w * 1.6, w: w * 1.2 };
+      return { parts: parts, A: A, end: end, v: v, yd: yd, w: w, col: col, split: split, contact: contact, chipPt: chipPt, tapEnd: tapEnd, intCross: intCross, solid: solid, ghost: ghost, missX: missX, alpha: 1,
+        label: row.label ? { p: labelP || { x: end.x, y: end.y }, z: v, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null };
     }
     /* Built on the near lane first: that's where each play is animated (the plan reads split etc. from it). */
     spec.rows.forEach(function (row, i) { rows.push(makeRow(row, i, vOf(0))); });
@@ -167,8 +194,34 @@
       x.restore();
       return { p: { x: b.x, y: b.y }, z: v, dir: d, text: st.text, a: st.alpha };
     }
+    /* Goal posts at one end (es = 1: right end line, -1: left), drawn flat; hit = {zs, amt, k} makes
+       one upright flash white and sway (a doink). */
+    var GL = K.GOAL;
+    function goal(x, es, hit) {
+      var f0 = es > 0 ? 110 : -10, hw = GL.hw / 53.3, base = Ph(f0 + es * GL.back, 0.5, 0), bTop = Ph(f0 + es * GL.back, 0.5, GL.cb - 1.3), neck = Ph(f0, 0.5, GL.cb);
+      var lw = Math.max(1.6 * k, 0.32 * s), uw = Math.max(1.3 * k, 0.24 * s);
+      x.save(); x.lineCap = "round"; x.lineJoin = "round";
+      function path(draw, width, col) { x.beginPath(); draw(); x.lineWidth = width; x.strokeStyle = col; x.stroke(); }
+      function all(col, extra) {
+        path(function () { x.moveTo(base.x, base.y); x.lineTo(bTop.x, bTop.y); x.quadraticCurveTo(bTop.x, neck.y, neck.x, neck.y); }, lw + extra, col);
+        var a = Ph(f0, 0.5 - hw, GL.cb), b = Ph(f0, 0.5 + hw, GL.cb);
+        path(function () { x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); }, uw + extra, col);
+        [-1, 1].forEach(function (zs) {
+          var q0 = Ph(f0, 0.5 + zs * hw, GL.cb), q1 = Ph(f0, 0.5 + zs * hw, GL.top);
+          path(function () { x.moveTo(q0.x, q0.y); x.lineTo(q1.x, q1.y); }, uw + extra, col);
+        });
+      }
+      if (!hit) { all("rgba(60,45,0,0.35)", 1.2 * k); all("#f4c430", 0); }
+      else if (hit.amt > 0) {
+        var r0 = Ph(f0, 0.5 + hit.zs * hw, GL.cb), r1 = Ph(f0, 0.5 + hit.zs * hw, GL.top), sway = Math.sin(hit.k / 24) * hit.amt * 0.9 * s;
+        path(function () { x.moveTo(r0.x, r0.y); x.quadraticCurveTo(r0.x, (r0.y + r1.y) / 2, r1.x + sway, r1.y); }, uw * 1.25, "#f4c430");
+        x.globalAlpha = Math.max(0, 1 - hit.k / 260);
+        path(function () { x.moveTo(r0.x, r0.y); x.quadraticCurveTo(r0.x, (r0.y + r1.y) / 2, r1.x + sway, r1.y); }, uw * 1.25, "#fffbe0");
+      }
+      x.restore();
+    }
     return {
-      cap: cap, yCap: yCap, summaryDraw: summaryDraw,
+      cap: cap, yCap: yCap, summaryDraw: summaryDraw, goal: goal,
       W: W, H: H, u: u, k: k, s: s, P: P, bannerY: (boxB + yT) / 2 / H, bannerScale: 0.9, sc: sc, yT: yT, yB: yB, rows: rows, reveal: reveal, tipAt: tipAt, along: along,
       startAt: startAt, startLabel: spec.start && spec.start.label, tbLine: tbLine, place: place, tbRow: tb ? tb.row : -1,
       labelOf: function (k) { var r = rows[k], l = r.label; if (!l || !(r.alpha > 0)) return null; return { p: l.p, z: l.z, dir: l.dir, text: l.text, a: r.alpha }; },
@@ -214,6 +267,7 @@
       x.save(); x.translate(q.x, q.y); x.scale(0.78, 0.72); x.font = "italic 800 " + Math.round(npx) + "px " + DISPLAY; x.fillText(lab, 0, 0); x.restore();
     }
     x.globalAlpha = 1;
+    B.goal(x, -1); B.goal(x, 1);
     return c;
   }
   function fieldLine(x, B, f, color, wYd) {
@@ -242,14 +296,17 @@
       } else if (p.kind === "dots") {
         var k = Math.round(f * p.count); x.fillStyle = c;
         for (var j = 0; j < k; j++) { var q = alongPts(p, (j + 0.5) / p.count); x.beginPath(); x.arc(q[0], q[1], r.w * 0.42, 0, Math.PI * 2); x.fill(); }
-      } else if (f >= 1) {
+      } else if (f >= 0.999) {
         var sc = scaleOf ? scaleOf(p) : 1; if (sc <= 0) return;
         x.save(); x.translate(p.tip[0], p.tip[1]); x.scale(sc, sc);
         if (p.cross) {
-          var h = p.size * 0.5; x.strokeStyle = c; x.lineWidth = p.w * 0.55;
+          var h = p.size * 0.5;
+          if (p.outline) { x.strokeStyle = "#fff"; x.lineWidth = p.w * 1.0; x.beginPath(); x.moveTo(-h, -h); x.lineTo(h, h); x.moveTo(-h, h); x.lineTo(h, -h); x.stroke(); }
+          x.strokeStyle = c; x.lineWidth = p.w * 0.55;
           x.beginPath(); x.moveTo(-h, -h); x.lineTo(h, h); x.moveTo(-h, h); x.lineTo(h, -h); x.stroke();
         } else {
           var L = p.size, wd = L * 0.62, dx = p.dir[0];
+          if (p.ang != null) { x.rotate(p.ang); dx = 1; }
           x.beginPath(); x.moveTo(0, 0); x.lineTo(-dx * L, -wd); x.lineTo(-dx * L, wd); x.closePath();
           x.fillStyle = c; x.fill(); x.strokeStyle = "rgba(0,0,0,0.35)"; x.lineWidth = Math.max(0.6, p.w * 0.08); x.stroke();
         }
@@ -331,7 +388,7 @@
       if (spec.laneMode) { var ls = K.laneState(spec, k, nR - 1, 1, B.cap); B.place(k, ls.depth, ls.alpha); }
       else B.place(k, nR - 1 - k);
     }
-    return B.rows.map(function (r, k) { return r.alpha > 0 ? { k: k, a: [r.A.x, r.A.y], b: [r.end.x, r.end.y] } : null; });
+    return B.rows.map(function (r, k) { var te = r.tapEnd || r.end; return r.alpha > 0 ? { k: k, a: [r.A.x, r.A.y], b: [te.x, te.y] } : null; });
   }
   function replay(holder, spec, opts) {
     opts = opts || {};
@@ -342,12 +399,13 @@
     wrap.appendChild(cv); holder.appendChild(wrap);
     var x = cv.getContext("2d"), B = build(spec, W, H), bg = background(spec, B);
     var linger = Math.max(0, opts.linger != null ? +opts.linger : 1) * 1000;
-    var P = K.plan(spec, B, linger), segs = P.segs, fracOf = K.fracOf;
+    var P = K.plan(spec, B, linger), segs = P.segs, fracOf = K.fracOf, doink = K.doinkWatch(segs, opts);
     var ltgAt = function (k) { return k >= 0 && spec.rows[k] ? spec.rows[k].ltg : null; };
 
     function renderAt(t) {
       var cur = K.activeAt(segs, t), g = segs[cur], s = spec.rows[cur], outro = t >= P.outro;
       var undim = outro ? EASE.out(ramp(t, P.outro, 400)) : 0;
+      doink(t);
       /* Earlier plays slide one lane back as each new play is spotted. */
       for (var q = 0; q <= cur && q < B.rows.length; q++) {
         if (spec.laneMode) { var ls = K.laneState(spec, q, cur, K.slideE(segs, cur, t), B.cap); B.place(q, ls.depth, ls.alpha); }
@@ -395,6 +453,9 @@
         if (row.missX && (k < cur || t >= sg.end)) drawX(x, row, dim, k === cur ? backOut(ramp(t, sg.end, 240)) : 1, la);
       });
       var sumLabel = B.summaryDraw(x, K.summaryState(spec, cur, K.slideE(segs, cur, t)));
+      /* Doink: the upright that was hit flashes and sways (~0.6 s). */
+      if (g && g.contact != null && t >= g.contact && !outro && t < g.contact + 650)
+        B.goal(x, (s.dir || 1) > 0 ? 1 : -1, { zs: (s.dir || 1) * K.fgSide(s) >= 0 ? 1 : -1, amt: 1 - ramp(t, g.contact, 650), k: t - g.contact });
       /* Ball: spotted at the start, rides the tip of the arrow, rests where the play ended. */
       if (g && !outro) {
         var row = B.rows[cur], yd = row.yd, sc = 1, pos, ang = 0, lift = 0;
@@ -417,11 +478,11 @@
           pos = g.type === "dot" ? pt(row.A) : B.tipAt(row, fr);
           lift = pos.gy - pos.y;
           if (g.type === "dot" && t >= g.end) pos.x += Math.sin((t - g.end) / 22) * 0.35 * yd * (1 - ramp(t, g.end, 260));
-          if (g.kind === "fg" && t < g.end) { var fl = Math.sin(Math.PI * fr) * 9 * yd * 0.62; pos.y -= fl; lift += fl; }
           if (g.kind === "pen" && !row.ghost && t < g.phases[0].a + g.phases[0].d) pos = pt(row.A);
           var flying = t < g.end && (g.type === "air" || g.type === "inc" || g.type === "kick" || g.kind === "fg") && (g.catchAt == null || t < g.catchAt);
           if (flying && pos.tx != null) ang = Math.atan2(pos.ty, pos.tx);
           if (g.kind === "inc" && t >= g.end) { sc *= 1 - ramp(t, g.end, 260); pos.y += 0.6 * yd * 0.62 * ramp(t, g.end, 260); }
+          if ((s.type === "fg" || s.blocked) && t >= g.end) sc *= 1 - ramp(t, g.end + 120, 280);   /* a kick's ball doesn't rest in the air */
         }
         pos.y -= 0.35 * yd * 0.62;
         if (sc > 0.01) drawBall(x, B, pos, ang, sc, lift, yd);
@@ -429,10 +490,12 @@
       var st = K.overlayState(t, cur, g, s, outro, segs, spec,
         function (k) { return B.labelOf(k); },
         function (k, sg) {
-          var e = B.rows[k], p = sg.type === "dot" ? e.A : e.end, f = sg.type === "dot" ? spec.rows[k].fs : spec.rows[k].fe;
+          var e = B.rows[k]; if (e.chipPt) return e.chipPt;
+          var p = sg.type === "dot" ? e.A : e.end, f = sg.type === "dot" ? spec.rows[k].fs : spec.rows[k].fe;
           var nudge = f >= 95 ? -10 * B.k : f <= 5 ? 10 * B.k : 0;   /* off the end-zone lettering */
           return { x: p.x + nudge, y: p.y - 1.4 * e.yd * 0.62 };
         });
+      if (g && g.contact != null && B.rows[cur].contact && !outro) K.drawBurst(x, clamp(B.rows[cur].contact.x, 24 * u, W - 24 * u), B.rows[cur].contact.y, u, ramp(t, g.contact, 360));
       K.drawOverlay(x, W, H, B, sumLabel ? st.labels.concat([sumLabel]) : st.labels, st.co, null, st.fx);
     }
 

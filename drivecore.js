@@ -22,12 +22,94 @@
     air: bez(0.25, 0.12, 0.5, 1),    /* even flight, settles into the catch */
     kick: bez(0.3, 0.2, 0.6, 0.9),   /* near-constant: hang time comes from the high arc */
     walk: bez(0.45, 0, 0.55, 1),     /* penalty walk-off: deliberate */
+    carom: bez(0.15, 0.45, 0.55, 1), /* ball off an upright: quick rebound, drops away */
     stub: bez(0.2, 0.6, 0.3, 1),
     out: bez(0.2, 0.7, 0.3, 1)
   };
   function backOut(t) { t = Math.max(0, Math.min(1, t)); var c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function ramp(t, a, d) { return clamp((t - a) / (d || 1), 0, 1); }
+
+  /* Goal posts (yards): crossbar height, half the width between the uprights, top of the uprights
+     (kept lower than the real 35 ft so they don't crowd the chart), and how far behind the end
+     line the base stands (the gooseneck brings the uprights over the end line). */
+  var GOAL = { cb: 3.33, hw: 3.1, top: 3.33 + 7, back: 2 };
+  /* Which upright / side of the posts, from the kicker's view: -1 left, 1 right, 0 neither. */
+  function fgSide(s) {
+    var r = s.fgResult;
+    return r === "wideL" || r === "upL" || s.fgDoink === "L" ? -1 : r === "wideR" || r === "upR" || s.fgDoink === "R" ? 1 : 0;
+  }
+  /* A field goal's flight, renderer-neutral: pieces of sample points {f, h, zo, b}.
+     f = field x (0..100 + end zones), h = height in yards, zo = offset from the posts' centre line
+     across the field in world depth (+ = near sideline), b = how far the path has moved from the
+     play's lane to the posts (0..1). Kicker's left is the far side when kicking toward +x and the
+     near side when kicking toward -x. A second piece is the carom after hitting an upright.
+     end: "cone" (good) or "cross" (miss / block). Blocked punts use the "blocked" shape too. */
+  function fgPath(s) {
+    var dir = s.dir || 1, res = s.blocked ? "blocked" : s.fgResult || (s.fgMiss ? "miss" : "good");
+    var fk = s.fs, fp = dir > 0 ? 110 : -10, D = Math.max(8, Math.abs(fp - fk)), pieces = [], end = "cone", contact = false;
+    function F(p) { return fk + dir * D * p; }
+    function piece(fn, n) { var pts = []; for (var i = 0; i <= n; i++) pts.push(fn(i / n)); pieces.push(pts); }
+    if (res === "blocked") {
+      /* Knocked down at the line: a low, short pop that stops just past the line of scrimmage. */
+      var fe = s.fe, pk = 1.5;
+      piece(function (q) { return { f: fk + (fe - fk) * q, h: 4 * pk * q * (1 - q), zo: 0, b: 0 }; }, 16);
+      end = "cross";
+    } else if (res === "short" || res === "miss") {
+      /* Comes down in front of the posts, under the crossbar. */
+      var pe = Math.max(0.5, (D - 4) / D), hp = clamp(0.2 * D, GOAL.cb + 2.4, 12), a = 4 * hp / (pe * pe);
+      piece(function (q) { var p = pe * q; return { f: F(p), h: a * p * (pe - p), zo: 0, b: p }; }, 36);
+      end = "cross";
+    } else {
+      var side = fgSide(s), up = res === "upL" || res === "upR" || !!s.fgDoink, sw = dir * side;
+      /* Parabola that would land at PE (past the posts): descending as it reaches them, like a real kick. */
+      var hc = up ? GOAL.cb + 2.4 : GOAL.cb + 3, PE = 1.2, A2 = hc / (PE - 1);
+      /* Wide: well outside the upright, ending just past the end line.
+         On the near side (toward the viewer) a little less, so the X stays inside the 3D frame. */
+      var nearW = sw > 0, lat = up ? GOAL.hw : side ? GOAL.hw + (nearW ? 4 : 5) : 0, pEnd = up ? 1 : 1 + (side ? (nearW ? -1 : 0.3) : Math.min(1.4, 0.1 * D)) / D;
+      piece(function (q) { var p = pEnd * q; return { f: F(p), h: A2 * p * (PE - p), zo: sw * lat * Math.pow(p, 1.5), b: Math.min(1, p) }; }, 40);
+      if (up && res !== "good") {
+        /* Doink: off the upright, back toward the field and outward, and down. */
+        contact = true;
+        piece(function (q) { return { f: fp - dir * 6 * q, h: hc + 2.6 * q - (hc + 2.6) * q * q, zo: sw * (GOAL.hw + 2.6 * q), b: 1 }; }, 20);
+        end = "cross";
+      } else if (up) {
+        /* Doink and in: off the inside of the upright and through. */
+        contact = true;
+        piece(function (q) { return { f: fp + dir * 2 * q, h: hc - 0.8 * q, zo: sw * GOAL.hw * (1 - 0.7 * q), b: 1 }; }, 10);
+        end = "cone";
+      } else end = side ? "cross" : "cone";
+    }
+    /* chip: where the result chip goes, in front of the posts and above them, so it doesn't cover them. */
+    var chip = res === "blocked" ? null : { f: fp - dir * 9, h: GOAL.top + 1, zo: 0, b: 1 };
+    return { pieces: pieces, end: end, contact: contact, fp: fp, side: fgSide(s), dir: dir, chip: chip };
+  }
+  /* Doink impact: a short white starburst at the contact point (e = 0..1 over ~360 ms). */
+  function drawBurst(o, x, y, u, e) {
+    if (!(e > 0 && e < 1)) return;
+    var r0 = (3 + 8 * e) * u, r1 = (7 + 15 * e) * u;
+    o.save(); o.globalAlpha = 1 - e * e; o.lineCap = "round";
+    [["rgba(0,0,0,0.35)", 3.4], ["#ffffff", 1.9]].forEach(function (st) {
+      o.strokeStyle = st[0]; o.lineWidth = st[1] * u; o.beginPath();
+      for (var i = 0; i < 8; i++) { var an = i * Math.PI / 4 + 0.3, c = Math.cos(an), sn = Math.sin(an); o.moveTo(x + c * r0, y + sn * r0); o.lineTo(x + c * r1, y + sn * r1); }
+      o.stroke();
+    });
+    o.restore();
+  }
+  /* The "doink": calls opts.onDoink when a render at time t follows one before a play's contact
+     time (t moving forward) and t is less than 400 ms past the contact. So: once per forward
+     crossing; nothing when seeking backwards, on the first render (e.g. fromLast), or when a seek
+     lands more than 400 ms past the contact. With opts.clock (frame capture) only if
+     opts.doinkOnSeek is set (the live animation drives the clock and sets it). */
+  function doinkWatch(segs, opts) {
+    var last = null, on = opts && opts.onDoink && (!opts.clock || opts.doinkOnSeek);
+    return function (t) {
+      if (on && last != null && t > last) segs.forEach(function (g) {
+        if (g.contact != null && last < g.contact && t >= g.contact && t - g.contact < 400) { try { opts.onDoink(g); } catch (e) {} }
+      });
+      last = t;
+    };
+  }
 
   /* Plan the timeline. linger = the user's "Replay pause" in ms. */
   function plan(spec, B, linger) {
@@ -50,8 +132,16 @@
       var ph = [], air = s.fc != null ? Math.abs(s.fc - s.fs) : Math.abs(s.fe - s.fs), len = Math.abs(s.fe - s.fs);
       function airMs(y) { return clamp(420 + 20 * y, 480, 1100); }
       function runMs(y) { return clamp(300 + 28 * y, 380, 1300) + (y >= 15 ? 150 : 0); }
-      if (kind === "kick") ph.push(["m", clamp(900 + 11 * len, 1100, 1800), 0, 1, EASE.kick]);
-      else if (kind === "fg") ph.push(["m", 1150, 0, 1, EASE.kick]);
+      if (kind === "fg" || (kind === "kick" && s.blocked)) {
+        var fl = clamp(780 + 12 * (s.fgDist || 35), 1050, 1600);
+        if (s.blocked || s.fgResult === "blocked") ph.push(["m", 560, 0, 1, EASE.out]);
+        else if (r.contact && r.split != null) {
+          /* Up to the upright, a beat on the contact, then the carom. */
+          ph.push(["m", fl, 0, r.split, EASE.kick]); ph.push(["m", 110, r.split, r.split, null]);
+          ph.push(["m", s.fgResult === "good" ? 420 : 680, r.split, 1, EASE.carom]); g.contactI = 1;
+        } else ph.push(["m", fl, 0, 1, EASE.kick]);
+      }
+      else if (kind === "kick") ph.push(["m", clamp(900 + 11 * len, 1100, 1800), 0, 1, EASE.kick]);
       else if (kind === "pen") {
         if (r.ghost) {
           var gl = Math.abs(s.prePlay.len);
@@ -77,9 +167,11 @@
       var tt = g.snap;
       g.phases = ph.map(function (p) { var o = { tgt: p[0], a: tt, d: p[1] * (p[4] ? tempo : 1), f0: p[2], f1: p[3], e: p[4] }; tt += o.d; return o; });
       if (g.catchI) g.catchAt = g.phases[0].a + g.phases[0].d;
+      if (g.contactI) g.contact = g.phases[0].a + g.phases[0].d;
       if (kind === "pen" && r.ghost) { g.ghostEnd = g.phases[0].a + g.phases[0].d; g.walkAt = g.phases[2].a; }
       g.end = tt;
-      var emph = kind === "td" ? 1200 : kind === "to" ? 1300 : kind === "fg" || kind === "safety" ? 1000 : big ? 350 : 0;
+      /* A missed kick holds a little longer (more so off an upright) so the miss can be seen. */
+      var emph = kind === "td" ? 1200 : kind === "to" ? 1300 : kind === "fg" ? (g.miss ? (g.contactI ? 1500 : 1200) : g.contactI ? 1300 : 1000) : kind === "safety" ? 1000 : big ? 350 : 0;
       /* Reading time counts only text the snap line did not already show. */
       g.newChars = newChars(s.callout || {});
       g.read = 400 + 30 * g.newChars;
@@ -95,7 +187,7 @@
     t = 0;
     segs.forEach(function (g, k) {
       var shift = t - g.t0;
-      if (shift) { g.t0 += shift; g.snap += shift; g.end += shift; if (g.catchAt) g.catchAt += shift; if (g.ghostEnd) g.ghostEnd += shift; if (g.walkAt) g.walkAt += shift; g.phases.forEach(function (p) { p.a += shift; }); }
+      if (shift) { g.t0 += shift; g.snap += shift; g.end += shift; if (g.catchAt) g.catchAt += shift; if (g.contact) g.contact += shift; if (g.ghostEnd) g.ghostEnd += shift; if (g.walkAt) g.walkAt += shift; g.phases.forEach(function (p) { p.a += shift; }); }
       var nx = segs[k + 1], nextPre = nx && !nx.cont ? nx.pre : 0;
       g.hold = g.nextCont ? 160 : Math.max(linger, g.read - nextPre) + g.emph;
       g.holdEnd = g.end + g.hold; t = g.holdEnd;
@@ -112,13 +204,14 @@
     var k = 0; while (k < res.length && k < pre.length && res[k] === pre[k]) k++;
     return res.length - k;
   }
+  var FGCHIP = { wideL: "Wide left", wideR: "Wide right", short: "Short", upL: "Hit left upright", upR: "Hit right upright", blocked: "Blocked" };
   function chipFor(s, g) {
     /* Chips in words: "18 yards", "-4 yards", "TD, 5 yards", "22 yard return". */
     var y = g.yds, GREY = "rgba(60,60,60,0.86)";
     function yards(n) { var a = Math.abs(n); return (n < 0 ? "\u2212" : "") + a + (a === 1 ? " yard" : " yards"); }
     function yardOf(n) { return (n < 0 ? "\u2212" : "") + Math.abs(n) + " yard"; }
     switch (g.kind) {
-      case "kick": return { text: Math.round(Math.abs(s.fe - s.fs)) + (s.punt ? " yard punt" : " yard kick") };
+      case "kick": if (s.blocked) return { text: "Blocked", bg: "#c62828" }; return { text: Math.round(Math.abs(s.fe - s.fs)) + (s.punt ? " yard punt" : " yard kick") };
       case "ret": return { text: yardOf(y) + " return" };
       case "inc": return { text: "Incomplete", bg: GREY };
       case "spike": return { text: "Spike", bg: GREY };
@@ -129,7 +222,7 @@
         if (s.intAt != null) { var ry = Math.round(Math.abs(s.fe - s.intAt)); return { text: ry >= 1 ? ry + " yard return" : "No return", bg: s.retColor || "#8f1d1d" }; }
         return null;
       case "safety": return null;
-      case "fg": return g.miss ? { text: "No good", bg: "#c62828" } : null;
+      case "fg": return g.miss ? { text: FGCHIP[s.fgResult] || "No good", bg: "#c62828" } : null;
       case "td": return s.defTD ? { text: "Defensive TD", bg: s.retColor || "#8f1d1d", big: true, td: true } : { text: "TD, " + yards(y), bg: s.color, big: true, td: true };
       default: return y < 0 ? { text: yards(y), bg: "#b4441d" } : y === 0 ? { text: "No gain", bg: GREY } : g.big ? { text: yards(y), bg: "#ffd23f", fg: "#17201b", big: true } : { text: yards(y) };
     }
@@ -355,12 +448,12 @@
   /* Timeline export (same shape for both renderers). */
   function timelineOf(segs) {
     return segs.map(function (g) {
-      return { row: g.k, kind: g.kind, type: g.type, yds: g.yds, cont: g.cont, num: g.num, t0: g.t0, snap: g.snap, catchAt: g.catchAt || null, ghostEnd: g.ghostEnd || null, walkAt: g.walkAt || null,
+      return { row: g.k, kind: g.kind, type: g.type, yds: g.yds, cont: g.cont, num: g.num, t0: g.t0, snap: g.snap, catchAt: g.catchAt || null, contact: g.contact || null, ghostEnd: g.ghostEnd || null, walkAt: g.walkAt || null,
         end: g.end, holdEnd: g.holdEnd, read: g.read, newChars: g.newChars, emph: g.emph,
         phases: g.phases.map(function (p) { return { tgt: p.tgt, a: p.a, d: p.d, f0: p.f0, f1: p.f1 }; }) };
     });
   }
-  window.DriveCore = { DISPLAY: DISPLAY, bez: bez, EASE: EASE, backOut: backOut, clamp: clamp, ramp: ramp, plan: plan, newChars: newChars,
+  window.DriveCore = { drawBurst: drawBurst, GOAL: GOAL, fgPath: fgPath, fgSide: fgSide, doinkWatch: doinkWatch, DISPLAY: DISPLAY, bez: bez, EASE: EASE, backOut: backOut, clamp: clamp, ramp: ramp, plan: plan, newChars: newChars,
     chipFor: chipFor, fracOf: fracOf, activeAt: activeAt, LANES: LANES, laneDepth: laneDepth, laneAlpha: laneAlpha, slideE: slideE, laneState: laneState, summaryState: summaryState, dimOf: dimOf, overlayState: overlayState, timelineOf: timelineOf,
     pill: pill, drawOverlay: drawOverlay };
 })();

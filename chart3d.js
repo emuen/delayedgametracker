@@ -89,7 +89,8 @@
     var scene = new THREE.Scene();
     scene.background = skyTexture();
     var cv = spec.cam || {};
-    var cam = new THREE.PerspectiveCamera(cv.fov || 24, W / H, 1, 1000);
+    /* fov 26 (was 24): the smallest view that keeps the goal posts on the end lines in the frame. */
+    var cam = new THREE.PerspectiveCamera(cv.fov || 26, W / H, 1, 1000);
     cam.position.set(0, cv.y || 82, cv.z || 138); cam.lookAt(0, cv.ly != null ? cv.ly : 8, cv.lz != null ? cv.lz : -3);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x2c4a26, 0.5));
     var sun = new THREE.DirectionalLight(0xffffff, 0.75);
@@ -102,6 +103,32 @@
     field.rotation.x = -Math.PI / 2; field.receiveShadow = true; scene.add(field);
 
     function wx(f) { return Math.max(-60, Math.min(60, f - 50)); }
+    /* Goal posts on both end lines (always shown): base behind the end line, gooseneck, crossbar
+       across the field's width direction and two uprights. Each upright has its own material so a
+       doink can flash and shake just the one that was hit. */
+    var GL = K.GOAL, uprights = {}, ycol = lin("#f4c430");
+    var ymat = new THREE.MeshStandardMaterial({ color: ycol, roughness: 0.4, metalness: 0.2, emissive: ycol.clone().multiplyScalar(0.18) });
+    [-1, 1].forEach(function (es) {
+      var x0 = es * 60, xb = es * (60 + GL.back), baseH = GL.cb - 1.3;
+      function add(geo, mm) { var me = new THREE.Mesh(geo, mm || ymat); me.castShadow = true; scene.add(me); return me; }
+      add(new THREE.CylinderGeometry(0.3, 0.34, baseH, 10)).position.set(xb, baseH / 2, 0);
+      add(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(xb, baseH - 0.05, 0), new THREE.Vector3(xb, GL.cb, 0), new THREE.Vector3(x0, GL.cb, 0)), 12, 0.28, 8, false));
+      var bar = add(new THREE.CylinderGeometry(0.25, 0.25, 2 * GL.hw + 0.5, 10)); bar.rotation.x = Math.PI / 2; bar.position.set(x0, GL.cb, 0);
+      uprights[es] = {};
+      [-1, 1].forEach(function (zs) {
+        var um = ymat.clone(), ug = new THREE.CylinderGeometry(0.22, 0.25, GL.top - GL.cb, 10);
+        ug.translate(0, (GL.top - GL.cb) / 2, 0);   /* pivot at the crossbar, so a shake sways the top */
+        var up2 = add(ug, um); up2.position.set(x0, GL.cb, zs * GL.hw); up2.userData.baseE = um.emissive.clone(); uprights[es][zs] = up2;
+      });
+    });
+    /* Doink: the hit upright flashes and sways for a moment (amt 0..1, k = ms since contact). */
+    function shake(es, zs, amt, k) {
+      [-1, 1].forEach(function (a) { [-1, 1].forEach(function (b) { var u2 = uprights[a][b]; u2.rotation.set(0, 0, 0); u2.material.emissive.copy(u2.userData.baseE); }); });
+      if (!(amt > 0) || !uprights[es] || !uprights[es][zs]) return;
+      var u3 = uprights[es][zs];
+      u3.rotation.z = 0.11 * amt * Math.sin(k / 24); u3.rotation.x = 0.04 * amt * Math.sin(k / 31);
+      u3.material.emissive.setRGB(1, 1, 0.85).multiplyScalar(0.9 * Math.max(0, 1 - k / 260));
+    }
     function lineMesh(color) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.06, FIELD_W), new THREE.MeshBasicMaterial({ color: lin(color) }));
       m.position.y = 0.04; m.visible = false; scene.add(m); return m;
@@ -149,10 +176,41 @@
         tube(new THREE.LineCurve3(new V3(at.x - d * 3.4, Y, z), new V3(at.x - d * CONE * 0.9, Y, z)));
         cone(at, new V3(d, 0, 0));
       }
-      var kick = row.type === "kick";
+      var kick = row.type === "kick", contact = null, chipPt = null, tapEnd = null;
       function arcH(len) { return Math.max(0.9, Math.min(kick ? 16 : 11, len * (kick ? 0.33 : 0.27))); }
       function arc(P, Q) { var h = arcH(Math.abs(Q.x - P.x)); return new THREE.QuadraticBezierCurve3(P, new V3((P.x + Q.x) / 2, Y + 2 * h, z), Q); }
-      if (row.intAt != null && row.type === "air") {
+      if (row.type === "fg" || row.blocked) {
+        /* Field goal (or blocked kick): the flight from the spot of the kick toward the posts in
+           the far end zone, leaving the play's lane for the posts' centre (local z = -zNear at
+           depth 0); a miss ends in a red X, a doink adds the carom off the upright. */
+        var fp = K.fgPath(row), mainF = m;
+        function fv(q) { return new V3(q.f - 50, Y + q.h, -zNear * q.b + q.zo); }
+        var tipV = null, cPt = null;
+        fp.pieces.forEach(function (pts, pi) {
+          var cvF = new THREE.CatmullRomCurve3(pts.map(fv)), last = pi === fp.pieces.length - 1;
+          tipV = cvF.getPointAt(1); if (pi === 0 && fp.contact) cPt = tipV.clone();
+          /* The path stops short of the arrowhead / X so neither is buried in the tube. */
+          var gap = !last ? 0 : fp.end === "cone" ? CONE * 0.9 : 1.2;
+          if (gap && cvF.getLength() > gap * 1.6) {
+            var u0 = 1 - gap / cvF.getLength(), cut = [];
+            for (var q = 0; q <= 30; q++) cut.push(cvF.getPointAt(u0 * q / 30));
+            tube(new THREE.CatmullRomCurve3(cut));
+            if (fp.end === "cone") cone(tipV, tipV.clone().sub(cvF.getPointAt(u0)));
+          } else tube(cvF);
+        });
+        if (fp.end === "cross") {
+          /* A larger red X with a white outline, so it shows on any end-zone colour. */
+          var xr = mat("#d32f2f"), xw = mat("#ffffff"), xg = new THREE.Group(); mats.push(xr, xw);
+          [Math.PI / 4, -Math.PI / 4].forEach(function (a) {
+            var bw = new THREE.Mesh(new THREE.BoxGeometry(3.9, 0.95, 0.3), xw); bw.rotation.z = a; xg.add(bw);
+            var br = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.5, 0.5), xr); br.rotation.z = a; br.position.z = 0.25; xg.add(br);
+          });
+          xg.position.copy(tipV).setY(Math.max(tipV.y, Y + 0.9)); grp.add(xg); parts.push({ kind: "end", mesh: xg, len: 1, from: tipV.clone(), to: tipV.clone() });
+        }
+        end = tipV.clone(); tapEnd = new V3(wx(fp.pieces[0][fp.pieces[0].length - 1].f), Y, z);   /* tap target stays on the lane */
+        if (fp.chip) chipPt = fv(fp.chip);
+        if (fp.contact && fp.pieces.length > 1) { contact = cPt; split = parts[0].len / (parts.reduce(function (s2, p2) { return s2 + p2.len; }, 0) || 1); }
+      } else if (row.intAt != null && row.type === "air") {
         /* Interception: the pass flies forward to where it was caught (red X), then the return
            runs back along the turf in the defence's colour. */
         var I = new V3(wx(row.intAt), Y, z), mainM = m;
@@ -230,12 +288,12 @@
         }
         hide(parts); parts = keepP; m = keepM;
       }
-      if (row.fgMiss) {
+      if (row.fgMiss && row.type !== "fg" && !row.blocked) {
         var xm = mat("#d32f2f"); missX = new THREE.Group();
         [Math.PI / 4, -Math.PI / 4].forEach(function (a) { var b = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.45, 0.45), xm); b.rotation.z = a; missX.add(b); });
         missX.position.copy(E).setY(Y + 2.5); missX.visible = false; grp.add(missX);
       }
-      rows.push({ grp: grp, parts: parts, z: z, A: A, end: end, mat: m, mats: mats, split: split, intCross: intCross, solid: solid, ghost: ghost, missX: missX, label: row.label ? { p: end.clone().setY(Y), z: z, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null, at: end.clone().setY(Y + 1.6) });
+      rows.push({ grp: grp, parts: parts, z: z, A: A, end: end, mat: m, mats: mats, split: split, contact: contact, chipPt: chipPt, tapEnd: tapEnd, intCross: intCross, solid: solid, ghost: ghost, missX: missX, label: row.label ? { p: end.clone().setY(Y), z: z, dir: end.x > A.x ? 1 : end.x < A.x ? -1 : (row.dir || 1), text: row.label } : null, at: end.clone().setY(Y + 1.6) });
     });
     /* Drive start: a stripe across the field and a flag in the offense's colour on the near side.
        After a touchback, a dashed line runs from the end zone to the start line. */
@@ -267,7 +325,7 @@
         } else if (p.kind === "dots") {
           var k = Math.round(f * p.list.length);
           p.list.forEach(function (b, j) { b.visible = j < k; });
-        } else p.mesh.visible = f >= 1;
+        } else p.mesh.visible = f >= 0.999;   /* tolerance: float sums can leave the last piece at 0.99999 */
       });
     }
     /* Where the tip of a play is at a fraction of its path (replay ball). */
@@ -319,7 +377,7 @@
       return { p: new V3(b, Y, z), z: z, dir: d, text: st.text, a: st.alpha };
     }
     return {
-      cap: cap, setSummary: setSummary,
+      cap: cap, setSummary: setSummary, shake: shake,
       scene: scene, cam: cam, rows: rows, reveal: reveal, tipAt: tipAt, ball: ball, ltgM: ltgM, wx: wx, setLines: setLines, startAt: startAt, startLabel: spec.start && spec.start.label,
       laneGap: STEP,
       /* Put play k on its lane (depth 0 = nearest); returns how visible it is (fades past the far lane). */
@@ -397,7 +455,7 @@
     B.cam.updateMatrixWorld(); B.cam.updateProjectionMatrix && B.cam.updateProjectionMatrix();
     B.rows.forEach(function (row, k) {
       if (!(row.alpha > 0)) { out.push(null); return; }
-      var a = B.scr(B.world(k, row.A), W, H), e = B.scr(B.world(k, row.end || row.A), W, H);
+      var a = B.scr(B.world(k, row.A), W, H), e = B.scr(B.world(k, row.tapEnd || row.end || row.A), W, H);
       out.push({ k: k, a: a, b: e });
     });
     B.dispose();
@@ -424,7 +482,7 @@
     r.setPixelRatio(1); r.setSize(W, H, false);
     var B = build(spec, W, H, r.capabilities.getMaxAnisotropy()), o = ov.getContext("2d");
     var linger = Math.max(0, opts.linger != null ? +opts.linger : 1) * 1000;
-    var P = plan(spec, B, linger), segs = P.segs;
+    var P = plan(spec, B, linger), segs = P.segs, doink = K.doinkWatch(segs, opts);
     var grey = new THREE.Color(0x8d968f).convertSRGBToLinear();
     B.rows.forEach(function (row) {
       B.reveal(row, 0);
@@ -449,6 +507,11 @@
     function renderAt(t) {
       var cur = activeAt(t), g = segs[cur], s = spec.rows[cur], outro = t >= P.outro;
       var undim = outro ? EASE.out(ramp(t, P.outro, 400)) : 0;
+      doink(t);
+      /* Doink: the upright that was hit shakes and flashes (~0.6 s). */
+      var sh = 0, shS = 0, shE = 0;
+      if (g && g.contact != null && t >= g.contact && !outro) { sh = 1 - ramp(t, g.contact, 650); shE = (s.dir || 1) > 0 ? 1 : -1; shS = (s.dir || 1) * K.fgSide(s) >= 0 ? 1 : -1; }
+      B.shake(shE, shS, sh, g && g.contact != null ? t - g.contact : 0);
       segs.forEach(function (sg, k) {
         var row = B.rows[k], f = k < cur ? 1 : k === cur ? fracOf(sg, t) : 0;
         /* Earlier plays slide one lane back as each new play is spotted. */
@@ -533,11 +596,11 @@
           var fr = fracOf(g, t);
           pos = g.type === "dot" ? row.A.clone() : B.tipAt(row, fr);
           if (g.type === "dot" && t >= g.end) pos.x += Math.sin((t - g.end) / 22) * 0.35 * (1 - ramp(t, g.end, 260));
-          if (g.kind === "fg" && t < g.end) pos.y += Math.sin(Math.PI * fr) * 9;
           if (g.kind === "pen" && !row.ghost && t < g.phases[0].a + g.phases[0].d) pos = row.A.clone();
           var flying = t < g.end && (g.type === "air" || g.type === "inc" || g.type === "kick" || g.kind === "fg") && (g.catchAt == null || t < g.catchAt);
           if (flying) ball.rotation.x = (t - g.snap) / 40;
           if (g.kind === "inc" && t >= g.end) { sc *= 1 - ramp(t, g.end, 260); pos.y -= 0.6 * ramp(t, g.end, 260); }
+          if ((s.type === "fg" || s.blocked) && t >= g.end) sc *= 1 - ramp(t, g.end + 120, 280);   /* a kick's ball doesn't rest in the air */
         }
         if (!isWorld) pos = B.world(cur, pos);
         ball.position.copy(pos).setY(pos.y + lift);
@@ -562,7 +625,9 @@
       o.clearRect(0, 0, W, H);
       var st = K.overlayState(t, cur, g, s, outro, segs, spec,
         function (k) { return B.labelOf(k); },
-        function (k, sg) { var e = B.rows[k]; return B.world(k, (sg.type === "dot" ? e.A : e.end).clone().setY(1.4)); });
+        function (k, sg) { var e = B.rows[k]; return B.world(k, e.chipPt ? e.chipPt : (sg.type === "dot" ? e.A : e.end).clone().setY(1.4)); });
+      /* Doink: a starburst where the ball hit the upright. */
+      if (g && g.contact != null && B.rows[cur].contact && !outro) { var cp = B.scr(B.world(cur, B.rows[cur].contact), W, H), bm = 24 * u; K.drawBurst(o, clamp(cp[0], bm, W - bm), cp[1], u, ramp(t, g.contact, 360)); }
       drawOverlay(o, W, H, B, sumLabel ? st.labels.concat([sumLabel]) : st.labels, st.co, null, st.fx);
     }
 
