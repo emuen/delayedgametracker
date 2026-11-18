@@ -284,12 +284,47 @@
       }
       return last.clone();
     }
+    /* Long-drive modes (spec.laneMode). "off": a hint of ground behind the far sideline so plays slid
+       past it still read, and the last usable depth before the info box. "summary": one thin arrow. */
+    var cap = 0, summary = null, mode = spec.laneMode;
+    if (mode === "off") {
+      var u0 = W / 360, yMin = 78 * u0, pv = new V3();
+      for (var dd2 = K.LANES; dd2 < 80; dd2 += 0.25) {
+        pv.set(0, Y, zNear - dd2 * STEP).project(cam);
+        if ((1 - pv.y) / 2 * H < yMin) break; cap = dd2;
+      }
+      /* Ground only as far back as plays can go, fading out toward the far end. */
+      var depthBack = Math.max(4, (-FIELD_W / 2) - (zNear - (cap + 1) * STEP)), gc = cvs(4, 64), gx = gc.getContext("2d"), gr = gx.createLinearGradient(0, 0, 0, 64);
+      gr.addColorStop(0, "rgba(43,93,41,0)"); gr.addColorStop(1, "rgba(43,93,41,0.55)"); gx.fillStyle = gr; gx.fillRect(0, 0, 4, 64);
+      var gt = new THREE.CanvasTexture(gc); gt.encoding = THREE.sRGBEncoding;
+      var back = new THREE.Mesh(new THREE.PlaneGeometry(400, depthBack), new THREE.MeshBasicMaterial({ map: gt, transparent: true, depthWrite: false }));
+      back.rotation.x = -Math.PI / 2; back.position.set(0, -0.03, -FIELD_W / 2 - depthBack / 2); scene.add(back);
+    }
+    if (mode === "summary") {
+      var sm2 = mat((spec.start && spec.start.color) || "#1d3f8f"); sm2.transparent = true;
+      var sBody = new THREE.Mesh(new THREE.BoxGeometry(1, RAD * 0.7, RAD * 0.7), sm2), sHead = new THREE.Mesh(new THREE.ConeGeometry(RAD * 1.2, CONE * 0.8, 14), sm2);
+      sBody.position.y = Y; sHead.position.y = Y; summary = { body: sBody, head: sHead, mat: sm2, label: null };
+      scene.add(sBody); scene.add(sHead); sBody.visible = sHead.visible = false;
+    }
+    function setSummary(st) {
+      if (!summary) return null;
+      summary.body.visible = summary.head.visible = !!st && st.alpha > 0;
+      if (!st || !(st.alpha > 0)) return null;
+      var z = zNear - st.depth * STEP, a = wx(st.f0), b = wx(st.f1), d = b >= a ? 1 : -1, len = Math.abs(b - a);
+      summary.mat.opacity = 0.6 * st.alpha;
+      var bodyLen = Math.max(0.01, len - CONE * 0.7);
+      summary.body.scale.x = bodyLen; summary.body.position.set(a + d * bodyLen / 2, Y, z);
+      summary.head.position.set(b - d * CONE * 0.4, Y, z); summary.head.rotation.set(0, 0, d > 0 ? -Math.PI / 2 : Math.PI / 2);
+      summary.body.visible = bodyLen > 0.05; summary.head.visible = len >= 1;
+      return { p: new V3(b, Y, z), z: z, dir: d, text: st.text, a: st.alpha };
+    }
     return {
+      cap: cap, setSummary: setSummary,
       scene: scene, cam: cam, rows: rows, reveal: reveal, tipAt: tipAt, ball: ball, ltgM: ltgM, wx: wx, setLines: setLines, startAt: startAt, startLabel: spec.start && spec.start.label,
       laneGap: STEP,
       /* Put play k on its lane (depth 0 = nearest); returns how visible it is (fades past the far lane). */
-      place: function (k, depth) {
-        var r = rows[k], a = K.laneAlpha(depth); r.z = zNear - depth * STEP; r.alpha = a;
+      place: function (k, depth, alpha) {
+        var r = rows[k], a = alpha != null ? alpha : K.laneAlpha(depth); r.z = zNear - depth * STEP; r.alpha = a;
         r.grp.position.z = r.z; r.grp.visible = a > 0; return a;
       },
       /* A play's local point (built at z = 0) where it is now. */
@@ -317,7 +352,14 @@
     var W = Math.round(spec.width), H = Math.round(spec.height), r = renderer();
     r.setPixelRatio(1); r.setSize(W, H, false);
     var B = build(spec, W, H, r.capabilities.getMaxAnisotropy());
-    B.rows.forEach(function (row, k) { B.place(k, B.rows.length - 1 - k); B.reveal(row, 1); });
+    var nR = B.rows.length;
+    B.rows.forEach(function (row, k) {
+      if (spec.laneMode) { var ls = K.laneState(spec, k, nR - 1, 1, B.cap); B.place(k, ls.depth, ls.alpha); }
+      else B.place(k, nR - 1 - k);
+      B.reveal(row, 1);
+      if (row.alpha > 0 && row.alpha < 1) row.mats.forEach(function (m) { m.transparent = true; m.opacity = row.alpha; m.needsUpdate = true; });
+    });
+    var sumLabel = B.setSummary(K.summaryState(spec, nR - 1, 1));
     /* Drive in progress: earlier plays stay dimmed exactly as the animation leaves them. */
     if (spec.dimFrom > 0) {
       var grey = new THREE.Color(0x8d968f).convertSRGBToLinear(), dim = 0.85;
@@ -334,7 +376,7 @@
     var out = cvs(W, H), o = out.getContext("2d");
     o.drawImage(r.domElement, 0, 0);
     var ci = spec.callout ? spec.callout.row : -1;
-    drawOverlay(o, W, H, B, B.rows.map(function (x, k) { return B.labelOf(k); }).filter(Boolean), spec.callout, null);
+    drawOverlay(o, W, H, B, B.rows.map(function (x, k) { return B.labelOf(k); }).filter(Boolean).concat(sumLabel ? [sumLabel] : []), spec.callout, null);
     B.dispose();
     var url = out.toDataURL("image/jpeg", 0.9);
     var keys = Object.keys(cache); if (keys.length > 20) delete cache[keys[0]];
@@ -390,7 +432,9 @@
       segs.forEach(function (sg, k) {
         var row = B.rows[k], f = k < cur ? 1 : k === cur ? fracOf(sg, t) : 0;
         /* Earlier plays slide one lane back as each new play is spotted. */
-        var la = B.place(k, K.laneDepth(segs, k, cur, t));
+        var la;
+        if (spec.laneMode) { var ls = K.laneState(spec, k, cur, K.slideE(segs, cur, t), B.cap); la = B.place(k, ls.depth, ls.alpha); }
+        else la = B.place(k, K.laneDepth(segs, k, cur, t));
         if (k > cur) row.grp.visible = false;   /* not played yet */
         B.reveal(row, f);
         var dim = K.dimOf(segs, k, cur, t, undim);
@@ -489,16 +533,17 @@
         var side = s.fe >= 50 ? 1 : 0, env = ramp(t, g.end, 80) * (1 - ramp(t, g.end + 300, 160));
         if (env > 0) { var pl = tints[side]; pl.visible = true; pl.material.color.set(s.color).convertSRGBToLinear(); pl.material.opacity = 0.25 * env; }
       }
+      var sumLabel = B.setSummary(K.summaryState(spec, cur, K.slideE(segs, cur, t)));
       r.render(B.scene, B.cam);
-      drawState(t, cur, g, s, outro);
+      drawState(t, cur, g, s, outro, sumLabel);
     }
 
-    function drawState(t, cur, g, s, outro) {
+    function drawState(t, cur, g, s, outro, sumLabel) {
       o.clearRect(0, 0, W, H);
       var st = K.overlayState(t, cur, g, s, outro, segs, spec,
         function (k) { return B.labelOf(k); },
         function (k, sg) { var e = B.rows[k]; return B.world(k, (sg.type === "dot" ? e.A : e.end).clone().setY(1.4)); });
-      drawOverlay(o, W, H, B, st.labels, st.co, null, st.fx);
+      drawOverlay(o, W, H, B, sumLabel ? st.labels.concat([sumLabel]) : st.labels, st.co, null, st.fx);
     }
 
     var raf = 0, stopped = false, done = false, start = null, now = 0;

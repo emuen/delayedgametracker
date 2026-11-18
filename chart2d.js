@@ -117,8 +117,8 @@
     /* Built on the near lane first: that's where each play is animated (the plan reads split etc. from it). */
     spec.rows.forEach(function (row, i) { rows.push(makeRow(row, i, vOf(0))); });
     /* Put play k on its lane (depth 0 = nearest); returns how visible it is (fades past the far lane). */
-    function place(k, depth) {
-      var a = K.laneAlpha(depth), v = vOf(depth);
+    function place(k, depth, alpha) {
+      var a = alpha != null ? alpha : K.laneAlpha(depth), v = vOf(depth);
       if (Math.abs(rows[k].v - v) > 1e-6) rows[k] = makeRow(spec.rows[k], k, v);
       rows[k].alpha = a; rows[k].depth = depth; return a;
     }
@@ -153,7 +153,22 @@
       }
       return { x: r.A.x, y: r.A.y, gx: r.A.x, gy: r.A.y, tx: 1, ty: 0 };
     }
+    /* Long-drive modes: "off" lanes may go above the far edge until just under the info box. */
+    var yCap = 78 * u, cap = spec.laneMode === "off" ? (vNear - (yCap - yT) / (yB - yT)) / vStep : 0;
+    /* "summary": one thin, dimmer arrow on the farthest lane, drive start -> first play shown on its own. */
+    function summaryDraw(x, st) {
+      if (!st || !(st.alpha > 0)) return null;
+      var v = vOf(st.depth), yd = s * sc(v), lw = Math.max(3.5 * k, Math.min(1.25 * yd, laneGapPx * 0.9)), w = Math.max(2.5 * k, lw * 0.55);
+      var a = P(st.f0, v), b = P(st.f1, v), d = st.f1 >= st.f0 ? 1 : -1, L = Math.abs(b.x - a.x), hl = w * 1.9;
+      x.save(); x.globalAlpha = 0.6 * st.alpha; x.lineCap = "round";
+      x.strokeStyle = x.fillStyle = mix(rgb(st.color), 0.15);
+      if (L > hl) { x.lineWidth = w; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x - d * hl * 0.9, b.y); x.stroke(); }
+      if (L >= yd) { x.beginPath(); x.moveTo(b.x, b.y); x.lineTo(b.x - d * hl, b.y - hl * 0.55); x.lineTo(b.x - d * hl, b.y + hl * 0.55); x.closePath(); x.fill(); }
+      x.restore();
+      return { p: { x: b.x, y: b.y }, z: v, dir: d, text: st.text, a: st.alpha };
+    }
     return {
+      cap: cap, yCap: yCap, summaryDraw: summaryDraw,
       W: W, H: H, u: u, k: k, s: s, P: P, bannerY: (boxB + yT) / 2 / H, bannerScale: 0.9, sc: sc, yT: yT, yB: yB, rows: rows, reveal: reveal, tipAt: tipAt, along: along,
       startAt: startAt, startLabel: spec.start && spec.start.label, tbLine: tbLine, place: place, tbRow: tb ? tb.row : -1,
       labelOf: function (k) { var r = rows[k], l = r.label; if (!l || !(r.alpha > 0)) return null; return { p: l.p, z: l.z, dir: l.dir, text: l.text, a: r.alpha }; },
@@ -170,6 +185,10 @@
     x.fillStyle = "rgba(255,255,255,0.35)";
     [[0.18, 0.34, 0.11, 0.012], [0.72, 0.3, 0.14, 0.01], [0.55, 0.37, 0.08, 0.009]].forEach(function (e) { x.beginPath(); x.ellipse(e[0] * W, e[1] * H, e[2] * W, e[3] * W, 0, 0, Math.PI * 2); x.fill(); });
     x.fillStyle = "#2f6a2c"; x.fillRect(0, B.yT, W, H - B.yT);   /* turf around the field */
+    if (spec.laneMode === "off") {   /* a hint of ground behind the far sideline for plays slid past it */
+      var gg = x.createLinearGradient(0, B.yCap, 0, B.yT); gg.addColorStop(0, "rgba(43,93,41,0)"); gg.addColorStop(1, "rgba(43,93,41,0.55)");
+      x.fillStyle = gg; x.fillRect(0, B.yCap, W, B.yT - B.yCap);
+    }
     function quad(f1, f2, fill) { var a = P(f1, 0), b = P(f2, 0), cc = P(f2, 1), d = P(f1, 1); x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.lineTo(cc.x, cc.y); x.lineTo(d.x, d.y); x.closePath(); x.fillStyle = fill; x.fill(); }
     for (var f = 0; f < 100; f += 10) quad(f, f + 10, (f / 10) % 2 ? "#5aa64f" : "#4f9a46");
     function ez(t, f1, f2, flip) {
@@ -275,7 +294,11 @@
     if (cache[key]) return cache[key];
     var W = Math.round(spec.width), H = Math.round(spec.height), B = build(spec, W, H), out = cvs(W, H), x = out.getContext("2d");
     /* Newest play nearest; each earlier play one lane further. */
-    for (var k = 0; k < B.rows.length; k++) B.place(k, B.rows.length - 1 - k);
+    var nR = B.rows.length;
+    for (var k = 0; k < nR; k++) {
+      if (spec.laneMode) { var ls = K.laneState(spec, k, nR - 1, 1, B.cap); B.place(k, ls.depth, ls.alpha); }
+      else B.place(k, nR - 1 - k);
+    }
     x.drawImage(background(spec, B), 0, 0);
     drawStart(x, spec, B);
     if (spec.ltg != null) fieldLine(x, B, spec.ltg, "#ffd23f", 0.45);
@@ -286,7 +309,8 @@
       B.reveal(r, 1); drawParts(x, r, r.parts, dim, r.alpha);
       if (r.missX) drawX(x, r, dim, 1, r.alpha);
     });
-    K.drawOverlay(x, W, H, B, B.rows.map(function (r, k) { return B.labelOf(k); }).filter(Boolean), spec.callout, null);
+    var sumLabel = B.summaryDraw(x, K.summaryState(spec, nR - 1, 1));
+    K.drawOverlay(x, W, H, B, B.rows.map(function (r, k) { return B.labelOf(k); }).filter(Boolean).concat(sumLabel ? [sumLabel] : []), spec.callout, null);
     var url = out.toDataURL("image/jpeg", 0.9);
     var keys = Object.keys(cache); if (keys.length > 20) delete cache[keys[0]];
     cache[key] = url;
@@ -315,7 +339,10 @@
       var cur = K.activeAt(segs, t), g = segs[cur], s = spec.rows[cur], outro = t >= P.outro;
       var undim = outro ? EASE.out(ramp(t, P.outro, 400)) : 0;
       /* Earlier plays slide one lane back as each new play is spotted. */
-      for (var q = 0; q <= cur && q < B.rows.length; q++) B.place(q, K.laneDepth(segs, q, cur, t));
+      for (var q = 0; q <= cur && q < B.rows.length; q++) {
+        if (spec.laneMode) { var ls = K.laneState(spec, q, cur, K.slideE(segs, cur, t), B.cap); B.place(q, ls.depth, ls.alpha); }
+        else B.place(q, K.laneDepth(segs, q, cur, t));
+      }
       x.drawImage(bg, 0, 0);
       /* End-zone tint on a touchdown / good field goal: ~25 %, ~300 ms. */
       if (g && !outro && (g.kind === "td" || (g.kind === "fg" && !g.miss)) && t >= g.end) {
@@ -357,6 +384,7 @@
         });
         if (row.missX && (k < cur || t >= sg.end)) drawX(x, row, dim, k === cur ? backOut(ramp(t, sg.end, 240)) : 1, la);
       });
+      var sumLabel = B.summaryDraw(x, K.summaryState(spec, cur, K.slideE(segs, cur, t)));
       /* Ball: spotted at the start, rides the tip of the arrow, rests where the play ended. */
       if (g && !outro) {
         var row = B.rows[cur], yd = row.yd, sc = 1, pos, ang = 0, lift = 0;
@@ -395,7 +423,7 @@
           var nudge = f >= 95 ? -10 * B.k : f <= 5 ? 10 * B.k : 0;   /* off the end-zone lettering */
           return { x: p.x + nudge, y: p.y - 1.4 * e.yd * 0.62 };
         });
-      K.drawOverlay(x, W, H, B, st.labels, st.co, null, st.fx);
+      K.drawOverlay(x, W, H, B, sumLabel ? st.labels.concat([sumLabel]) : st.labels, st.co, null, st.fx);
     }
 
     var raf = 0, stopped = false, done = false, start = null, now = 0;
