@@ -188,11 +188,66 @@
   {
    "season": 2026,
    "week": 11,
+   "away": "IND",
+   "home": "HOU",
+   "network": "Prime Video",
+   "slot": "Thu 8:00 ET",
+   "crew": [
+    "Al Michaels",
+    "Kirk Herbstreit"
+   ],
+   "note": "also WXIN/FOX Indianapolis, KRIV/FOX Houston"
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "MIN",
+   "home": "SF",
+   "network": "NBC",
+   "slot": "Sun 8:00 ET",
+   "crew": [
+    "Mike Tirico",
+    "Cris Collinsworth"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "CIN",
+   "home": "WSH",
+   "network": "ESPN",
+   "slot": "Mon 8:00 ET",
+   "crew": [
+    "Joe Buck",
+    "Troy Aikman"
+   ],
+   "note": "also WLWT/NBC Cincinnati, WTTG/FOX DC"
+  },
+  {
+   "season": 2026,
+   "week": 11,
+   "away": "ARI",
+   "home": "KC",
+   "network": "CBS",
+   "slot": "Early",
+   "crew": [
+    "Ian Eagle",
+    "Ross Tucker"
+   ],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 11,
    "away": "PIT",
    "home": "PHI",
    "network": "CBS",
    "slot": "Early",
-   "crew": [],
+   "crew": [
+    "Kevin Harlan",
+    "Trent Green"
+   ],
    "note": ""
   },
   {
@@ -202,17 +257,10 @@
    "home": "BUF",
    "network": "CBS",
    "slot": "Early",
-   "crew": [],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "ARI",
-   "home": "KC",
-   "network": "CBS",
-   "slot": "Early",
-   "crew": [],
+   "crew": [
+    "Spero Dedes",
+    "Adam Archuleta"
+   ],
    "note": ""
   },
   {
@@ -222,7 +270,10 @@
    "home": "NYG",
    "network": "CBS",
    "slot": "Late",
-   "crew": [],
+   "crew": [
+    "Jim Nantz",
+    "J.J. Watt"
+   ],
    "note": ""
   },
   {
@@ -232,7 +283,10 @@
    "home": "DEN",
    "network": "CBS",
    "slot": "Late",
-   "crew": [],
+   "crew": [
+    "Andrew Catalon",
+    "Logan Ryan"
+   ],
    "note": ""
   },
   {
@@ -242,7 +296,10 @@
    "home": "DAL",
    "network": "FOX",
    "slot": "Single",
-   "crew": [],
+   "crew": [
+    "Joe Davis",
+    "Greg Olsen"
+   ],
    "note": ""
   },
   {
@@ -252,7 +309,10 @@
    "home": "CHI",
    "network": "FOX",
    "slot": "Single",
-   "crew": [],
+   "crew": [
+    "Kevin Burkhardt",
+    "Tom Brady"
+   ],
    "note": ""
   },
   {
@@ -262,7 +322,10 @@
    "home": "CAR",
    "network": "FOX",
    "slot": "Single",
-   "crew": [],
+   "crew": [
+    "Kenny Albert",
+    "Jonathan Vilma"
+   ],
    "note": ""
   },
   {
@@ -272,7 +335,10 @@
    "home": "DET",
    "network": "FOX",
    "slot": "Single",
-   "crew": [],
+   "crew": [
+    "Kevin Kugler",
+    "Daryl Johnston"
+   ],
    "note": ""
   },
   {
@@ -282,9 +348,12 @@
    "home": "LAC",
    "network": "FOX",
    "slot": "Late",
-   "crew": [],
+   "crew": [
+    "Adam Amin",
+    "Drew Brees"
+   ],
    "note": ""
   }
  ],
- "updated": "2026-11-15T23:26:18Z"
+ "updated": "2026-11-18T00:58:55Z"
 }
