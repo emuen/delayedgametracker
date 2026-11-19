@@ -339,7 +339,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
   </div>
 </div></div>
 
-<script src="drivecore.js?v=11"></script>
+<script src="drivecore.js?v=12"></script>
 <script src="chart2d.js?v=12"></script>
 <script>
 (function(){
@@ -931,7 +931,7 @@ function fieldChart3D(L,specOnly){
     rows.push({fs:+fs.toFixed(2),fe:+fe.toFixed(2),fc:fc==null?null:+fc.toFixed(2),type:type,dir:odir,color:col,label:r.score||"",
       /* Replay-only hints (the still image ignores them). */
       kind:k,yds:yds,td:r.score==="TD",fg:(/\d+ yard field goal is/i.test(t)||/^(?:field goal (?:good|missed)|blocked field goal)/i.test(ty))&&r.kind==="play"&&k!=="pen"&&!/No Play/i.test(t),to:k==="to",sack:/sack/i.test(ty+" "+t),
-      spike:/spike/i.test(t),safety:safety,punt:k==="kick"&&/punt/i.test(ty+" "+t),defTD:r.score==="TD"&&k==="to",retColor:k==="to"?defCol:undefined,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
+      spike:/spike/i.test(t),safety:safety,gdd:L.offAb==="IND"&&r.kind==="play"&&/\(Shotgun\)/i.test(t)&&/\bsacked\b/i.test(t)&&!/No Play/i.test(t),punt:k==="kick"&&/punt/i.test(ty+" "+t),defTD:r.score==="TD"&&k==="to",retColor:k==="to"?defCol:undefined,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
     var row=rows[rows.length-1], ct=cleanText(t), m;
     /* Interception: where the ball was caught, so the pass flies forward and the return comes back in the defence's colour. */
     if(k==="to"&&(m=/INTERCEPTED by \S+ at ([A-Z]{2,4} -?\d+|50)\b/.exec(ct.replace(/\s*\([^)]*\)/g,"")))){var ia=parseSpot(m[1],L.A);if(ia!=null){row.intAt=+F(ia).toFixed(2);row.retColor=defCol}}
@@ -1458,10 +1458,11 @@ function liveTick(j,T,V){
   var L2=latestDrive(j,T,{ids:ids,plays:V.plays,last:kP});
   if(!L2||L2.vis.indexOf(P)<0){S.liveDone[P.id]=1;return}
   var spec=fieldChart3D(L2,true), k0=-1, k1=-1;
+  spec.easter=true;   /* the "God dammit Donald" easter egg only plays here, in the live broadcast */
   L2.rows.forEach(function(r,i){if(r.p===P){if(k0<0)k0=i;k1=i}});
   if(k0<0){S.liveDone[P.id]=1;return}
   var tmp=document.createElement("div"), ctrl;
-  try{ctrl=E.replay(tmp,spec,{clock:true,linger:S.linger,onDoink:window.dbDoink,doinkOnSeek:true})}catch(e){console.log("Live animation failed",e);S.liveDone[P.id]=1;return}
+  try{ctrl=E.replay(tmp,spec,{clock:true,linger:S.linger,onDoink:window.dbDoink,onGdd:gddSound,doinkOnSeek:true})}catch(e){console.log("Live animation failed",e);S.liveDone[P.id]=1;return}
   var g0=ctrl.timeline[k0], g1=ctrl.timeline[k1], F=g1.end-g0.snap;
   var tSnap=tReveal-F, tPre=tSnap-S.lead*1000;
   S.live={ctrl:ctrl,tmp:tmp,attached:false,id:P.id,tPre:tPre,tSnap:tSnap,t0:g0.t0,preEnd:g0.snap-1,snap:g0.snap,
@@ -1608,10 +1609,26 @@ function doinkSound(){
   }catch(e){}
 }
 window.dbDoink=doinkSound;
+/* Easter egg: a Colts QB sacked out of the shotgun, live only. The shout is our own recording (gdd.mp3). */
+DG.gddBuf=null;
+function gddLoad(){
+  if(DG.gddBuf||DG.gddLoading||!DG.audio)return; DG.gddLoading=true;
+  fetch("gdd.mp3").then(function(r){return r.arrayBuffer()}).then(function(b){
+    return new Promise(function(res,rej){DG.audio.decodeAudioData(b,res,rej)});
+  }).then(function(buf){DG.gddBuf=buf}).catch(function(){DG.gddLoading=false});
+}
+function gddSound(){
+  if(S.dongMode!=="sound")return;
+  try{
+    var A=DG.audio; if(!A||!DG.gddBuf)return;
+    if(A.state==="suspended"&&A.resume){var pr=A.resume();if(pr&&pr.catch)pr.catch(function(){})}
+    var s=A.createBufferSource(), g=A.createGain(); s.buffer=DG.gddBuf; g.gain.value=1; s.connect(g); g.connect(A.destination); s.start();
+  }catch(e){}
+}
 /* Phones only allow sound after a tap: the first tap anywhere unlocks the chime. */
 document.addEventListener("pointerdown",function(){
   if(DG.audio)return;
-  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume()}}catch(e){}
+  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume();gddLoad()}}catch(e){}
 },true);
 /* Every score that has been announced stays in DG.log; ones not yet watched count on the pill. */
 DG.log=[];

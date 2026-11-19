@@ -102,10 +102,12 @@
      lands more than 400 ms past the contact. With opts.clock (frame capture) only if
      opts.doinkOnSeek is set (the live animation drives the clock and sets it). */
   function doinkWatch(segs, opts) {
-    var last = null, on = opts && opts.onDoink && (!opts.clock || opts.doinkOnSeek);
+    var last = null, ok = opts && (!opts.clock || opts.doinkOnSeek), on = ok && opts.onDoink, onG = ok && opts.onGdd;
     return function (t) {
-      if (on && last != null && t > last) segs.forEach(function (g) {
-        if (g.contact != null && last < g.contact && t >= g.contact && t - g.contact < 400) { try { opts.onDoink(g); } catch (e) {} }
+      if ((on || onG) && last != null && t > last) segs.forEach(function (g) {
+        if (on && g.contact != null && last < g.contact && t >= g.contact && t - g.contact < 400) { try { opts.onDoink(g); } catch (e) {} }
+        /* Easter egg (live broadcast only): the sack shout, as the sack lands. */
+        if (onG && g.gdd && last < g.end && t >= g.end && t - g.end < 400) { try { opts.onGdd(g); } catch (e) {} }
       });
       last = t;
     };
@@ -123,7 +125,7 @@
       var kind = s.td ? "td" : s.safety ? "safety" : s.to ? "to" : s.fg ? "fg" : s.type === "kick" ? "kick" : s.kind === "ret" ? "ret" :
         s.kind === "pen" ? "pen" : s.type === "inc" ? "inc" : s.spike ? "spike" : s.type === "dot" ? "nogain" :
         s.sack ? "sack" : s.type === "air" ? "pass" : "run";
-      var g = { k: k, kind: kind, type: s.type, yds: gain, big: big, cont: cont, t0: t, miss: !!s.fgMiss };
+      var g = { k: k, kind: kind, type: s.type, yds: gain, big: big, cont: cont, t0: t, miss: !!s.fgMiss, gdd: !!(spec.easter && s.gdd) };
       var pre = cont ? 140 : k === 0 ? 700 : Math.max(320, 480 * pace);
       if (s.tmo && !cont) pre += 650;
       if (s.td && !cont) pre = Math.max(pre, 650);
@@ -171,7 +173,7 @@
       if (kind === "pen" && r.ghost) { g.ghostEnd = g.phases[0].a + g.phases[0].d; g.walkAt = g.phases[2].a; }
       g.end = tt;
       /* A missed kick holds a little longer (more so off an upright) so the miss can be seen. */
-      var emph = kind === "td" ? 1200 : kind === "to" ? 1300 : kind === "fg" ? (g.miss ? (g.contactI ? 1500 : 1200) : g.contactI ? 1300 : 1000) : kind === "safety" ? 1000 : big ? 350 : 0;
+      var emph = g.gdd ? 1300 : kind === "td" ? 1200 : kind === "to" ? 1300 : kind === "fg" ? (g.miss ? (g.contactI ? 1500 : 1200) : g.contactI ? 1300 : 1000) : kind === "safety" ? 1000 : big ? 350 : 0;
       /* Reading time counts only text the snap line did not already show. */
       g.newChars = newChars(s.callout || {});
       g.read = 400 + 30 * g.newChars;
@@ -427,7 +429,11 @@
         fx.chips.push({ p: chipAt(k, sg), text: ch.text, bg: ch.bg, fg: ch.fg, big: ch.big, s: backOut(ramp(t, sg.end, 260)), a: fade });
         if (ch.td) chipRows[k] = 1;   /* "TD +3" replaces the TD label while it shows */
       }
-      if (t >= g.end && !g.miss && (g.kind === "td" || g.kind === "to" || g.kind === "fg" || g.kind === "safety")) {
+      if (g.gdd && t >= g.end) {
+        var gin = backOut(ramp(t, g.end + 80, 300)), gout = 1 - ramp(t, Math.min(g.holdEnd - 220, g.end + 1700), 250);
+        fx.banner = { text: "GOD DAMMIT DONALD", bg: s.color, fg: "#fff", s: gin, a: gout, size: 17 };
+      }
+      else if (t >= g.end && !g.miss && (g.kind === "td" || g.kind === "to" || g.kind === "fg" || g.kind === "safety")) {
         var bt = g.kind === "td" ? "TOUCHDOWN" : g.kind === "fg" ? "FIELD GOAL" : g.kind === "safety" ? "SAFETY" : (/fumble/i.test((s.callout || {}).l1 + " " + (s.callout || {}).l2) ? "FUMBLE" : "INTERCEPTED");
         var bin = backOut(ramp(t, g.end + 120, 300)), bout = 1 - ramp(t, Math.min(g.holdEnd - 220, g.end + 1500), 250);
         fx.banner = { text: bt, bg: g.kind === "to" || g.kind === "safety" ? "#c62828" : s.color, fg: "#fff", s: bin, a: bout, size: g.kind === "fg" ? 18 : 22 };
