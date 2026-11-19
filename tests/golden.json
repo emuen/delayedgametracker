@@ -1,0 +1,4641 @@
+{
+ "pass_gain#0": {
+  "box": [
+   "1st & 10 · NO 44  (Q3 13:17)",
+   "T.Shough pass short right to C.Olave to ATL 45",
+   "for 11 yards."
+  ],
+  "chips": [
+   "11 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Field Goal",
+  "hold": 1120,
+  "noRow": false
+ },
+ "pass_gain#1": {
+  "box": [
+   "1st & 10 · DET 26  (Q3 4:17)",
+   "J.Goff pass short middle to J.Gibbs to DET 34",
+   "for 8 yards."
+  ],
+  "chips": [
+   "8 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DET · Touchdown",
+  "hold": 1090,
+  "noRow": false
+ },
+ "pass_gain#2": {
+  "box": [
+   "1st & 10 · BAL 38  (Q4 1:14)",
+   "D.Prescott pass short left to R.Flournoy pushed ob",
+   "at BLT 29 for 9 yards."
+  ],
+  "chips": [
+   "9 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DAL · Field Goal",
+  "hold": 1390,
+  "noRow": false
+ },
+ "pass_big#0": {
+  "box": [
+   "1st & 10 · KC 48  (Q3 10:09)",
+   "P.Mahomes pass short right to N.Gray to LAC 21",
+   "for 31 yards."
+  ],
+  "chips": [
+   "31 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · KC · Downs",
+  "hold": 1470,
+  "noRow": false
+ },
+ "pass_big#1": {
+  "box": [
+   "1st & 10 · CHI 33  (Q4 9:46)",
+   "C.Keenum pass deep left to R.Odunze to GB 47",
+   "for 20 yards."
+  ],
+  "chips": [
+   "20 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Fumble",
+  "hold": 1440,
+  "noRow": false
+ },
+ "pass_big#2": {
+  "box": [
+   "1st & 10 · BUF 32  (Q1 4:20)",
+   "J.Allen pass deep right to J.Palmer ran ob at LV 31",
+   "for 37 yards."
+  ],
+  "chips": [
+   "37 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BUF · Field Goal",
+  "hold": 1650,
+  "noRow": false
+ },
+ "pass_nogain#0": {
+  "box": [
+   "1st & 10 · PHI 33  (Q2 5:10)",
+   "C.Keenum pass short left to D.Swift to PHI 33",
+   "for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Field Goal",
+  "hold": 1090,
+  "noRow": false
+ },
+ "pass_nogain#1": {
+  "box": [
+   "2nd & 3 · BAL 44  (Q4 10:19)",
+   "J.Fagnano pass short left to M.Andrews to BLT 44",
+   "for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Downs",
+  "hold": 1090,
+  "noRow": false
+ },
+ "pass_nogain#2": {
+  "box": [
+   "2nd & 10 · BUF 40  (Q4 12:51)",
+   "J.Allen pass short right to D.Knox to BUF 40",
+   "for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BUF · Punt",
+  "hold": 1090,
+  "noRow": false
+ },
+ "pass_loss#0": {
+  "box": [
+   "1st & 10 · LAC 49  (Q4 8:51)",
+   "P.Mahomes pass short right to X.Worthy pushed ob at",
+   "KC 49 for -2 yards."
+  ],
+  "chips": [
+   "−2 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · KC · Field Goal",
+  "hold": 1390,
+  "noRow": false
+ },
+ "pass_loss#1": {
+  "box": [
+   "2nd & 4 · LAC 13  (Q4 3:57)",
+   "J.Herbert pass short left to K.Mitchell to LAC 10",
+   "for -3 yards."
+  ],
+  "chips": [
+   "−3 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Field Goal",
+  "hold": 1120,
+  "noRow": false
+ },
+ "pass_loss#2": {
+  "box": [
+   "1st & 10 · ATL 45  (Q4 13:06)",
+   "M.Penix pass short right to Z.Branch ran ob at ATL",
+   "37 for -8 yards."
+  ],
+  "chips": [
+   "−8 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Field Goal",
+  "hold": 1330,
+  "noRow": false
+ },
+ "pass_inc_short#0": {
+  "box": [
+   "1st & 10 · LAC 47  (Q2 0:46)",
+   "C.Stroud pass incomplete short left to X.Hutchinson."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · HOU · Touchdown",
+  "hold": 1540,
+  "noRow": false
+ },
+ "pass_inc_short#1": {
+  "box": [
+   "2nd & 8 · LV 48  (Q2 0:28)",
+   "K.Cousins pass incomplete short right to B.Bowers."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Field Goal",
+  "hold": 1450,
+  "noRow": false
+ },
+ "pass_inc_short#2": {
+  "box": [
+   "1st & 10 · MIN 36  (Q2 14:03)",
+   "C.Wentz pass incomplete short left to T.Hockenson."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIN · Field Goal",
+  "hold": 1510,
+  "noRow": false
+ },
+ "pass_inc_deep#0": {
+  "box": [
+   "2nd & 8 · SF 43  (Q1 4:30)",
+   "B.Nix pass incomplete deep left to J.Waddle."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DEN · Field Goal",
+  "hold": 1390,
+  "noRow": false
+ },
+ "pass_inc_deep#1": {
+  "box": [
+   "2nd & 10 · KC 19  (Q4 2:47)",
+   "M.Penix pass incomplete deep middle to B.Collins."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Interception",
+  "hold": 1480,
+  "noRow": false
+ },
+ "pass_inc_deep#2": {
+  "box": [
+   "2nd & 17 · PIT 23  (Q3 3:29)",
+   "A.Rodgers pass incomplete deep middle to D.Metcalf."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PIT · Punt",
+  "hold": 1480,
+  "noRow": false
+ },
+ "pass_td#0": {
+  "box": [
+   "1st & 10 · GB 20  (Q4 8:29)",
+   "TOUCHDOWN · K.Cousins pass short middle to",
+   "G.Bartholomew for 20 yards. PAT good."
+  ],
+  "chips": [
+   "TD, 20 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · MIN · Touchdown",
+  "hold": 4000,
+  "noRow": false
+ },
+ "pass_td#1": {
+  "box": [
+   "2nd & 10 · TB 18  (Q4 5:26)",
+   "TOUCHDOWN · D.Prescott pass deep left to G.Pickens",
+   "for 18 yards. 2-pt failed."
+  ],
+  "chips": [
+   "TD, 18 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · DAL · Touchdown",
+  "hold": 3910,
+  "noRow": false
+ },
+ "pass_td#2": {
+  "box": [
+   "4th & 2 · PIT 25  (Q4 13:29)",
+   "TOUCHDOWN · J.Burrow pass deep middle to M.Gesicki",
+   "for 25 yards. PAT good."
+  ],
+  "chips": [
+   "TD, 25 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · CIN · Touchdown",
+  "hold": 3820,
+  "noRow": false
+ },
+ "spike#0": {
+  "box": [
+   "1st & 10 · PIT 45  (Q2 0:12)",
+   "A.Rodgers spiked the ball to stop the clock."
+  ],
+  "chips": [
+   "Spike"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PIT · End of Half",
+  "hold": 1000,
+  "noRow": false
+ },
+ "spike#1": {
+  "box": [
+   "1st & 10 · DET 44  (Q4 0:07)",
+   "T.Shough spiked the ball to stop the clock."
+  ],
+  "chips": [
+   "Spike"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Missed FG",
+  "hold": 1000,
+  "noRow": false
+ },
+ "spike#2": {
+  "box": [
+   "1st & 10 · LAC 26  (Q2 0:09)",
+   "J.Brissett spiked the ball to stop the clock."
+  ],
+  "chips": [
+   "Spike"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Field Goal",
+  "hold": 1000,
+  "noRow": false
+ },
+ "pass_lateral#0": {
+  "box": [
+   "2nd & 24 · BUF 47  (Q3 2:24)",
+   "J.Allen pass short left to K.Coleman for 1 yard,",
+   "lateral to K.Shakir for 5 yards"
+  ],
+  "chips": [
+   "6 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BUF · Punt",
+  "hold": 1720,
+  "noRow": false
+ },
+ "pass_lateral#1": {
+  "box": [
+   "3rd & 14 · DAL 27  (Q4 2:34)",
+   "C.Stroud pass short right to D.Schultz for 2 yards,",
+   "lateral to D.Montgomery for 19 yards"
+  ],
+  "chips": [
+   "21 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · HOU · Touchdown",
+  "hold": 2250,
+  "noRow": false
+ },
+ "pass_lateral#2": {
+  "box": [
+   "3rd & 11 · NE 39  (Q2 12:34)",
+   "D.Maye pass short middle to E.Chism for 4 yards,",
+   "lateral to T.Henderson for 12 yards"
+  ],
+  "chips": [
+   "16 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NE · Punt",
+  "hold": 1870,
+  "noRow": false
+ },
+ "pass_lateral_td#0": {
+  "box": [
+   "3rd & 12 · SF 18  (Q1 8:26)",
+   "TOUCHDOWN · B.Purdy pass short left to M.Evans to SF",
+   "20 for 2 yards. Lateral to D.Samuel for 80 yards."
+  ],
+  "chips": [
+   "TD, 82 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · SF · Touchdown",
+  "hold": 4660,
+  "noRow": false
+ },
+ "hail_mary#0": {
+  "box": [
+   "3rd & 22 · NYJ 45  (Q2 0:03)",
+   "G.Smith pass incomplete deep middle."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · End of Half",
+  "hold": 1090,
+  "noRow": false
+ },
+ "hail_mary#1": {
+  "box": [
+   "1st & 10 · ATL 40  (Q2 0:05)",
+   "M.Penix pass incomplete deep middle."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · End of Half",
+  "hold": 1090,
+  "noRow": false
+ },
+ "hail_mary#2": {
+  "box": [
+   "4th & 10 · TEN 46  (Q4 0:04)",
+   "D.Jones pass incomplete deep right."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · IND · Downs",
+  "hold": 1060,
+  "noRow": false
+ },
+ "run_gain#0": {
+  "box": [
+   "1st & 10 · GB 36  (Q1 0:02)",
+   "K.Johnson left guard to GB 48 for 12 yards."
+  ],
+  "chips": [
+   "12 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · GB · Touchdown",
+  "hold": 1090,
+  "noRow": false
+ },
+ "run_gain#1": {
+  "box": [
+   "1st & 10 · PIT 14  (Q2 1:55)",
+   "Q.Judkins right guard to PIT 10 for 4 yards."
+  ],
+  "chips": [
+   "4 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Touchdown",
+  "hold": 1090,
+  "noRow": false
+ },
+ "run_gain#2": {
+  "box": [
+   "1st & 10 · NYJ 33  (Q3 10:14)",
+   "B.Hall up the middle to NYJ 38 for 5 yards."
+  ],
+  "chips": [
+   "5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · Punt",
+  "hold": 1090,
+  "noRow": false
+ },
+ "run_big#0": {
+  "box": [
+   "3rd & 5 · MIA 36  (Q3 14:08)",
+   "O.Gordon left tackle pushed ob at MIN 11",
+   "for 53 yards."
+  ],
+  "chips": [
+   "53 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIA · Field Goal",
+  "hold": 1770,
+  "noRow": false
+ },
+ "run_big#1": {
+  "box": [
+   "1st & 10 · ATL 12  (Q1 4:47)",
+   "Bi.Robinson left guard to ATL 32 for 20 yards."
+  ],
+  "chips": [
+   "20 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Punt",
+  "hold": 1470,
+  "noRow": false
+ },
+ "run_big#2": {
+  "box": [
+   "1st & 10 · SF 35  (Q1 1:43)",
+   "D.Samuel up the middle pushed ob at DEN 43",
+   "for 22 yards."
+  ],
+  "chips": [
+   "22 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SF · Downs",
+  "hold": 1770,
+  "noRow": false
+ },
+ "run_nogain#0": {
+  "box": [
+   "2nd & 2 · GB 23  (Q4 11:31)",
+   "J.Jacobs right tackle to GB 23 for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · GB · Punt",
+  "hold": 1060,
+  "noRow": false
+ },
+ "run_nogain#1": {
+  "box": [
+   "1st & 10 · DEN 45  (Q2 10:49)",
+   "E.Wilson left end to DEN 45 for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SEA · Punt",
+  "hold": 1090,
+  "noRow": false
+ },
+ "run_nogain#2": {
+  "box": [
+   "1st & Goal · TB 4  (Q1 11:37)",
+   "J.Williams up the middle to TB 4 for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DAL · Touchdown",
+  "hold": 1030,
+  "noRow": false
+ },
+ "run_loss#0": {
+  "box": [
+   "1st & Goal · PIT 2  (Q4 13:49)",
+   "Q.Judkins left tackle to PIT 5 for -3 yards."
+  ],
+  "chips": [
+   "−3 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Downs",
+  "hold": 1090,
+  "noRow": false
+ },
+ "run_loss#1": {
+  "box": [
+   "3rd & Goal · NYJ 1  (Q4 10:47)",
+   "K.Monangai left tackle to NYJ 3 for -2 yards."
+  ],
+  "chips": [
+   "−2 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Field Goal",
+  "hold": 1090,
+  "noRow": false
+ },
+ "run_loss#2": {
+  "box": [
+   "2nd & 11 · CAR 39  (Q4 8:16)",
+   "T.Etienne left guard to CAR 38 for -1 yards."
+  ],
+  "chips": [
+   "−1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CAR · Touchdown",
+  "hold": 1120,
+  "noRow": false
+ },
+ "run_td#0": {
+  "box": [
+   "1st & 10 · HOU 30  (OT 7:25)",
+   "TOUCHDOWN · D.Singletary up the middle for 30 yards."
+  ],
+  "chips": [
+   "TD, 30 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · NYG · Touchdown",
+  "hold": 3160,
+  "noRow": false
+ },
+ "run_td#1": {
+  "box": [
+   "1st & Goal · LAC 3  (Q4 3:13)",
+   "TOUCHDOWN · J.Cook up the middle for 3 yards.",
+   "PAT good."
+  ],
+  "chips": [
+   "TD, 3 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · BUF · Touchdown",
+  "hold": 3250,
+  "noRow": false
+ },
+ "run_td#2": {
+  "box": [
+   "2nd & 4 · NO 8  (Q3 2:11)",
+   "TOUCHDOWN · Br.Robinson right tackle for 8 yards.",
+   "PAT good."
+  ],
+  "chips": [
+   "TD, 8 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · ATL · Touchdown",
+  "hold": 3370,
+  "noRow": false
+ },
+ "scramble#0": {
+  "box": [
+   "2nd & 8 · DAL 38  (Q1 13:29)",
+   "C.Stroud scrambles right end pushed ob at DAL 29",
+   "for 9 yards."
+  ],
+  "chips": [
+   "9 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · HOU · Touchdown",
+  "hold": 1390,
+  "noRow": false
+ },
+ "scramble#1": {
+  "box": [
+   "1st & 10 · CLE 35  (Q4 3:01)",
+   "D.Watson scrambles left end ran ob at CLV 46",
+   "for 11 yards."
+  ],
+  "chips": [
+   "11 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Punt",
+  "hold": 1330,
+  "noRow": false
+ },
+ "scramble#2": {
+  "box": [
+   "1st & 10 · WSH 32  (Q4 12:55)",
+   "J.Daniels scrambles right end to WAS 37 for 5 yards."
+  ],
+  "chips": [
+   "5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · WSH · Downs",
+  "hold": 1090,
+  "noRow": false
+ },
+ "scramble_td#0": {
+  "box": [
+   "3rd & 2 · NYG 26  (Q4 11:05)",
+   "TOUCHDOWN · J.Daniels scrambles left tackle",
+   "for 26 yards. 2-pt good."
+  ],
+  "chips": [
+   "TD, 26 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · WSH · Touchdown",
+  "hold": 3640,
+  "noRow": false
+ },
+ "scramble_td#1": {
+  "box": [
+   "3rd & 6 · BAL 22  (Q1 10:39)",
+   "TOUCHDOWN · J.Herbert scrambles up the middle",
+   "for 22 yards. PAT good."
+  ],
+  "chips": [
+   "TD, 22 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · LAC · Touchdown",
+  "hold": 3670,
+  "noRow": false
+ },
+ "scramble_td#2": {
+  "box": [
+   "1st & Goal · TEN 9  (OT 7:00)",
+   "TOUCHDOWN · J.Burrow scrambles left end for 9 yards.",
+   "PAT good."
+  ],
+  "chips": [
+   "TD, 9 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · CIN · Touchdown",
+  "hold": 3460,
+  "noRow": false
+ },
+ "kneel#0": {
+  "box": [
+   "1st & 10 · ATL 20  (Q4 0:47)",
+   "M.Penix kneels to ATL 19 for -1 yards."
+  ],
+  "chips": [
+   "−1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · End of Game",
+  "hold": 1120,
+  "noRow": false
+ },
+ "kneel#1": {
+  "box": [
+   "1st & 10 · NYG 2  (Q4 0:06)",
+   "J.Winston kneels to NYG 1 for -1 yards."
+  ],
+  "chips": [
+   "−1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYG · End of Half",
+  "hold": 1090,
+  "noRow": false
+ },
+ "kneel#2": {
+  "box": [
+   "1st & 10 · JAX 18  (Q4 2:00)",
+   "B.Nix kneels to JAX 19 for -1 yards."
+  ],
+  "chips": [
+   "−1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DEN · End of Game",
+  "hold": 1120,
+  "noRow": false
+ },
+ "direct_snap#0": {
+  "box": [
+   "4th & 1 · NE 46  (Q2 4:54)",
+   "Penalty SEA, Off. offside, −4",
+   "No play · run"
+  ],
+  "chips": [
+   "−4 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SEA · Punt",
+  "hold": 1690,
+  "noRow": false
+ },
+ "direct_snap#1": {
+  "box": [
+   "2nd & 6 · ATL 12  (Q1 9:38)",
+   "J.Fields up the middle to ATL 12 for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · KC · Touchdown",
+  "hold": 1090,
+  "noRow": false
+ },
+ "direct_snap#2": {
+  "box": [
+   "1st & 10 · CAR 48  (Q4 12:48)",
+   "Penalty CHI, Illegal formation, −5",
+   "No play · run"
+  ],
+  "chips": [
+   "−5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Touchdown",
+  "hold": 1840,
+  "noRow": false
+ },
+ "sack#0": {
+  "box": [
+   "2nd & 10 · MIA 23  (Q3 11:36)",
+   "G.Smith sacked at MIA 29 for -6 yards."
+  ],
+  "chips": [
+   "Sack, −6 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · Missed FG",
+  "hold": 1330,
+  "noRow": false
+ },
+ "sack#1": {
+  "box": [
+   "1st & 10 · CAR 20  (Q4 0:22)",
+   "B.Young sacked at CAR 16 for -4 yards."
+  ],
+  "chips": [
+   "Sack, −4 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CAR · Fumble",
+  "hold": 1330,
+  "noRow": false
+ },
+ "sack#2": {
+  "box": [
+   "3rd & 6 · LV 39  (Q4 6:34)",
+   "F.Mendoza sacked at LV 31 for -8 yards."
+  ],
+  "chips": [
+   "Sack, −8 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Punt",
+  "hold": 1300,
+  "noRow": false
+ },
+ "sack_fum_own#0": {
+  "box": [
+   "1st & 10 · LV 31  (Q2 0:18)",
+   "K.Cousins sacked at LV 22 for -9 yards.",
+   "FUMBLE, LV recovers at LV 20."
+  ],
+  "chips": [
+   "Sack, −11 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · End of Half",
+  "hold": 2200,
+  "noRow": false
+ },
+ "sack_fum_own#1": {
+  "box": [
+   "3rd & 7 · LAC 40  (Q4 4:49)",
+   "J.Herbert sacked at LAC 36 for -4 yards.",
+   "FUMBLE, LAC recovers at LAC 46."
+  ],
+  "chips": [
+   "Sack, 6 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Fumble",
+  "hold": 2290,
+  "noRow": false
+ },
+ "sack_fum_own#2": {
+  "box": [
+   "1st & 10 · ARI 19  (Q4 8:49)",
+   "M.Stafford sacked at ARZ 30 for -11 yards.",
+   "FUMBLE, recovered at ARZ 30."
+  ],
+  "chips": [
+   "Sack, −11 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAR · Fumble",
+  "hold": 2230,
+  "noRow": false
+ },
+ "sack_fum_lost#0": {
+  "box": [
+   "3rd & 16 · DEN 35  (Q3 0:35)",
+   "B.Nix sacked at DEN 26 for -9 yards.",
+   "FUMBLE, KC recovers at DEN 34."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · DEN · Fumble",
+  "hold": 3560,
+  "noRow": false
+ },
+ "sack_fum_lost#1": {
+  "box": [
+   "2nd & 10 · HOU 39  (Q4 4:45)",
+   "D.Jones sacked at HST 45 for -6 yards.",
+   "FUMBLE, HST recovers at HST 46."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · IND · Fumble",
+  "hold": 3590,
+  "noRow": false
+ },
+ "sack_fum_lost#2": {
+  "box": [
+   "2nd & 7 · 50  (Q1 10:41)",
+   "D.Watson sacked at CLV 45 for -5 yards.",
+   "FUMBLE, PIT recovers at CLV 45."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · CLE · Fumble",
+  "hold": 3590,
+  "noRow": false
+ },
+ "sack_fum_td#0": {
+  "box": [
+   "1st & 10 · MIA 10  (Q3 14:48)",
+   "TOUCHDOWN · K.McCord sacked at MIA 2 for -8 yards.",
+   "FUMBLE, IND recovers at MIA -6. PAT good."
+  ],
+  "chips": [
+   "Defensive TD"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · MIA · Fumble Touchdown",
+  "hold": 4360,
+  "noRow": false
+ },
+ "sack_fum_td#1": {
+  "box": [
+   "3rd & 16 · DET 32  (Q2 9:34)",
+   "Goff Incomplete Pass, Intended For Sam LaPorta"
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DET · Punt",
+  "hold": 1980,
+  "noRow": false
+ },
+ "sack_fum_td#2": {
+  "box": [
+   "2nd & 21 · PIT 30  (Q4 13:37)",
+   "TOUCHDOWN · A.Rodgers sacked at PIT 21 for -9 yards.",
+   "FUMBLE, NE recovers at PIT 19. PAT good."
+  ],
+  "chips": [
+   "Defensive TD"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · PIT · Fumble Touchdown",
+  "hold": 4390,
+  "noRow": false
+ },
+ "int_noret#0": {
+  "box": [
+   "3rd & 22 · IND 14  (Q4 0:41)",
+   "INTERCEPTED by C.Downs at IND 37 · no return",
+   "D.Jones pass deep middle to K.Allen"
+  ],
+  "chips": [],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · IND · Interception",
+  "hold": 4100,
+  "noRow": false
+ },
+ "int_noret#1": {
+  "box": [
+   "3rd & 11 · MIN 31  (Q3 8:41)",
+   "INTERCEPTED by A.Robinson at MIN 22 · no return",
+   "K.Murray pass short middle to J.Addison"
+  ],
+  "chips": [
+   "No return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · MIN · Interception",
+  "hold": 4310,
+  "noRow": false
+ },
+ "int_noret#2": {
+  "box": [
+   "1st & 10 · TEN 42  (Q3 1:47)",
+   "INTERCEPTED by A.Hooker at TEN 5 · no return",
+   "J.Burrow pass deep right to J.Chase"
+  ],
+  "chips": [
+   "No return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · CIN · Interception",
+  "hold": 4100,
+  "noRow": false
+ },
+ "int_ret_gain#0": {
+  "box": [
+   "2nd & 17 · NE 43  (Q2 0:51)",
+   "INTERCEPTED by R.McCreary at DET 36 · 22-yd return",
+   "T.DeVito pass deep middle to M.Hollins"
+  ],
+  "chips": [
+   "22 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · NE · Interception",
+  "hold": 4370,
+  "noRow": false
+ },
+ "int_ret_gain#1": {
+  "box": [
+   "1st & 10 · LAC 45  (Q1 14:46)",
+   "INTERCEPTED by T.Tuipulotu at LAC 44 · 4-yd return",
+   "S.Darnold pass short left to E.Wilson"
+  ],
+  "chips": [
+   "4 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · SEA · Interception",
+  "hold": 4340,
+  "noRow": false
+ },
+ "int_ret_gain#2": {
+  "box": [
+   "1st & 15 · GB 28  (Q2 2:00)",
+   "INTERCEPTED by B.Cisse at GB 18 · 5-yd return",
+   "D.Prescott pass short left to C.Lamb"
+  ],
+  "chips": [
+   "5 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · DAL · Interception",
+  "hold": 4160,
+  "noRow": false
+ },
+ "int_ret_loss#0": {
+  "box": [
+   "1st & 10 · SEA 32  (Q3 12:10)",
+   "INTERCEPTED by S.Styles at SEA 42 · -1-yd return",
+   "S.Darnold pass short left to J.Smith-Njigba"
+  ],
+  "chips": [
+   "1 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · SEA · Interception",
+  "hold": 4460,
+  "noRow": false
+ },
+ "int_ret_loss#1": {
+  "box": [
+   "3rd & 12 · CHI 40  (Q1 1:47)",
+   "INTERCEPTED by B.Murphy at MIN 36 · -1-yd return",
+   "C.Williams pass deep middle to L.Burden"
+  ],
+  "chips": [],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · CHI · Interception",
+  "hold": 4340,
+  "noRow": false
+ },
+ "int_ret_loss#2": {
+  "box": [
+   "1st & 10 · CLE 34  (Q2 0:48)",
+   "INTERCEPTED by T.Campbell at CLV 26 · -5-yd return",
+   "C.Stroud pass short left to N.Collins"
+  ],
+  "chips": [
+   "5 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · HOU · Interception",
+  "hold": 4340,
+  "noRow": false
+ },
+ "int_touchback#0": {
+  "box": [
+   "3rd & Goal · LAC 2  (Q2 8:37)",
+   "INTERCEPTED by C.Hart at LAC -9",
+   "P.Mahomes pass short right to A.Armstrong"
+  ],
+  "chips": [],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · KC · Interception",
+  "hold": 3890,
+  "noRow": false
+ },
+ "int_touchback#1": {
+  "box": [
+   "1st & 10 · CHI 15  (Q2 3:32)",
+   "INTERCEPTED by D.Jackson at CHI -7",
+   "D.Maye pass deep right to E.Raridon"
+  ],
+  "chips": [
+   "27 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · NE · Interception",
+  "hold": 3800,
+  "noRow": false
+ },
+ "int_touchback#2": {
+  "box": [
+   "1st & 10 · LV 35  (Q4 0:14)",
+   "INTERCEPTED by J.Chinn at LV -6",
+   "G.Smith pass deep left to G.Wilson"
+  ],
+  "chips": [],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · NYJ · Interception",
+  "hold": 3680,
+  "noRow": false
+ },
+ "int_td#0": {
+  "box": [
+   "1st & 10 · JAX 17  (Q2 0:10)",
+   "INTERCEPTED by R.Lane · TOUCHDOWN, 92-yd return",
+   "D.Jones pass short left to T.Warren"
+  ],
+  "chips": [
+   "Defensive TD"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · IND · Interception Touchdown",
+  "hold": 4090,
+  "noRow": false
+ },
+ "int_td#1": {
+  "box": [
+   "3rd & 2 · ATL 10  (Q3 2:58)",
+   "INTERCEPTED by D.Lloyd · TOUCHDOWN, 16-yd return",
+   "J.Strand pass short right to J.Dotson"
+  ],
+  "chips": [
+   "Defensive TD"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · ATL · Interception Touchdown",
+  "hold": 4180,
+  "noRow": false
+ },
+ "int_td#2": {
+  "box": [
+   "4th & Goal · NYG 4  (Q4 0:00)",
+   "INTERCEPTED by D.Banks · TOUCHDOWN, 98-yd return",
+   "J.Brissett pass short left to Mi.Wilson"
+  ],
+  "chips": [
+   "Defensive TD"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · ARI · Interception Touchdown",
+  "hold": 4240,
+  "noRow": false
+ },
+ "int_fumble#0": {
+  "box": [
+   "3rd & 6 · NO 31  (Q4 8:03)",
+   "INTERCEPTED by H.Masses at NO 43 · 35-yd return",
+   "T.Shough pass short left to B.Lance"
+  ],
+  "chips": [],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · NO · Interception",
+  "hold": 4190,
+  "noRow": false
+ },
+ "int_fumble#1": {
+  "box": [
+   "1st & 10 · NYJ 27  (Q3 2:19)",
+   "INTERCEPTED by D.Igbinosun at 50 · 17-yd return",
+   "C.Klubnik pass deep right to G.Wilson"
+  ],
+  "chips": [
+   "27 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · NYJ · Interception",
+  "hold": 4250,
+  "noRow": false
+ },
+ "fum_own#0": {
+  "box": [
+   "3rd & 9 · PIT 33  (Q4 7:39)",
+   "D.Watson scrambles right end to PIT 31 for 2 yards.",
+   "FUMBLE, recovered at PIT 26."
+  ],
+  "chips": [
+   "7 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Field Goal",
+  "hold": 1960,
+  "noRow": false
+ },
+ "fum_own#1": {
+  "box": [
+   "2nd & 2 · PHI 21  (Q4 4:13)",
+   "J.Croskey-Merritt up the middle to PHI 19",
+   "for 2 yards. FUMBLE, WAS recovers at PHI 18."
+  ],
+  "chips": [
+   "3 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · WSH · Touchdown",
+  "hold": 2050,
+  "noRow": false
+ },
+ "fum_own#2": {
+  "box": [
+   "2nd & 2 · PIT 42  (Q4 9:29)",
+   "A.Rodgers pass short right to J.Warren to PIT 45",
+   "for 3 yards. FUMBLE, PIT recovers at PIT 46."
+  ],
+  "chips": [
+   "4 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PIT · Touchdown",
+  "hold": 2050,
+  "noRow": false
+ },
+ "fum_lost#0": {
+  "box": [
+   "2nd & 3 · NYG 49  (Q4 9:40)",
+   "C.Donaldson up the middle to NYG 48 for 1 yard.",
+   "FUMBLE, NYG recovers at NYG 48."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · NO · Fumble",
+  "hold": 3320,
+  "noRow": false
+ },
+ "fum_lost#1": {
+  "box": [
+   "2nd & 10 · GB 12  (Q2 0:30)",
+   "J.Gibbs up the middle to GB 6 for 6 yards.",
+   "FUMBLE, GB recovers at GB 8."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · DET · Fumble",
+  "hold": 3200,
+  "noRow": false
+ },
+ "fum_lost#2": {
+  "box": [
+   "4th & 3 · GB 40  (Q4 8:36)",
+   "C.Keenum pass short right to R.Odunze to GB 31",
+   "for 9 yards. FUMBLE, GB recovers at GB 43."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · CHI · Fumble",
+  "hold": 3260,
+  "noRow": false
+ },
+ "fum_lost_ret#0": {
+  "box": [
+   "1st & 10 · WSH 24  (Q3 7:15)",
+   "M.Mariota pass short left to D.Brown for -6 yards.",
+   "FUMBLE, DAL recovers at WAS 18."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · WSH · Fumble",
+  "hold": 3080,
+  "noRow": false
+ },
+ "fum_lost_ret#1": {
+  "box": [
+   "1st & 10 · SEA 9  (Q2 8:31)",
+   "E.Wilson right end to SEA 11 for 2 yards.",
+   "FUMBLE, SF recovers at SEA 12."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · SEA · Fumble",
+  "hold": 3320,
+  "noRow": false
+ },
+ "fum_lost_ret#2": {
+  "box": [
+   "1st & 10 · LV 48  (Q4 3:52)",
+   "O.Hampton up the middle to LV 46 for 2 yards.",
+   "FUMBLE, LV recovers at LV 41."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · LAC · Fumble",
+  "hold": 3260,
+  "noRow": false
+ },
+ "fum_lost_ret_neg#0": {
+  "box": [
+   "2nd & 11 · DAL 29  (Q2 2:00)",
+   "T.Tracy left end to DAL 21 for 8 yards.",
+   "FUMBLE, DAL recovers at DAL 19."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · NYG · Fumble",
+  "hold": 3350,
+  "noRow": false
+ },
+ "fum_lost_ret_neg#1": {
+  "box": [
+   "3rd & 8 · CLE 38  (Q2 7:15)",
+   "The ruling on the field stands."
+  ],
+  "chips": [],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · CLE · Fumble",
+  "hold": 2300,
+  "noRow": false
+ },
+ "fum_td#0": {
+  "box": [
+   "1st & 10 · SEA 4  (Q2 0:13)",
+   "TOUCHDOWN · G.Holani left guard to SEA 0",
+   "for -4 yards. FUMBLE, SF recovers at SEA -4."
+  ],
+  "chips": [
+   "Defensive TD"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · SEA · Fumble Return Touchdown",
+  "hold": 4150,
+  "noRow": false
+ },
+ "fum_td#1": {
+  "box": [
+   "2nd & 19 · BAL 25  (Q1 8:03)",
+   "TOUCHDOWN · T.Huntley pass short middle to M.Andrews",
+   "to BLT 34 for 9 yards. FUMBLE, ATL recovers at BLT…"
+  ],
+  "chips": [
+   "Defensive TD"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · BAL · Fumble Return Touchdown",
+  "hold": 4720,
+  "noRow": false
+ },
+ "fum_td#2": {
+  "box": [
+   "3rd & 15 · NO 19  (Q3 2:34)",
+   "TOUCHDOWN · K.Murray pass short left to M.Price to",
+   "NO 12 for 7 yards. FUMBLE, NO recovers at NO 13."
+  ],
+  "chips": [
+   "Defensive TD"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · MIN · Fumble Return Touchdown",
+  "hold": 4570,
+  "noRow": false
+ },
+ "fum_oob#0": {
+  "box": [
+   "2nd & 3 · TB 42  (Q4 15:00)",
+   "B.Irving left tackle to CHI 33 for 25 yards. FUMBLE,",
+   "out of bounds at CHI 31."
+  ],
+  "chips": [
+   "25 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TB · Field Goal",
+  "hold": 2460,
+  "noRow": false
+ },
+ "fum_oob#1": {
+  "box": [
+   "3rd & 1 · NO 44  (Q4 4:30)",
+   "K.Miller right end to NO 49 for 5 yards. FUMBLE, out",
+   "of bounds at LV 47."
+  ],
+  "chips": [
+   "5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Fumble",
+  "hold": 2020,
+  "noRow": false
+ },
+ "fum_oob#2": {
+  "box": [
+   "2nd & Goal · NE 7  (Q1 8:41)",
+   "J.Jacobs left end to NE 5 for 2 yards. FUMBLE, out",
+   "of bounds at NE 3."
+  ],
+  "chips": [
+   "2 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · GB · Touchdown",
+  "hold": 1960,
+  "noRow": false
+ },
+ "fum_touchback#0": {
+  "box": [
+   "2nd & 13 · SF 25  (Q3 4:19)",
+   "K.Cousins pass deep middle to M.Mayer to SF 1",
+   "for 24 yards. FUMBLE, SF recovers at SF -2."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · LV · Fumble",
+  "hold": 3260,
+  "noRow": false
+ },
+ "fum_touchback#1": {
+  "box": [
+   "2nd & 7 · ATL 15  (Q1 6:42)",
+   "B.Mayfield for -2 yards. FUMBLE, recovered at ATL",
+   "18. B.Mayfield for 2 yards, lateral to B.Irving…"
+  ],
+  "chips": [
+   "−5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TB · Fumble",
+  "hold": 3040,
+  "noRow": false
+ },
+ "fum_touchback#2": {
+  "box": [
+   "1st & 5 · CIN 12  (Q2 12:15)",
+   "B.Mayfield scrambles up the middle to CIN 4",
+   "for 8 yards. FUMBLE, CIN recovers at CIN -3."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · TB · Fumble",
+  "hold": 3320,
+  "noRow": false
+ },
+ "fum_aborted_own#0": {
+  "box": [
+   "2nd & 8 · IND 27  (Q4 4:17)",
+   "D.Jones Aborted. T.Bortolini FUMBLES at IND 27,",
+   "recovered by IND-D.Jones at IND 24."
+  ],
+  "chips": [
+   "−1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · IND · Punt",
+  "hold": 2050,
+  "noRow": false
+ },
+ "fum_aborted_own#1": {
+  "box": [
+   "1st & 10 · DEN 27  (Q4 5:55)",
+   "B.Nix FUMBLES at DEN 22, and recovers at DEN 22."
+  ],
+  "chips": [
+   "−5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DEN · Downs",
+  "hold": 1690,
+  "noRow": false
+ },
+ "fum_aborted_own#2": {
+  "box": [
+   "2nd & 7 · KC 32  (Q2 12:14)",
+   "M.Penix FUMBLES at KC 34, and recovers at KC 36."
+  ],
+  "chips": [
+   "−4 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Field Goal",
+  "hold": 1630,
+  "noRow": false
+ },
+ "fum_aborted_lost#0": {
+  "box": [
+   "2nd & 4 · MIN 46  (Q3 12:17)",
+   "J.Love Aborted. J.Williams FUMBLES at GB 42, touched",
+   "at GB 35, RECOVERED by MIN-D.Turner at GB 27."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · GB · Fumble",
+  "hold": 3860,
+  "noRow": false
+ },
+ "fum_aborted_lost#1": {
+  "box": [
+   "3rd & 1 · BUF 48  (Q4 2:38)",
+   "J.Fagnano FUMBLES at BUF 48, RECOVERED by",
+   "BUF-D.Williams at BUF 47."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · BAL · Fumble",
+  "hold": 3440,
+  "noRow": false
+ },
+ "fum_aborted_lost#2": {
+  "box": [
+   "2nd & 3 · DET 42  (Q3 14:16)",
+   "J.Goff FUMBLES at DET 41, touched at DET 41,",
+   "RECOVERED by GB-I.McDuffie at DET 42."
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · DET · Fumble",
+  "hold": 3980,
+  "noRow": false
+ },
+ "downs#0": {
+  "box": [
+   "4th & 3 · LAR 48  (Q2 2:00)",
+   "K.Cousins pass incomplete short left to C.White."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Downs",
+  "hold": 1390,
+  "noRow": false
+ },
+ "downs#1": {
+  "box": [
+   "4th & 6 · IND 38  (Q4 9:24)",
+   "A.Richardson pass short left to K.Allen to IND 43",
+   "for 5 yards."
+  ],
+  "chips": [
+   "5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · IND · Downs",
+  "hold": 1090,
+  "noRow": false
+ },
+ "downs#2": {
+  "box": [
+   "4th & 1 · LAC 41  (Q4 10:33)",
+   "J.Herbert right guard to LAC 41 for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Downs",
+  "hold": 1090,
+  "noRow": false
+ },
+ "ko_touchback#0": {
+  "box": [
+   "Kickoff  (Q3 7:48)",
+   "Kickoff 65 yds to end zone, touchback"
+  ],
+  "chips": [
+   "65 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Punt",
+  "hold": 1510,
+  "noRow": false
+ },
+ "ko_touchback#1": {
+  "box": [
+   "Kickoff  (Q4 0:08)",
+   "Kickoff 65 yds to end zone, touchback"
+  ],
+  "chips": [
+   "65 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · End of Half",
+  "hold": 1510,
+  "noRow": false
+ },
+ "ko_touchback#2": {
+  "box": [
+   "Kickoff  (Q4 15:00)",
+   "Kickoff 65 yds to end zone, touchback"
+  ],
+  "chips": [
+   "65 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · IND · Interception",
+  "hold": 1510,
+  "noRow": false
+ },
+ "ko_return#0": {
+  "box": [
+   "Kickoff  (Q4 13:37)",
+   "Kickoff 62 yds to PIT 3",
+   "K.Wetjen returns 24 yds"
+  ],
+  "chips": [
+   "24 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PIT · Punt",
+  "hold": 1120,
+  "noRow": false
+ },
+ "ko_return#1": {
+  "box": [
+   "Kickoff  (Q2 11:51)",
+   "Kickoff 58 yds to MIA 7",
+   "J.Wright returns 21 yds"
+  ],
+  "chips": [
+   "21 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIA · Interception",
+  "hold": 1120,
+  "noRow": false
+ },
+ "ko_return#2": {
+  "box": [
+   "Kickoff  (Q2 4:03)",
+   "Kickoff 64 yds to ATL 1",
+   "O.Zaccheaus returns 28 yds"
+  ],
+  "chips": [
+   "28 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Punt",
+  "hold": 1210,
+  "noRow": false
+ },
+ "ko_return_td#0": {
+  "box": [
+   "Kickoff  (Q2 10:44)",
+   "Kickoff 60 yds to LV 5",
+   "D.Laube returns 95 yds · TOUCHDOWN · PAT good"
+  ],
+  "chips": [
+   "TD, 95 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · LV · Touchdown",
+  "hold": 2980,
+  "noRow": false
+ },
+ "ko_short#0": {
+  "box": [
+   "Kickoff  (Q3 13:30)",
+   "Kickoff 43 yds to IND 22, short of landing zone",
+   "Penalty TEN, Kickoff short of landing zone"
+  ],
+  "chips": [
+   "18 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · IND · Interception",
+  "hold": 1000,
+  "noRow": false
+ },
+ "ko_short#1": {
+  "box": [
+   "Kickoff  (Q1 9:38)",
+   "Kickoff 42 yds to TB 23, short of landing zone",
+   "Penalty CHI, Kickoff short of landing zone"
+  ],
+  "chips": [
+   "17 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TB · Punt",
+  "hold": 1000,
+  "noRow": false
+ },
+ "ko_short#2": {
+  "box": [
+   "Kickoff  (Q3 10:23)",
+   "Kickoff 43 yds to PIT 22, short of landing zone",
+   "Penalty IND, Kickoff short of landing zone"
+  ],
+  "chips": [
+   "18 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PIT · Touchdown",
+  "hold": 1000,
+  "noRow": false
+ },
+ "ko_oob#0": {
+  "box": [
+   "Kickoff  (Q1 15:00)",
+   "Kickoff 60 yds to NYJ 5, out of bounds",
+   "Penalty TEN, Kickoff out of bounds · ball at NYJ 40"
+  ],
+  "chips": [
+   "60 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · Touchdown",
+  "hold": 3100,
+  "noRow": false
+ },
+ "ko_oob#1": {
+  "box": [
+   "Kickoff  (Q1 15:00)",
+   "Kickoff 60 yds to NO 5, out of bounds",
+   "Penalty CAR, Kickoff out of bounds · ball at NO 40"
+  ],
+  "chips": [
+   "60 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Interception",
+  "hold": 3040,
+  "noRow": false
+ },
+ "ko_oob#2": {
+  "box": [
+   "Kickoff  (Q4 12:40)",
+   "Kickoff 55 yds to DET 10, out of bounds",
+   "Penalty NE, Kickoff out of bounds · ball at DET 40"
+  ],
+  "chips": [
+   "55 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DET · Touchdown",
+  "hold": 3100,
+  "noRow": false
+ },
+ "ko_muff_own#0": {
+  "box": [
+   "Kickoff  (Q1 15:00)",
+   "Kickoff 60 yds to DET 5",
+   "T.Kennedy MUFFS catch, recovered by DET-J.Saylors…"
+  ],
+  "chips": [
+   "13 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DET · Punt",
+  "hold": 1930,
+  "noRow": false
+ },
+ "ko_muff_own#1": {
+  "box": [
+   "Kickoff  (Q3 15:00)",
+   "Kickoff 62 yds to CLV 3",
+   "MUFFED, recovered"
+  ],
+  "chips": [
+   "16 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Punt",
+  "hold": 1000,
+  "noRow": false
+ },
+ "ko_muff_own#2": {
+  "box": [
+   "Kickoff  (Q1 8:10)",
+   "Kickoff 56 yds to BLT 9",
+   "MUFFED, recovered"
+  ],
+  "chips": [
+   "12 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Downs",
+  "hold": 1000,
+  "noRow": false
+ },
+ "ko_fum_lost#0": {
+  "box": [
+   "Kickoff  (Q3 6:40)",
+   "Kickoff 63 yds to LV 2",
+   "D.Laube returns 28 yds · FUMBLE, NO recovers"
+  ],
+  "chips": [
+   "28 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Fumble",
+  "hold": 1750,
+  "noRow": false
+ },
+ "ko_fum_lost#1": {
+  "box": [
+   "Kickoff  (Q2 1:18)",
+   "Kickoff 60 yds to NYG 5",
+   "C.Jones returns 22 yds · FUMBLE, NO recovers"
+  ],
+  "chips": [
+   "22 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYG · Fumble",
+  "hold": 1750,
+  "noRow": false
+ },
+ "ko_fum_lost#2": {
+  "box": [
+   "Kickoff  (Q3 1:48)",
+   "Kickoff 62 yds to ATL 3",
+   "Z.Branch returns 26 yds · FUMBLE, CHI recovers"
+  ],
+  "chips": [
+   "26 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Fumble",
+  "hold": 1810,
+  "noRow": false
+ },
+ "ko_fum_own#0": {
+  "box": [
+   "Kickoff  (Q1 6:47)",
+   "Kickoff 59 yds to KC 6",
+   "C.Allen returns 19 yds · FUMBLE, KC recovers"
+  ],
+  "chips": [
+   "19 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · KC · Fumble",
+  "hold": 1750,
+  "noRow": false
+ },
+ "ko_fum_own#1": {
+  "box": [
+   "Kickoff  (Q4 3:07)",
+   "Kickoff 55 yds to WAS 10",
+   "J.Lane returns 33 yds · FUMBLE, recovered"
+  ],
+  "chips": [
+   "33 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · WSH · End of Game",
+  "hold": 1660,
+  "noRow": false
+ },
+ "ko_fum_own#2": {
+  "box": [
+   "Kickoff  (Q3 12:35)",
+   "Kickoff 58 yds to JAX 7",
+   "J.Cameron returns 25 yds · FUMBLE, JAX recovers"
+  ],
+  "chips": [
+   "25 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · JAX · Touchdown",
+  "hold": 1840,
+  "noRow": false
+ },
+ "onside_kept#0": {
+  "box": [
+   "Kickoff  (Q4 7:00)",
+   "Onside kick 14 yds to NYG 49",
+   "J.Johnson, no return"
+  ],
+  "chips": [
+   "14 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Punt",
+  "hold": 1870,
+  "noRow": false
+ },
+ "onside_kept#1": {
+  "box": [
+   "Kickoff  (Q4 1:56)",
+   "Onside kick 10 yds to LAC 45",
+   "K.Coleman, no return"
+  ],
+  "chips": [
+   "10 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BUF · End of Game",
+  "hold": 1870,
+  "noRow": false
+ },
+ "onside_kept#2": {
+  "box": [
+   "Kickoff  (Q4 4:19)",
+   "Onside kick 9 yds to LAC 44",
+   "M.Stewart, no return"
+  ],
+  "chips": [
+   "9 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · HOU · Field Goal",
+  "hold": 1840,
+  "noRow": false
+ },
+ "onside_rec#0": {
+  "box": [
+   "Kickoff  (Q4 8:12)",
+   "Onside kick 15 yds to 50",
+   "RECOVERED by ATL-C.Blair"
+  ],
+  "chips": [
+   "15 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Field Goal",
+  "hold": 1870,
+  "noRow": false
+ },
+ "ko_lateral#0": {
+  "box": [
+   "Kickoff  (Q1 9:32)",
+   "Kickoff 65 yds to LV 0",
+   "D.Laube returns 16 yds"
+  ],
+  "chips": [
+   "16 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Punt",
+  "hold": 1090,
+  "noRow": false
+ },
+ "ko_lateral#1": {
+  "box": [
+   "Kickoff  (Q4 5:21)",
+   "Kickoff 65 yds to LV 0",
+   "D.Laube returns 18 yds"
+  ],
+  "chips": [
+   "18 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Interception",
+  "hold": 1090,
+  "noRow": false
+ },
+ "punt_return#0": {
+  "box": [
+   "4th & 7 · DET 24  (Q4 5:05)",
+   "Punt 48 yds to NE 28",
+   "M.Jones returns 7 yds"
+  ],
+  "chips": [
+   "7 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DET · Punt",
+  "hold": 1060,
+  "noRow": false
+ },
+ "punt_return#1": {
+  "box": [
+   "4th & 3 · WSH 26  (Q1 8:15)",
+   "Punt 47 yds to DAL 27",
+   "K.Turpin returns 9 yds"
+  ],
+  "chips": [
+   "9 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · WSH · Punt",
+  "hold": 1090,
+  "noRow": false
+ },
+ "punt_return#2": {
+  "box": [
+   "4th & 13 · IND 37  (Q2 1:00)",
+   "Punt 50 yds to DAL 13",
+   "J.Mingo returns 12 yds"
+  ],
+  "chips": [
+   "12 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · IND · Punt",
+  "hold": 1090,
+  "noRow": false
+ },
+ "punt_ret_nogain#0": {
+  "box": [
+   "4th & 10 · ARI 45  (Q4 2:58)",
+   "Punt 41 yds to LA 14",
+   "A.Bachman, no return"
+  ],
+  "chips": [
+   "41 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Punt",
+  "hold": 1630,
+  "noRow": false
+ },
+ "punt_ret_nogain#1": {
+  "box": [
+   "4th & 2 · PHI 23  (Q4 14:27)",
+   "Punt 61 yds to DAL 16",
+   "J.Mingo, no return"
+  ],
+  "chips": [
+   "61 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PHI · Punt",
+  "hold": 1600,
+  "noRow": false
+ },
+ "punt_ret_nogain#2": {
+  "box": [
+   "4th & 5 · HOU 13  (Q1 8:47)",
+   "Punt 47 yds to CIN 40",
+   "D.Meyers, no return"
+  ],
+  "chips": [
+   "47 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · HOU · Punt",
+  "hold": 1630,
+  "noRow": false
+ },
+ "punt_ret_loss#0": {
+  "box": [
+   "4th & 12 · CHI 49  (Q3 6:57)",
+   "Punt 44 yds to ATL 7",
+   "O.Zaccheaus returns -1 yd"
+  ],
+  "chips": [
+   "−1 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Punt",
+  "hold": 1180,
+  "noRow": false
+ },
+ "punt_ret_loss#1": {
+  "box": [
+   "4th & 12 · BAL 8  (Q1 4:50)",
+   "Punt 51 yds to LAC 41",
+   "D.Davis returns -1 yd"
+  ],
+  "chips": [
+   "−1 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Punt",
+  "hold": 1060,
+  "noRow": false
+ },
+ "punt_ret_loss#2": {
+  "box": [
+   "4th & 18 · JAX 42  (Q1 4:19)",
+   "Punt 46 yds to DEN 12",
+   "K.Abrams-Draine returns -1 yd"
+  ],
+  "chips": [
+   "−1 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · JAX · Punt",
+  "hold": 1300,
+  "noRow": false
+ },
+ "punt_fair#0": {
+  "box": [
+   "4th & 8 · NO 29  (Q1 14:14)",
+   "Punt 47 yds to LV 24, fair catch"
+  ],
+  "chips": [
+   "47 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Punt",
+  "hold": 1360,
+  "noRow": false
+ },
+ "punt_fair#1": {
+  "box": [
+   "4th & 4 · MIN 26  (Q2 1:03)",
+   "Punt 51 yds to TB 23, fair catch"
+  ],
+  "chips": [
+   "51 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIN · Punt",
+  "hold": 1360,
+  "noRow": false
+ },
+ "punt_fair#2": {
+  "box": [
+   "4th & 5 · 50  (Q1 0:46)",
+   "Punt 42 yds to SEA 8, fair catch"
+  ],
+  "chips": [
+   "42 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SF · Punt",
+  "hold": 1360,
+  "noRow": false
+ },
+ "punt_downed#0": {
+  "box": [
+   "4th & 16 · NE 48  (Q1 5:24)",
+   "Punt 50 yds to GB 2, downed"
+  ],
+  "chips": [
+   "50 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NE · Punt",
+  "hold": 1210,
+  "noRow": false
+ },
+ "punt_downed#1": {
+  "box": [
+   "4th & 9 · JAX 45  (Q1 10:20)",
+   "Punt 33 yds to JAX 12, downed"
+  ],
+  "chips": [
+   "33 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NE · Punt",
+  "hold": 1270,
+  "noRow": false
+ },
+ "punt_downed#2": {
+  "box": [
+   "4th & 2 · PHI 47  (Q2 0:45)",
+   "Punt 51 yds to WAS 2, downed"
+  ],
+  "chips": [
+   "51 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PHI · Punt",
+  "hold": 1240,
+  "noRow": false
+ },
+ "punt_oob#0": {
+  "box": [
+   "4th & 9 · BAL 33  (Q3 8:02)",
+   "Punt 40 yds to BUF 27, out of bounds"
+  ],
+  "chips": [
+   "40 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Punt",
+  "hold": 1480,
+  "noRow": false
+ },
+ "punt_oob#1": {
+  "box": [
+   "4th & 21 · JAX 24  (Q2 6:32)",
+   "Punt 38 yds to PHI 38, out of bounds"
+  ],
+  "chips": [
+   "38 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · JAX · Punt",
+  "hold": 1480,
+  "noRow": false
+ },
+ "punt_oob#2": {
+  "box": [
+   "4th & 8 · DEN 37  (Q1 14:17)",
+   "Punt 57 yds to SF 6, out of bounds"
+  ],
+  "chips": [
+   "57 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DEN · Punt",
+  "hold": 1420,
+  "noRow": false
+ },
+ "punt_touchback#0": {
+  "box": [
+   "4th & 25 · CLE 45  (Q3 1:21)",
+   "Punt 45 yds to end zone, touchback"
+  ],
+  "chips": [
+   "45 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PIT · Punt",
+  "hold": 1420,
+  "noRow": false
+ },
+ "punt_touchback#1": {
+  "box": [
+   "4th & 1 · DET 44  (Q4 0:37)",
+   "Punt 56 yds to end zone, touchback"
+  ],
+  "chips": [
+   "56 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DET · Punt",
+  "hold": 1420,
+  "noRow": false
+ },
+ "punt_touchback#2": {
+  "box": [
+   "4th & 2 · MIN 46  (Q4 4:01)",
+   "Punt 54 yds to end zone, touchback"
+  ],
+  "chips": [
+   "54 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIN · Punt",
+  "hold": 1420,
+  "noRow": false
+ },
+ "punt_muff_own#0": {
+  "box": [
+   "4th & 14 · LAC 21  (Q2 1:17)",
+   "Punt 54 yds to HST 25",
+   "MUFFED, recovered"
+  ],
+  "chips": [
+   "1 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Punt",
+  "hold": 1000,
+  "noRow": false
+ },
+ "punt_muff_own#1": {
+  "box": [
+   "4th & 13 · TEN 17  (Q4 9:46)",
+   "Punt 54 yds to BLT 29",
+   "L.Wester MUFFS catch, ball out of bounds at BLT 25"
+  ],
+  "chips": [
+   "54 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TEN · Punt",
+  "hold": 2560,
+  "noRow": false
+ },
+ "punt_muff_own#2": {
+  "box": [
+   "4th & 3 · ARI 38  (Q1 13:57)",
+   "Punt 45 yds to DAL 17",
+   "MUFFED, recovered"
+  ],
+  "chips": [
+   "−2 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Punt",
+  "hold": 1000,
+  "noRow": false
+ },
+ "punt_muff_lost#0": {
+  "box": [
+   "4th & 5 · 50  (Q1 0:59)",
+   "Punt 36 yds to CAR 14",
+   "MUFFED, TB recovers"
+  ],
+  "chips": [
+   "4 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TB · Punt",
+  "hold": 1000,
+  "noRow": false
+ },
+ "punt_muff_lost#1": {
+  "box": [
+   "4th & 13 · SEA 32  (Q1 10:13)",
+   "Punt 45 yds to LAC 23",
+   "MUFFED, SEA recovers"
+  ],
+  "chips": [
+   "45 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SEA · Punt",
+  "hold": 1660,
+  "noRow": false
+ },
+ "punt_muff_lost#2": {
+  "box": [
+   "4th & 5 · CHI 30  (Q2 7:07)",
+   "Punt 48 yds to CAR 22",
+   "MUFFED, CHI recovers"
+  ],
+  "chips": [
+   "6 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Punt",
+  "hold": 1030,
+  "noRow": false
+ },
+ "punt_fum_lost#0": {
+  "box": [
+   "4th & 7 · SF 11  (Q3 9:52)",
+   "Punt 61 yds to DEN 28",
+   "M.Mims returns 1 yd · FUMBLE, SF recovers"
+  ],
+  "chips": [
+   "61 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SF · Punt",
+  "hold": 2290,
+  "noRow": false
+ },
+ "punt_fum_lost#1": {
+  "box": [
+   "4th & 5 · CLE 20  (Q2 4:12)",
+   "Punt 57 yds to NO 23",
+   "B.Brown returns -3 yds · FUMBLE, CLV recovers"
+  ],
+  "chips": [
+   "−3 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Punt",
+  "hold": 1780,
+  "noRow": false
+ },
+ "punt_ret_td#0": {
+  "box": [
+   "4th & 5 · TB 45  (Q1 8:43)",
+   "TOUCHDOWN",
+   "+ Penalty MIN, Unsportsmanlike conduct, 15 yds on…"
+  ],
+  "chips": [
+   "TD, 56 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · TB · Punt Touchdown",
+  "hold": 3400,
+  "noRow": false
+ },
+ "punt_blocked#0": {
+  "box": [
+   "4th & 11 · LAC 19  (Q4 12:28)",
+   "Punt BLOCKED by S.Fehoko",
+   "LAC recovers"
+  ],
+  "chips": [
+   "Blocked"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Blocked Punt, Downs",
+  "hold": 1510,
+  "noRow": false
+ },
+ "punt_blocked_td#0": {
+  "box": [
+   "4th & 12 · IND 37  (Q4 10:17)",
+   "Punt BLOCKED by J.Chestnut",
+   "TEN recovers · TOUCHDOWN, 14-yd return"
+  ],
+  "chips": [
+   "TD, 14 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · IND · Blocked Punt Touchdown",
+  "hold": 2770,
+  "noRow": false
+ },
+ "fake_punt#0": {
+  "box": [
+   "4th & 5 · LV 30  (Q3 12:07)",
+   "A.Cole pass short middle to C.Heyward to LV 43",
+   "for 13 yards."
+  ],
+  "chips": [
+   "13 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Downs",
+  "hold": 1090,
+  "noRow": false
+ },
+ "fake_punt#1": {
+  "box": [
+   "4th & 7 · DET 30  (Q2 14:55)",
+   "J.Fox pass short left to T.Martin to DET 41",
+   "for 11 yards."
+  ],
+  "chips": [
+   "11 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DET · Punt",
+  "hold": 1120,
+  "noRow": false
+ },
+ "fake_punt#2": {
+  "box": [
+   "4th & 9 · KC 30  (Q1 13:21)",
+   "M.Araiza right end to KC 42 for 12 yards."
+  ],
+  "chips": [
+   "12 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · KC · Downs",
+  "hold": 1090,
+  "noRow": false
+ },
+ "fake_fg#0": {
+  "box": [
+   "4th & 4 · CIN 16  (Q2 13:28)",
+   "K.Kroeger to CIN 24 for -8 yards. FUMBLE, recovered",
+   "at CIN 25. K.Kroeger pass incomplete short right."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · HOU · Downs",
+  "hold": 3160,
+  "noRow": false
+ },
+ "fg_good#0": {
+  "box": [
+   "4th & 6 · SEA 18  (Q4 4:34)",
+   "Field goal GOOD · D.Stevens from 36 yds"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · WSH · Field Goal",
+  "hold": 2570,
+  "noRow": false
+ },
+ "fg_good#1": {
+  "box": [
+   "2nd & 10 · NE 18  (Q4 0:32)",
+   "Field goal GOOD · J.Sanders from 36 yds"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · NYJ · Field Goal",
+  "hold": 2570,
+  "noRow": false
+ },
+ "fg_good#2": {
+  "box": [
+   "4th & Goal · DEN 5  (Q3 9:02)",
+   "Field goal GOOD · C.Little from 23 yds"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · JAX · Field Goal",
+  "hold": 2540,
+  "noRow": false
+ },
+ "fg_wide_l#0": {
+  "box": [
+   "4th & 7 · ATL 38  (Q2 7:23)",
+   "Field goal NO GOOD · C.Santos from 56 yds",
+   "Wide left"
+  ],
+  "chips": [
+   "Wide left"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Missed FG",
+  "hold": 3130,
+  "noRow": false
+ },
+ "fg_wide_l#1": {
+  "box": [
+   "4th & 8 · BAL 29  (Q4 3:44)",
+   "Field goal NO GOOD · A.Szmyt from 48 yds",
+   "Wide left"
+  ],
+  "chips": [
+   "Wide left"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Missed FG",
+  "hold": 3100,
+  "noRow": false
+ },
+ "fg_wide_l#2": {
+  "box": [
+   "4th & 15 · LV 23  (Q3 0:11)",
+   "Field goal NO GOOD · R.Patterson from 41 yds",
+   "Wide left"
+  ],
+  "chips": [
+   "Wide left"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIA · Missed FG",
+  "hold": 3220,
+  "noRow": false
+ },
+ "fg_wide_r#0": {
+  "box": [
+   "4th & 17 · DET 35  (Q3 12:24)",
+   "Field goal NO GOOD · C.Ryland from 53 yds",
+   "Wide right"
+  ],
+  "chips": [
+   "Wide right"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Missed FG",
+  "hold": 3160,
+  "noRow": false
+ },
+ "fg_wide_r#1": {
+  "box": [
+   "4th & 12 · PIT 36  (Q2 2:38)",
+   "Field goal NO GOOD · N.Folk from 54 yds",
+   "Wide right"
+  ],
+  "chips": [
+   "Wide right"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Missed FG",
+  "hold": 3100,
+  "noRow": false
+ },
+ "fg_wide_r#2": {
+  "box": [
+   "4th & 3 · SEA 27  (Q4 8:38)",
+   "Field goal NO GOOD · H.Butker from 45 yds",
+   "Wide right"
+  ],
+  "chips": [
+   "Wide right"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · KC · Missed FG",
+  "hold": 3160,
+  "noRow": false
+ },
+ "fg_short#0": {
+  "box": [
+   "4th & 1 · CIN 40  (Q3 7:33)",
+   "Field goal NO GOOD · K.Fairbairn from 58 yds",
+   "Short"
+  ],
+  "chips": [
+   "Short"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · HOU · Missed FG",
+  "hold": 3100,
+  "noRow": false
+ },
+ "fg_short#1": {
+  "box": [
+   "2nd & 6 · SEA 40  (Q2 0:01)",
+   "Field goal NO GOOD · H.Butker from 58 yds",
+   "Short"
+  ],
+  "chips": [
+   "Short"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · KC · Missed FG",
+  "hold": 3010,
+  "noRow": false
+ },
+ "fg_doink#0": {
+  "box": [
+   "4th & 3 · LV 40  (Q1 11:44)",
+   "Field goal NO GOOD · C.Dicker from 58 yds",
+   "Hit right upright"
+  ],
+  "chips": [
+   "Hit right upright"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Missed FG",
+  "hold": 3670,
+  "noRow": false
+ },
+ "fg_doink#1": {
+  "box": [
+   "4th & 4 · TEN 25  (Q4 14:09)",
+   "Field goal NO GOOD · A.Szmyt from 43 yds",
+   "Hit right upright"
+  ],
+  "chips": [
+   "Hit right upright"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Missed FG",
+  "hold": 3640,
+  "noRow": false
+ },
+ "fg_doink#2": {
+  "box": [
+   "4th & 6 · LAR 25  (Q1 1:23)",
+   "Field goal NO GOOD · W.Lutz from 43 yds",
+   "Hit left upright"
+  ],
+  "chips": [
+   "Hit left upright"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DEN · Missed FG",
+  "hold": 3580,
+  "noRow": false
+ },
+ "fg_blocked#0": {
+  "box": [
+   "4th & 12 · CHI 15  (Q4 14:13)",
+   "Field goal BLOCKED · J.Myers from 33 yds",
+   "Blocked by A.Booker"
+  ],
+  "chips": [
+   "Blocked"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SEA · Missed FG",
+  "hold": 3400,
+  "noRow": false
+ },
+ "fg_blocked#1": {
+  "box": [
+   "4th & 5 · DET 17  (Q4 3:25)",
+   "Field goal BLOCKED · T.Smack from 35 yds",
+   "Blocked by D.Wonnum"
+  ],
+  "chips": [
+   "Blocked"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · GB · Missed FG",
+  "hold": 3400,
+  "noRow": false
+ },
+ "fg_blocked#2": {
+  "box": [
+   "4th & 11 · HOU 44  (Q2 5:02)",
+   "Field goal BLOCKED · B.Aubrey from 62 yds",
+   "Blocked by W.Anderson"
+  ],
+  "chips": [
+   "Blocked"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DAL · Missed FG",
+  "hold": 3490,
+  "noRow": false
+ },
+ "fg_blocked_ret#0": {
+  "box": [
+   "4th & 12 · CHI 15  (Q4 14:13)",
+   "Field goal BLOCKED · J.Myers from 44 yds",
+   "CHI recovers · 38-yd return"
+  ],
+  "chips": [
+   "15 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SEA · Missed FG",
+  "hold": 1210,
+  "noRow": false
+ },
+ "fg_blocked_off#0": {
+  "box": [
+   "4th & Goal · MIN 5  (Q4 6:26)",
+   "Field goal BLOCKED · C.Santos from 23 yds",
+   "CHI recovers"
+  ],
+  "chips": [
+   "7 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Blocked FG, Downs",
+  "hold": 1000,
+  "noRow": false
+ },
+ "pat_good#0": {
+  "box": [
+   "1st & Goal · DAL 5  (Q2 13:25)",
+   "TOUCHDOWN · D.Pierce left tackle for 5 yards.",
+   "PAT good."
+  ],
+  "chips": [
+   "TD, 5 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · PHI · Touchdown",
+  "hold": 3250,
+  "noRow": false
+ },
+ "pat_good#1": {
+  "box": [
+   "1st & Goal · CIN 10  (Q2 1:49)",
+   "TOUCHDOWN · B.Irving left end for 10 yards.",
+   "PAT good."
+  ],
+  "chips": [
+   "TD, 10 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · TB · Touchdown",
+  "hold": 3190,
+  "noRow": false
+ },
+ "pat_good#2": {
+  "box": [
+   "3rd & Goal · WSH 3  (Q3 0:44)",
+   "TOUCHDOWN · J.Winston pass short right to I.Likely",
+   "for 3 yards. PAT good."
+  ],
+  "chips": [
+   "TD, 3 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · NYG · Touchdown",
+  "hold": 3790,
+  "noRow": false
+ },
+ "pat_wide#0": {
+  "box": [
+   "4th & 5 · PHI 27  (Q4 3:20)",
+   "TOUCHDOWN · T.Lawrence pass deep right to",
+   "P.Washington for 27 yards. PAT missed."
+  ],
+  "chips": [
+   "TD, 27 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · JAX · Touchdown",
+  "hold": 4000,
+  "noRow": false
+ },
+ "pat_wide#1": {
+  "box": [
+   "2nd & 10 · DAL 13  (Q4 0:06)",
+   "TOUCHDOWN · G.Minshew pass short middle to Mi.Wilson",
+   "for 13 yards. PAT missed."
+  ],
+  "chips": [
+   "TD, 13 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · ARI · Touchdown",
+  "hold": 3940,
+  "noRow": false
+ },
+ "pat_wide#2": {
+  "box": [
+   "3rd & 10 · CHI 43  (Q2 0:30)",
+   "TOUCHDOWN · S.Darnold pass deep left to",
+   "J.Smith-Njigba for 43 yards. PAT missed."
+  ],
+  "chips": [
+   "TD, 43 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · SEA · Touchdown",
+  "hold": 4000,
+  "noRow": false
+ },
+ "pat_upright#0": {
+  "box": [
+   "1st & Goal · ARI 10  (Q4 8:42)",
+   "TOUCHDOWN · B.Purdy pass short middle to G.Kittle",
+   "for 10 yards. PAT missed."
+  ],
+  "chips": [
+   "TD, 10 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · SF · Touchdown",
+  "hold": 3850,
+  "noRow": false
+ },
+ "pat_upright#1": {
+  "box": [
+   "3rd & 10 · NYJ 29  (Q4 6:15)",
+   "TOUCHDOWN · D.Watson pass deep left to D.Boston",
+   "for 29 yards. PAT missed."
+  ],
+  "chips": [
+   "TD, 29 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · CLE · Touchdown",
+  "hold": 3790,
+  "noRow": false
+ },
+ "pat_upright#2": {
+  "box": [
+   "3rd & 8 · CAR 12  (Q1 5:08)",
+   "TOUCHDOWN · J.Love pass short middle to T.Kraft",
+   "for 12 yards. PAT missed."
+  ],
+  "chips": [
+   "TD, 12 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · GB · Touchdown",
+  "hold": 3790,
+  "noRow": false
+ },
+ "pat_blocked#0": {
+  "box": [
+   "3rd & Goal · LV 2  (Q1 0:50)",
+   "TOUCHDOWN · T.Shough pass short left to J.Johnson",
+   "for 2 yards. D.Carlson extra point is Blocked."
+  ],
+  "chips": [
+   "TD, 2 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · NO · Touchdown",
+  "hold": 4480,
+  "noRow": false
+ },
+ "pat_blocked#1": {
+  "box": [
+   "1st & Goal · PHI 1  (Q2 1:50)",
+   "TOUCHDOWN · J.Croskey-Merritt left guard for 1 yard.",
+   "D.Stevens extra point is Blocked."
+  ],
+  "chips": [
+   "TD, 1 yard"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · WSH · Touchdown",
+  "hold": 4180,
+  "noRow": false
+ },
+ "pat_blocked#2": {
+  "box": [
+   "2nd & Goal · CHI 8  (Q4 4:00)",
+   "TOUCHDOWN · B.Young pass short left to J.Coker",
+   "for 8 yards. R.Fitzgerald extra point is Blocked."
+  ],
+  "chips": [
+   "TD, 8 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · CAR · Touchdown",
+  "hold": 4480,
+  "noRow": false
+ },
+ "two_pass_good#0": {
+  "box": [
+   "2nd & 11 · BAL 19  (Q3 1:48)",
+   "TOUCHDOWN · D.Prescott pass deep right to J.Ferguson",
+   "for 19 yards. 2-pt good."
+  ],
+  "chips": [
+   "TD, 19 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · DAL · Touchdown",
+  "hold": 3910,
+  "noRow": false
+ },
+ "two_pass_good#1": {
+  "box": [
+   "2nd & Goal · DET 8  (Q4 8:44)",
+   "TOUCHDOWN · K.Murray pass short middle to",
+   "T.Hockenson for 8 yards. 2-pt good."
+  ],
+  "chips": [
+   "TD, 8 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · MIN · Touchdown",
+  "hold": 3910,
+  "noRow": false
+ },
+ "two_pass_good#2": {
+  "box": [
+   "2nd & 10 · CIN 15  (Q4 3:46)",
+   "TOUCHDOWN · C.Ward pass short right to W.Robinson",
+   "for 15 yards. 2-pt good."
+  ],
+  "chips": [
+   "TD, 15 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · TEN · Touchdown",
+  "hold": 3820,
+  "noRow": false
+ },
+ "two_pass_fail#0": {
+  "box": [
+   "1st & 10 · TEN 25  (Q4 7:13)",
+   "TOUCHDOWN · J.Burrow pass deep left to M.Gesicki",
+   "for 25 yards. 2-pt failed."
+  ],
+  "chips": [
+   "TD, 25 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · CIN · Touchdown",
+  "hold": 3850,
+  "noRow": false
+ },
+ "two_pass_fail#1": {
+  "box": [
+   "1st & Goal · CAR 9  (Q4 10:17)",
+   "TOUCHDOWN · J.Coleman right end for 9 yards.",
+   "2-pt failed."
+  ],
+  "chips": [
+   "TD, 9 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · DEN · Touchdown",
+  "hold": 3310,
+  "noRow": false
+ },
+ "two_pass_fail#2": {
+  "box": [
+   "3rd & Goal · DET 4  (Q4 11:17)",
+   "TOUCHDOWN · G.Smith pass short middle to J.Ruckert",
+   "for 4 yards. 2-pt failed."
+  ],
+  "chips": [
+   "TD, 4 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · NYJ · Touchdown",
+  "hold": 3880,
+  "noRow": false
+ },
+ "two_run_good#0": {
+  "box": [
+   "1st & 10 · SF 13  (Q4 4:05)",
+   "TOUCHDOWN · B.Nix pass short left to J.Waddle",
+   "for 13 yards. 2-pt good."
+  ],
+  "chips": [
+   "TD, 13 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · DEN · Touchdown",
+  "hold": 3700,
+  "noRow": false
+ },
+ "two_run_good#1": {
+  "box": [
+   "1st & Goal · SF 1  (Q4 0:43)",
+   "TOUCHDOWN · D.Prescott pass short left to C.Lamb",
+   "for 1 yard. 2-pt good."
+  ],
+  "chips": [
+   "TD, 1 yard"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · DAL · Touchdown",
+  "hold": 3730,
+  "noRow": false
+ },
+ "two_run_good#2": {
+  "box": [
+   "2nd & 10 · ARI 11  (Q3 1:44)",
+   "TOUCHDOWN · J.Winston pass short middle to T.Johnson",
+   "for 11 yards. 2-pt good."
+  ],
+  "chips": [
+   "TD, 11 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · NYG · Touchdown",
+  "hold": 3910,
+  "noRow": false
+ },
+ "two_run_fail#0": {
+  "box": [
+   "1st & 10 · MIN 30  (Q3 4:40)",
+   "TOUCHDOWN · J.Gibbs up the middle for 30 yards.",
+   "2-pt failed."
+  ],
+  "chips": [
+   "TD, 30 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · DET · Touchdown",
+  "hold": 3400,
+  "noRow": false
+ },
+ "two_run_fail#1": {
+  "box": [
+   "1st & Goal · CLE 8  (Q4 4:25)",
+   "TOUCHDOWN · B.Young pass short left to J.Metchie",
+   "for 8 yards. 2-pt failed."
+  ],
+  "chips": [
+   "TD, 8 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · CAR · Touchdown",
+  "hold": 3820,
+  "noRow": false
+ },
+ "two_def#0": {
+  "box": [
+   "2nd & 5 · CAR 0  (Q2 9:09)",
+   "Zyon McCollum Defensive PAT Conversion"
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [
+   "TD",
+   "PAT"
+  ],
+  "caption": "Drive · CAR · Touchdown",
+  "hold": 1000,
+  "noRow": false
+ },
+ "two_def#1": {
+  "box": [
+   "2nd & 9 · ARI 15  (Q2 8:23)",
+   "TOUCHDOWN · M.Stafford pass short right to B.Corum",
+   "for 15 yards. 2-pt failed. DEFENSIVE TWO-POINT…"
+  ],
+  "chips": [
+   "TD, 15 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · LAR · Touchdown",
+  "hold": 4540,
+  "noRow": false
+ },
+ "safety#0": {
+  "box": [
+   "2nd & 12 · TEN 3  (Q3 0:46)",
+   "SAFETY · Demetrius Knight Jr."
+  ],
+  "chips": [],
+  "banner": "SAFETY",
+  "labels": [
+   "SAFETY"
+  ],
+  "caption": "Drive · TEN · Safety",
+  "hold": 2270,
+  "noRow": false
+ },
+ "safety#1": {
+  "box": [
+   "2nd & 10 · LAC 6  (Q4 1:41)",
+   "SAFETY · Team"
+  ],
+  "chips": [],
+  "banner": "SAFETY",
+  "labels": [
+   "SAFETY"
+  ],
+  "caption": "Drive · LAC · Safety",
+  "hold": 2000,
+  "noRow": false
+ },
+ "pen_pre_off#0": {
+  "box": [
+   "1st & 10 · ATL 24  (Q1 13:13)",
+   "Penalty CAR, False start, −5",
+   "No play"
+  ],
+  "chips": [
+   "−5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CAR · Touchdown",
+  "hold": 1480,
+  "noRow": false
+ },
+ "pen_pre_off#1": {
+  "box": [
+   "3rd & 16 · PIT 8  (Q2 6:19)",
+   "Penalty PIT, Delay of game, −4",
+   "No play"
+  ],
+  "chips": [
+   "−4 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PIT · Punt",
+  "hold": 1540,
+  "noRow": false
+ },
+ "pen_pre_off#2": {
+  "box": [
+   "1st & 10 · 50  (Q1 13:32)",
+   "Penalty SEA, False start, −5",
+   "No play"
+  ],
+  "chips": [
+   "−5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SEA · Punt",
+  "hold": 1480,
+  "noRow": false
+ },
+ "pen_pre_def#0": {
+  "box": [
+   "2nd & 18 · MIN 7  (Q2 4:36)",
+   "Penalty GB, Neutral zone infraction, +5",
+   "No play"
+  ],
+  "chips": [
+   "5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIN · Touchdown",
+  "hold": 1810,
+  "noRow": false
+ },
+ "pen_pre_def#1": {
+  "box": [
+   "1st & Goal · BUF 5  (Q1 3:38)",
+   "Penalty BUF, Encroachment, +3 · 1st down",
+   "No play"
+  ],
+  "chips": [
+   "3 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Touchdown",
+  "hold": 1840,
+  "noRow": false
+ },
+ "pen_pre_def#2": {
+  "box": [
+   "3rd & 10 · MIA 33  (Q1 5:30)",
+   "Penalty MIN, Neutral zone infraction, +5",
+   "No play"
+  ],
+  "chips": [
+   "5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIA · Punt",
+  "hold": 1840,
+  "noRow": false
+ },
+ "pen_live_off#0": {
+  "box": [
+   "1st & 10 · TB 48  (Q2 3:03)",
+   "Penalty TB, Off. holding, −10",
+   "No play · incomplete pass"
+  ],
+  "chips": [
+   "−10 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TB · Punt",
+  "hold": 2050,
+  "noRow": false
+ },
+ "pen_live_off#1": {
+  "box": [
+   "1st & 10 · BAL 44  (Q1 7:45)",
+   "Penalty BLT, Illegal shift, −5",
+   "No play · completed pass"
+  ],
+  "chips": [
+   "−5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Touchdown",
+  "hold": 2050,
+  "noRow": false
+ },
+ "pen_live_off#2": {
+  "box": [
+   "1st & 10 · ARI 46  (Q3 0:59)",
+   "Penalty ARZ, Off. holding, −10",
+   "No play · run"
+  ],
+  "chips": [
+   "−10 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Punt",
+  "hold": 1720,
+  "noRow": false
+ },
+ "pen_live_def#0": {
+  "box": [
+   "2nd & 10 · CAR 34  (Q4 0:28)",
+   "Penalty NO, Def. pass interference, +30 · 1st down",
+   "No play · incomplete pass"
+  ],
+  "chips": [
+   "30 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CAR · Field Goal",
+  "hold": 2680,
+  "noRow": false
+ },
+ "pen_live_def#1": {
+  "box": [
+   "3rd & 7 · LAR 29  (Q1 11:35)",
+   "Penalty LA, Def. offside, +5",
+   "No play · incomplete pass"
+  ],
+  "chips": [
+   "5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Field Goal",
+  "hold": 2020,
+  "noRow": false
+ },
+ "pen_live_def#2": {
+  "box": [
+   "1st & 10 · LAC 30  (Q3 3:28)",
+   "Penalty BLT, Roughing the passer, +15 · 1st down",
+   "No play · incomplete pass"
+  ],
+  "chips": [
+   "15 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Field Goal",
+  "hold": 2620,
+  "noRow": false
+ },
+ "pen_with_play#0": {
+  "box": [
+   "3rd & 1 · WSH 28  (Q2 10:13)",
+   "D.Prescott pass short right to G.Pickens for 9 yards",
+   "+ Penalty WAS, Unnecessary roughness, +9 · 1st down"
+  ],
+  "chips": [
+   "18 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DAL · Touchdown",
+  "hold": 2320,
+  "noRow": false
+ },
+ "pen_with_play#1": {
+  "box": [
+   "3rd & 7 · LV 11  (Q4 7:01)",
+   "B.Corum up the middle for 3 yards",
+   "+ Penalty LV, Horse collar tackle, +4 · 1st down"
+  ],
+  "chips": [
+   "7 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAR · Touchdown",
+  "hold": 2230,
+  "noRow": false
+ },
+ "pen_with_play#2": {
+  "box": [
+   "1st & 10 · MIA 28  (Q2 7:04)",
+   "M.Willis left end for 3 yards",
+   "+ Penalty MIN, Unnecessary roughness, +15 · 1st down"
+  ],
+  "chips": [
+   "18 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIA · Fumble",
+  "hold": 2350,
+  "noRow": false
+ },
+ "pen_declined#0": {
+  "box": [
+   "2nd & 9 · SF 32  (Q3 14:15)",
+   "B.Purdy pass incomplete short left to G.Kittle."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SF · Punt",
+  "hold": 1420,
+  "noRow": false
+ },
+ "pen_declined#1": {
+  "box": [
+   "1st & 10 · LAR 33  (Q4 6:02)",
+   "M.Stafford pass deep right to P.Nacua to PHI 35",
+   "for 32 yards."
+  ],
+  "chips": [
+   "32 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAR · Touchdown",
+  "hold": 1470,
+  "noRow": false
+ },
+ "pen_declined#2": {
+  "box": [
+   "3rd & 4 · SF 38  (Q2 2:00)",
+   "B.Purdy pass short middle to M.Evans to SF 47",
+   "for 9 yards."
+  ],
+  "chips": [
+   "9 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SF · Punt",
+  "hold": 1060,
+  "noRow": false
+ },
+ "pen_offsetting#0": {
+  "box": [
+   "3rd & 6 · DAL 35  (Q3 0:10)",
+   "D.Prescott pass incomplete deep left to C.Lamb.",
+   "Offsetting penalties, no play."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DAL · Downs",
+  "hold": 2260,
+  "noRow": false
+ },
+ "pen_offsetting#1": {
+  "box": [
+   "4th & 5 · ARI 43  (Q3 3:20)",
+   "Punt 37 yds to SEA 20, fair catch",
+   "Offsetting penalties, no play"
+  ],
+  "chips": [
+   "37 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Punt",
+  "hold": 2290,
+  "noRow": false
+ },
+ "pen_offsetting#2": {
+  "box": [
+   "1st & 10 · ARI 15  (Q3 9:22)",
+   "G.Holani left end to ARZ 4 for 11 yards. Offsetting",
+   "penalties, no play."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SEA · Field Goal",
+  "hold": 2020,
+  "noRow": false
+ },
+ "pen_between#0": {
+  "box": [
+   "4th & 11 · CIN 27  (Q3 0:35)",
+   "K.Fairbairn 45 yard field goal is GOOD",
+   "+ Penalty HST, Unnecessary roughness, 15 yds on…"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · HOU · Field Goal",
+  "hold": 3110,
+  "noRow": false
+ },
+ "pen_between#1": {
+  "box": [
+   "1st & 10 · BAL 13  (Q3 4:29)",
+   "TOUCHDOWN",
+   "+ Penalty BLT, Def. offside, 5 yds on the kickoff"
+  ],
+  "chips": [
+   "TD, 13 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · CIN · Touchdown",
+  "hold": 3370,
+  "noRow": false
+ },
+ "pen_between#2": {
+  "box": [
+   "3rd & 6 · PHI 10  (Q4 9:59)",
+   "TOUCHDOWN",
+   "+ Penalty WAS, Unsportsmanlike conduct, 15 yds on…"
+  ],
+  "chips": [
+   "TD, 10 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · WSH · Touchdown",
+  "hold": 3400,
+  "noRow": false
+ },
+ "pen_kick#0": {
+  "box": [
+   "4th & 26 · NYJ 4  (Q1 4:35)",
+   "Punt 53 yds to NE 43",
+   "M.Jones returns 10 yds"
+  ],
+  "chips": [
+   "53 yard punt"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · Punt",
+  "hold": 1690,
+  "noRow": false
+ },
+ "pen_kick#1": {
+  "box": [
+   "Kickoff  (Q1 0:48)",
+   "Kickoff 60 yds to NO 5",
+   "J.Price returns 26 yds"
+  ],
+  "chips": [
+   "26 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Touchdown",
+  "hold": 1090,
+  "noRow": false
+ },
+ "pen_kick#2": {
+  "box": [
+   "Kickoff  (Q1 4:09)",
+   "Kickoff 62 yds to WAS 3",
+   "L.McCaffrey returns 25 yds"
+  ],
+  "chips": [
+   "25 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · WSH · Punt",
+  "hold": 1210,
+  "noRow": false
+ },
+ "pen_td_null#0": {
+  "box": [
+   "4th & 1 · TEN 23  (Q3 4:44)",
+   "Penalty NYJ, Off. holding, −9",
+   "No play · run"
+  ],
+  "chips": [
+   "−9 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · Field Goal",
+  "hold": 1690,
+  "noRow": false
+ },
+ "pen_td_null#1": {
+  "box": [
+   "3rd & 12 · CHI 43  (Q3 13:26)",
+   "Penalty GB, Off. pass interference, −10",
+   "No play · completed pass"
+  ],
+  "chips": [
+   "−10 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · GB · Touchdown",
+  "hold": 2320,
+  "noRow": false
+ },
+ "pen_td_null#2": {
+  "box": [
+   "2nd & Goal · IND 4  (Q2 13:00)",
+   "Penalty BLT, Off. holding, −10",
+   "No play · completed pass"
+  ],
+  "chips": [
+   "−10 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Downs",
+  "hold": 2050,
+  "noRow": false
+ },
+ "pen_to_null#0": {
+  "box": [
+   "2nd & 9 · MIA 21  (Q4 6:17)",
+   "INTERCEPTED by C.Allen at MIA 20 · no return",
+   "+ Penalty IND, Illegal contact, +5 · 1st down"
+  ],
+  "chips": [
+   "6 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · MIA · Punt",
+  "hold": 4400,
+  "noRow": false
+ },
+ "pen_to_null#1": {
+  "box": [
+   "2nd & 1 · CHI 16  (Q4 12:42)",
+   "INTERCEPTED by C.Lewis at CHI -2",
+   "+ Penalty CHI, Def. holding, +5 · 1st down"
+  ],
+  "chips": [
+   "13 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · SEA · Touchdown",
+  "hold": 3950,
+  "noRow": false
+ },
+ "pen_to_null#2": {
+  "box": [
+   "3rd & 5 · LAC 8  (Q3 3:28)",
+   "INTERCEPTED by K.Abrams-Draine at LAC 17",
+   "+ Penalty DEN, Def. pass interference, +5 · 1st down"
+  ],
+  "chips": [
+   "4 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · LAC · Punt",
+  "hold": 4490,
+  "noRow": false
+ },
+ "pen_multi#0": {
+  "box": [
+   "3rd & Goal · NE 16  (Q2 1:48)",
+   "Penalty NE, Def. holding, +5 · 1st down",
+   "No play · incomplete pass"
+  ],
+  "chips": [
+   "10 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BUF · Touchdown",
+  "hold": 2350,
+  "noRow": false
+ },
+ "pen_multi#1": {
+  "box": [
+   "Kickoff  (Q1 8:02)",
+   "Kickoff 43 yds to CIN 22, short of landing zone",
+   "Penalty MIA, Kickoff short of landing zone"
+  ],
+  "chips": [
+   "3 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CIN · Punt",
+  "hold": 1000,
+  "noRow": false
+ },
+ "pen_multi#2": {
+  "box": [
+   "3rd & 3 · BUF 33  (Q2 0:19)",
+   "Penalty BUF, Def. holding, +5 · 1st down",
+   "No play · incomplete pass"
+  ],
+  "chips": [
+   "19 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Field Goal",
+  "hold": 2380,
+  "noRow": false
+ },
+ "pen_placed#0": {
+  "box": [
+   "Kickoff  (Q3 10:42)",
+   "Kickoff 44 yds to LAC 21, short of landing zone",
+   "Penalty LA, Kickoff short of landing zone"
+  ],
+  "chips": [
+   "19 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Punt",
+  "hold": 1000,
+  "noRow": false
+ },
+ "pen_placed#1": {
+  "box": [
+   "Kickoff  (Q3 10:17)",
+   "Kickoff 63 yds to ARZ 2, out of bounds",
+   "Penalty LA, Kickoff out of bounds · ball at ARZ 40"
+  ],
+  "chips": [
+   "63 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Interception",
+  "hold": 3070,
+  "noRow": false
+ },
+ "pen_placed#2": {
+  "box": [
+   "Kickoff  (Q3 15:00)",
+   "Kickoff 35 yds to PHI 30, short of landing zone",
+   "Penalty TEN, Kickoff short of landing zone"
+  ],
+  "chips": [
+   "10 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · PHI · Punt",
+  "hold": 1000,
+  "noRow": false
+ },
+ "pen_on_turnover#0": {
+  "box": [
+   "3rd & 10 · GB 27  (Q4 4:50)",
+   "J.Williams for -5 yards. FUMBLE, GB recovers at GB…",
+   "+ Penalty GB, Intentional grounding, −15"
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · GB · Punt",
+  "hold": 2860,
+  "noRow": false
+ },
+ "pen_on_turnover#1": {
+  "box": [
+   "1st & 10 · ATL 34  (Q1 7:35)",
+   "INTERCEPTED by A.Anzalone at ATL 41 · 8-yd return",
+   "+ Penalty ATL, Unnecessary roughness, −15"
+  ],
+  "chips": [
+   "23 yard return"
+  ],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · ATL · Interception",
+  "hold": 4430,
+  "noRow": false
+ },
+ "pen_on_turnover#2": {
+  "box": [
+   "1st & 10 · LAC 29  (Q4 1:03)",
+   "J.Herbert sacked at LAC 20 for -9 yards.",
+   "+ Penalty LAC, Unnecessary roughness, −10"
+  ],
+  "chips": [],
+  "banner": "INTERCEPTED",
+  "labels": [],
+  "caption": "Drive · LAC · Fumble",
+  "hold": 3890,
+  "noRow": false
+ },
+ "adm_timeout#0": {
+  "box": [
+   "1st & 10 · ATL 37  (Q4 3:59)",
+   "C.Brown up the middle to ATL 35 for 2 yards."
+  ],
+  "chips": [
+   "2 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CIN · End of Game",
+  "hold": 1090,
+  "noRow": true
+ },
+ "adm_timeout#1": {
+  "box": [
+   "2nd & 9 · WSH 17  (Q2 4:18)",
+   "J.Croskey-Merritt up the middle to WAS 20",
+   "for 3 yards."
+  ],
+  "chips": [
+   "3 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · WSH · Punt",
+  "hold": 1090,
+  "noRow": true
+ },
+ "adm_timeout#2": {
+  "box": [
+   "3rd & 7 · HOU 34  (Q2 0:45)",
+   "C.Stroud pass short right to J.Noel to HST 39",
+   "for 5 yards."
+  ],
+  "chips": [
+   "5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · HOU · Punt",
+  "hold": 1090,
+  "noRow": true
+ },
+ "adm_official_to#0": {
+  "box": [
+   "4th & 3 · CIN 6  (Q2 0:50)",
+   "Field goal GOOD · T.Loop from 24 yds"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · BAL · Field Goal",
+  "hold": 2480,
+  "noRow": true
+ },
+ "adm_official_to#1": {
+  "box": [
+   "4th & 5 · SEA 34  (Q3 13:15)",
+   "Field goal NO GOOD · E.Pineiro from 52 yds",
+   "Wide left"
+  ],
+  "chips": [
+   "Wide left"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SF · Missed FG",
+  "hold": 3160,
+  "noRow": true
+ },
+ "adm_official_to#2": {
+  "box": [
+   "Kickoff  (Q4 13:00)",
+   "Kickoff 62 yds to ATL 3",
+   "Z.Branch returns 25 yds"
+  ],
+  "chips": [
+   "25 yard return"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Touchdown",
+  "hold": 1120,
+  "noRow": true
+ },
+ "adm_2min#0": {
+  "box": [
+   "1st & 10 · DAL 22  (Q2 2:05)",
+   "J.Brissett pass incomplete deep right to Mi.Wilson."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Field Goal",
+  "hold": 1450,
+  "noRow": true
+ },
+ "adm_2min#1": {
+  "box": [
+   "2nd & 6 · MIA 35  (Q2 2:46)",
+   "K.Coleman left end to DET 49 for 16 yards."
+  ],
+  "chips": [
+   "16 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · MIA · Missed FG",
+  "hold": 1120,
+  "noRow": true
+ },
+ "adm_2min#2": {
+  "box": [
+   "3rd & 3 · SF 38  (Q4 2:18)",
+   "R.Rivers right guard to SF 37 for 1 yard."
+  ],
+  "chips": [
+   "1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAR · End of Game",
+  "hold": 1030,
+  "noRow": true
+ },
+ "adm_end_q#0": {
+  "box": [
+   "3rd & 11 · TEN 5  (Q1 0:47)",
+   "C.Ward pass short right to W.Robinson to TEN 15",
+   "for 10 yards."
+  ],
+  "chips": [
+   "10 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TEN · Punt",
+  "hold": 1120,
+  "noRow": true
+ },
+ "adm_end_q#1": {
+  "box": [
+   "1st & 10 · PIT 35  (Q1 0:01)",
+   "J.Daniels pass short middle to C.Godwin to PIT 24",
+   "for 11 yards."
+  ],
+  "chips": [
+   "11 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TB · Touchdown",
+  "hold": 1120,
+  "noRow": true
+ },
+ "adm_end_q#2": {
+  "box": [
+   "1st & 10 · TB 45  (Q1 0:28)",
+   "B.Mayfield pass short right to C.Otton to CIN 42",
+   "for 13 yards."
+  ],
+  "chips": [
+   "13 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · TB · Fumble",
+  "hold": 1120,
+  "noRow": true
+ },
+ "adm_end_half#0": {
+  "box": [
+   "2nd & Goal · LAR 10  (Q1 0:17)",
+   "T.Allgeier up the middle to LA 12 for -2 yards."
+  ],
+  "chips": [
+   "−2 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ARI · Field Goal",
+  "hold": 1090,
+  "noRow": true
+ },
+ "adm_end_half#1": {
+  "box": [
+   "3rd & 15 · TEN 46  (Q2 0:00)",
+   "Field goal GOOD · T.Loop from 64 yds"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · BAL · Field Goal",
+  "hold": 2480,
+  "noRow": true
+ },
+ "adm_end_half#2": {
+  "box": [
+   "4th & 11 · PHI 19  (Q2 0:00)",
+   "Field goal GOOD · J.Slye from 37 yds"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · TEN · Field Goal",
+  "hold": 2480,
+  "noRow": true
+ },
+ "adm_end_game#0": {
+  "box": [
+   "3rd & 12 · TEN 37  (Q4 0:38)",
+   "G.Smith kneels to TEN 38 for -1 yards."
+  ],
+  "chips": [
+   "−1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · End of Game",
+  "hold": 1120,
+  "noRow": true
+ },
+ "adm_end_game#1": {
+  "box": [
+   "2nd & 11 · DET 23  (Q4 0:40)",
+   "B.Young kneels to DET 26 for -3 yards."
+  ],
+  "chips": [
+   "−3 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CAR · End of Game",
+  "hold": 1120,
+  "noRow": true
+ },
+ "adm_end_game#2": {
+  "box": [
+   "1st & 10 · NYJ 44  (Q4 0:36)",
+   "J.Fields kneels to NYJ 45 for -1 yards."
+  ],
+  "chips": [
+   "−1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · KC · End of Game",
+  "hold": 1120,
+  "noRow": true
+ },
+ "adm_last_play#0": {
+  "box": [
+   "3rd & Goal · PHI 9  (Q2 0:00)",
+   "Field goal GOOD · B.Aubrey from 27 yds"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · DAL · Field Goal",
+  "hold": 2540,
+  "noRow": false
+ },
+ "adm_last_play#1": {
+  "box": [
+   "1st & Goal · KC 6  (Q4 0:05)",
+   "M.Penix pass incomplete short left to C.Blair."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · End of Game",
+  "hold": 1390,
+  "noRow": false
+ },
+ "adm_last_play#2": {
+  "box": [
+   "3rd & Goal · MIN 25  (Q2 0:00)",
+   "Field goal GOOD · S.Shrader from 43 yds"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · IND · Field Goal",
+  "hold": 2570,
+  "noRow": false
+ },
+ "rev_chal_rev#0": {
+  "box": [
+   "2nd & 7 · LAC 43  (Q1 3:53)",
+   "J.Herbert pass incomplete deep right to T.Harris.Los",
+   "Angeles."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LAC · Field Goal",
+  "hold": 2130,
+  "noRow": false
+ },
+ "rev_chal_rev#1": {
+  "box": [
+   "3rd & 11 · GB 27  (Q2 5:26)",
+   "J.Love pass short left to M.Golden to GB 39",
+   "for 12 yards."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · GB · Punt",
+  "hold": 1090,
+  "noRow": false
+ },
+ "rev_chal_rev#2": {
+  "box": [
+   "2nd & 14 · NYJ 26  (Q4 10:59)",
+   "C.Klubnik pass short left to A.Mitchell to NYJ 39",
+   "for 13 yards."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · Punt",
+  "hold": 1120,
+  "noRow": false
+ },
+ "rev_chal_up#0": {
+  "box": [
+   "3rd & 1 · DEN 49  (Q2 10:34)",
+   "B.Nix left end to 50 for 1 yard."
+  ],
+  "chips": [
+   "1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DEN · Field Goal",
+  "hold": 1000,
+  "noRow": false
+ },
+ "rev_chal_up#1": {
+  "box": [
+   "4th & 1 · DEN 44  (Q2 5:19)",
+   "B.Nix up the middle to DEN 45 for 1 yard.Los",
+   "Angeles."
+  ],
+  "chips": [
+   "1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DEN · Field Goal",
+  "hold": 1420,
+  "noRow": false
+ },
+ "rev_chal_up#2": {
+  "box": [
+   "1st & 10 · NYJ 20  (Q1 5:03)",
+   "G.Smith pass incomplete short middle to M.Taylor."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · Punt",
+  "hold": 1480,
+  "noRow": false
+ },
+ "rev_booth_rev#0": {
+  "box": [
+   "2nd & Goal · NYJ 3  (Q1 9:31)",
+   "D.Swift right guard to NYJ 1 for 2 yards."
+  ],
+  "chips": [
+   "2 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Downs",
+  "hold": 1060,
+  "noRow": false
+ },
+ "rev_booth_rev#1": {
+  "box": [
+   "2nd & Goal · NYG 1  (Q3 6:11)",
+   "C.Donaldson up the middle to NYG 1 for no gain."
+  ],
+  "chips": [
+   "No gain"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Touchdown",
+  "hold": 1060,
+  "noRow": false
+ },
+ "rev_booth_rev#2": {
+  "box": [
+   "1st & 10 · SEA 25  (Q2 1:12)",
+   "S.Darnold pass incomplete deep right to R.Shaheed."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SEA · Punt",
+  "hold": 1450,
+  "noRow": false
+ },
+ "rev_booth_up#0": {
+  "box": [
+   "3rd & 14 · NO 29  (Q2 0:19)",
+   "The ruling on the field stands."
+  ],
+  "chips": [
+   "15 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Field Goal",
+  "hold": 1000,
+  "noRow": false
+ },
+ "rev_booth_up#1": {
+  "box": [
+   "2nd & 2 · MIN 12  (Q4 0:10)"
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Downs",
+  "hold": 1000,
+  "noRow": false
+ },
+ "rev_booth_up#2": {
+  "box": [
+   "2nd & 6 · JAX 14  (Q2 1:19)",
+   "The ruling on the field stands."
+  ],
+  "chips": [
+   "9 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NE · Interception",
+  "hold": 1000,
+  "noRow": false
+ },
+ "adm_injury#0": {
+  "box": [
+   "2nd & 5 · GB 43  (Q3 1:59)",
+   "D.Maye pass incomplete deep right to L.Larison."
+  ],
+  "chips": [
+   "Incomplete"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NE · Touchdown",
+  "hold": 1450,
+  "noRow": false
+ },
+ "adm_injury#1": {
+  "box": [
+   "1st & 10 · ATL 48  (Q3 3:36)",
+   "K.Herbert right guard to TB 43 for 9 yards."
+  ],
+  "chips": [
+   "9 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · ATL · Interception",
+  "hold": 1060,
+  "noRow": false
+ },
+ "adm_injury#2": {
+  "box": [
+   "1st & 10 · CIN 17  (Q3 13:03)",
+   "J.Burrow pass short middle to D.Sample to CIN 22",
+   "for 5 yards."
+  ],
+  "chips": [
+   "5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CIN · Punt",
+  "hold": 1090,
+  "noRow": false
+ },
+ "adm_eligible#0": {
+  "box": [
+   "1st & 5 · CAR 42  (Q4 6:18)",
+   "Penalty CAR, Horse collar tackle, +15 · 1st down",
+   "No play · sack"
+  ],
+  "chips": [
+   "15 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NO · Touchdown",
+  "hold": 2290,
+  "noRow": false
+ },
+ "adm_eligible#1": {
+  "box": [
+   "2nd & Goal · SEA 1  (Q4 4:46)",
+   "Penalty CHI, Delay of game, −4",
+   "No play"
+  ],
+  "chips": [
+   "−4 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CHI · Touchdown",
+  "hold": 1540,
+  "noRow": false
+ },
+ "adm_eligible#2": {
+  "box": [
+   "4th & 1 · BAL 40  (Q4 6:48)",
+   "J.Hill right tackle to BLT 41 for 1 yard."
+  ],
+  "chips": [
+   "1 yard"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Punt",
+  "hold": 1060,
+  "noRow": false
+ },
+ "adm_runoff#0": {
+  "box": [
+   "1st & 10 · CLE 43  (Q4 1:12)",
+   "Penalty CLV, False start, −5",
+   "No play"
+  ],
+  "chips": [
+   "−5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · CLE · Field Goal",
+  "hold": 1480,
+  "noRow": false
+ },
+ "adm_runoff#1": {
+  "box": [
+   "2nd & 8 · TEN 47  (Q2 0:16)",
+   "Penalty NYJ, False start, −5",
+   "No play"
+  ],
+  "chips": [
+   "−5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · NYJ · End of Half",
+  "hold": 1480,
+  "noRow": false
+ },
+ "adm_runoff#2": {
+  "box": [
+   "2nd & 18 · SF 27  (Q2 0:29)",
+   "Penalty SF, False start, −5",
+   "No play"
+  ],
+  "chips": [
+   "−5 yard penalty"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · SF · End of Half",
+  "hold": 1450,
+  "noRow": false
+ },
+ "lat_multi#0": {
+  "box": [
+   "2nd & 10 · DAL 9  (Q4 0:02)",
+   "D.Prescott pass short middle to R.Flournoy",
+   "for 12 yards, lateral to C.Beebe for -6 yards…"
+  ],
+  "chips": [
+   "14 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · DAL · Fumble",
+  "hold": 1810,
+  "noRow": false
+ },
+ "stub_text#0": {
+  "box": [
+   "1st & Goal · NYJ 1  (Q1 2:49)",
+   "Josh Allen 1 Yd Run"
+  ],
+  "chips": [
+   "TD, 1 yard"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · BUF · Touchdown",
+  "hold": 2200,
+  "noRow": false
+ },
+ "stub_text#1": {
+  "box": [
+   "3rd & 7 · MIA 34  (Q2 10:40)",
+   "Kirk Cousins Pass Complete for 5 Yds to Michael",
+   "Mayer"
+  ],
+  "chips": [
+   "5 yards"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · LV · Field Goal",
+  "hold": 1000,
+  "noRow": false
+ },
+ "stub_text#2": {
+  "box": [
+   "3rd & 8 · TB 41  (Q2 4:11)",
+   "Jordan Addison 41 Yd pass from Kyler Murray"
+  ],
+  "chips": [
+   "TD, 41 yards"
+  ],
+  "banner": "TOUCHDOWN",
+  "labels": [],
+  "caption": "Drive · MIN · Touchdown",
+  "hold": 2200,
+  "noRow": false
+ },
+ "adm_other#0": {
+  "box": [
+   "1st & 10 · CAR 38  (Q4 15:00)",
+   "Bryce Young Pass Complete for 21 Yds to Tetairoa",
+   "McMillan Tetairoa McMillan Fumble Devin Bush 0 Yd…"
+  ],
+  "chips": [],
+  "banner": "FUMBLE",
+  "labels": [],
+  "caption": "Drive · CAR · Fumble",
+  "hold": 2300,
+  "noRow": false
+ },
+ "adm_other#1": {
+  "box": [
+   "1st & 10 · LV 30  (Q3 14:43)",
+   "Jaden Dugger 35 Yd Interception Return"
+  ],
+  "chips": [
+   "−30 yards"
+  ],
+  "banner": null,
+  "labels": [
+   "PTS"
+  ],
+  "caption": "Drive · LV · Interception Touchdown",
+  "hold": 1000,
+  "noRow": false
+ },
+ "ko_fair#0": {
+  "box": [
+   "Kickoff  (Q3 7:48)",
+   "Kickoff 60 yds to LAR 5, fair catch"
+  ],
+  "chips": [
+   "30 yard kick"
+  ],
+  "banner": null,
+  "labels": [],
+  "caption": "Drive · BAL · Punt",
+  "hold": 1450,
+  "noRow": false
+ },
+ "fg_doink_in#0": {
+  "box": [
+   "4th & 6 · SEA 18  (Q4 4:34)",
+   "Field goal GOOD · J.Tucker from 48 yds",
+   "Off the left upright and in"
+  ],
+  "chips": [],
+  "banner": "FIELD GOAL",
+  "labels": [
+   "FG"
+  ],
+  "caption": "Drive · WSH · Field Goal",
+  "hold": 3680,
+  "noRow": false
+ }
+}
