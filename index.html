@@ -1027,6 +1027,8 @@ function fieldChart3D(L,specOnly){
   function penOf(t,cp){
     var m=/PENALTY on ([A-Z]{2,4})(?:-[^,]+)?,\s*([^,]+?),\s*(?:(\d+) yards?|placed at ([A-Z]{2,4} -?\d+|50))[^.]*\./i.exec(t); if(!m)return null;
     var mine=isOff(m[1]), fd=cp&&cp.end&&cp.end.down===1&&!mine&&m[3]?" · 1st down":"";
+    /* "enforced between downs" (e.g. after a touchdown): it doesn't change this play, it moves the next kickoff. */
+    if(/enforced between downs/i.test(m[0]))return {idx:m.index, text:"Penalty "+m[1]+", "+short(m[2])+(m[3]?", "+m[3]+" yds":"")+" on the kickoff", between:true};
     return {idx:m.index, text:"Penalty "+m[1]+", "+short(m[2])+(m[3]?", "+(mine?"−":"+")+m[3]:" · ball at "+m[4])+fd};
   }
   function kindOf(b){
@@ -1043,6 +1045,12 @@ function fieldChart3D(L,specOnly){
       var ip=penOf(m[5],cp), l2=ip?"+ "+ip.text:m[1]+(m[2]?" to "+m[2]:"");
       if(r&&r[2])return "INTERCEPTED by "+m[3]+" · TOUCHDOWN, "+parseInt(r[1],10)+"-yd return\n"+l2;
       return "INTERCEPTED by "+m[3]+" at "+m[4]+ret+"\n"+l2;
+    }
+    /* Blocked punt: who blocked it, then who recovered and any return. */
+    if((m=/^(\S+) punts? is BLOCKED(?: by (\S+?)(?=,|\.\s|\.?$))?/i.exec(t))){
+      var bl=blockLine(raw,t), l1="Punt BLOCKED"+(m[2]?" by "+m[2]:" · "+m[1]);
+      if(m[2]&&/^Blocked by /.test(bl))bl="";
+      return l1+(bl?"\n"+bl:"");
     }
     if(pen){
       var before=t.slice(0,pen.idx).replace(/[\s.]+$/,""), nop=/No Play/i.test(t);
