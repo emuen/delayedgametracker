@@ -176,6 +176,33 @@
         tube(new THREE.LineCurve3(new V3(at.x - d * 3.4, Y, z), new V3(at.x - d * CONE * 0.9, Y, z)));
         cone(at, new V3(d, 0, 0));
       }
+      function dotsOn(curve) {
+        var pts = curve.getSpacedPoints(Math.max(3, Math.round(curve.getLength() / 1.5))), list = [];
+        pts.forEach(function (p) { var b = new THREE.Mesh(new THREE.SphereGeometry(RAD * 0.8, 12, 10), m); b.position.copy(p); b.castShadow = true; grp.add(b); list.push(b); });
+        parts.push({ kind: "dots", list: list, len: curve.getLength(), curve: curve });
+      }
+      /* Along the turf from P to Q; at each lateral a short dotted hop back, then the next carrier's leg. */
+      function groundTo(P, Q, lats) {
+        var cur = P, bd = -(row.dir || 1);
+        (lats || []).forEach(function (lf) {
+          var Lp = new V3(wx(lf), Y, z), hb = new V3(Lp.x + bd * 1.8, Y, z);
+          if (Math.abs(Lp.x - cur.x) > 0.3) tube(new THREE.LineCurve3(cur, Lp));
+          dotsOn(new THREE.QuadraticBezierCurve3(Lp, new V3((Lp.x + hb.x) / 2, Y + 1.8, z), hb));
+          cur = hb;
+        });
+        var dd = Q.x >= cur.x ? 1 : -1;
+        if (Math.abs(Q.x - cur.x) > CONE * 1.1) tube(new THREE.LineCurve3(cur, new V3(Q.x - dd * CONE * 0.9, Y, z)));
+        cone(Q, new V3(dd, 0, 0));
+      }
+      /* Where possession changed on a fumble or muff: a red ring with a white rim, flat on the turf. */
+      function ring(p) {
+        var rg = new THREE.Group(), rm = mat("#d32f2f"), wm = mat("#ffffff"); mats.push(rm, wm);
+        /* Tilted toward the camera so it reads as a ring at this angle, not a flat line. */
+        var tw = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.6, 8, 40), wm); tw.position.z = -0.45; rg.add(tw);
+        var tr = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.44, 10, 40), rm); tr.position.z = 0.3; rg.add(tr);
+        rg.rotation.x = -0.75; rg.position.set(p.x, Y + 0.5, p.z); grp.add(rg);
+        parts.push({ kind: "end", mesh: rg, len: 1, from: p.clone(), to: p.clone() });
+      }
       var kick = row.type === "kick", contact = null, chipPt = null, tapEnd = null;
       function arcH(len) { return Math.max(0.9, Math.min(kick ? 16 : 11, len * (kick ? 0.33 : 0.27))); }
       function arc(P, Q) { var h = arcH(Math.abs(Q.x - P.x)); return new THREE.QuadraticBezierCurve3(P, new V3((P.x + Q.x) / 2, Y + 2 * h, z), Q); }
@@ -223,6 +250,14 @@
         if (rl >= 1) cone(E, new V3(rd, 0, 0));
         m = mainM; end = E;
         split = preLen / (parts.reduce(function (s2, p2) { return s2 + p2.len; }, 0) || 1);
+      } else if (row.type === "none") {
+        end = A;   /* nothing drawn: offsetting fouls (their ghost only) or a defensive 2-pt */
+      } else if (row.lats && (row.type === "air" || row.type === "ground")) {
+        /* Laterals: the catch (or run), a dotted hop at each lateral, then the next carrier. */
+        var Cl = row.type === "air" ? new V3(wx(row.fc != null ? row.fc : row.lats[0]), Y, z) : A;
+        if (row.type === "air") tube(arc(A, Cl));
+        groundTo(Cl, E, row.lats); end = E;
+        if (row.type === "air") split = parts[0].len / (parts.reduce(function (s2, p2) { return s2 + p2.len; }, 0) || 1);
       } else if (row.type === "dot") {
         stub(A, row.dir || 1); end = A;
       } else if (row.type === "air" || row.type === "inc" || kick) {
@@ -258,6 +293,7 @@
       /* split: the share of the path before a catch / interception (replay only). */
       var tot = parts.reduce(function (s2, p2) { return s2 + p2.len; }, 0) || 1;
       if (split == null && row.type === "air" && parts.length === 3 && parts[0].curve && parts[0].curve.type === "QuadraticBezierCurve3") split = parts[0].len / tot;
+      if (row.ring) ring(end.clone().setY(Y));
       /* Replay-only pieces, built hidden so the still image never shows them. */
       function hide(ps) { ps.forEach(function (p) { if (p.mesh) p.mesh.visible = false; if (p.list) p.list.forEach(function (b) { b.visible = false; }); }); }
       var solid = null, ghost = null, missX = null;
@@ -269,9 +305,24 @@
       }
       if (row.prePlay) {
         /* Penalty: the snap that happened before the flag, drawn first, then the walk-off. */
-        var keepP = parts, keepM = m, pp = row.prePlay, gd = (row.dir || 1), G = new V3(A.x + gd * pp.len, Y, z);
-        parts = []; m = mat(row.ghostColor || "#1d3f8f"); m.transparent = true;
-        if (pp.type === "inc") {
+        var keepP = parts, keepM = m, pp = row.prePlay, gd = (row.dir || 1), G = new V3(A.x + gd * pp.len, Y, z), gmats = [];
+        parts = []; m = mat(row.ghostColor || "#1d3f8f"); m.transparent = true; gmats.push(m);
+        if (pp.type === "kick") {
+          /* A kick that didn't count: its high arc. */
+          var kh = Math.max(0.9, Math.min(16, Math.abs(pp.len) * 0.33)), kd2 = pp.len >= 0 ? gd : -gd;
+          tube(new THREE.QuadraticBezierCurve3(A, new V3((A.x + G.x) / 2, Y + 2 * kh, z), new V3(G.x - kd2 * CONE * 0.85, Y, z))); cone(G, new V3(kd2, 0, 0));
+        } else if (pp.type === "int") {
+          /* An interception that didn't count: the pass, the red X, the return in the defence's colour. */
+          if (Math.abs(pp.len) >= 1) tube(arc(A, G));
+          var gx = mat("#d32f2f"); gx.transparent = true; gmats.push(gx); m = gx; cross(G.clone().setY(Y + 0.3));
+          var R = new V3(G.x + gd * (pp.ret || 0), Y, z), rd2 = R.x >= G.x ? 1 : -1;
+          if (Math.abs(R.x - G.x) >= 1) {
+            m = mat(pp.retColor || "#8f1d1d"); m.transparent = true; gmats.push(m);
+            if (Math.abs(R.x - G.x) > CONE * 1.1) tube(new THREE.LineCurve3(G, new V3(R.x - rd2 * CONE * 0.9, Y, z)));
+            cone(R, new V3(rd2, 0, 0)); G = R;
+          }
+          m = gmats[0];
+        } else if (pp.type === "inc") {
           var ga = arc(A, G), gpts = ga.getSpacedPoints(Math.max(4, Math.round(ga.getLength() / 1.7))), gdots = [];
           gpts.forEach(function (p) { var b = new THREE.Mesh(new THREE.SphereGeometry(RAD * 0.9, 12, 10), m); b.position.copy(p); grp.add(b); gdots.push(b); });
           parts.push({ kind: "dots", list: gdots, len: ga.getLength(), curve: ga }); cross(G.clone().setY(Y + 0.3));
@@ -281,7 +332,9 @@
           if (pp.type === "air") { tube(arc(A, new V3(G.x - gdir * Math.min(CONE * 0.85, Math.abs(pp.len) * 0.35), Y, z))); cone(G, new V3(gdir, 0, 0)); }
           else { if (Math.abs(pp.len) > CONE * 1.1) tube(new THREE.LineCurve3(A, new V3(G.x - gdir * CONE * 0.9, Y, z))); cone(G, new V3(gdir, 0, 0)); }
         }
-        ghost = { parts: parts, A: A, mat: m, inc: pp.type === "inc", end: G };
+        ghost = { parts: parts, A: A, mat: m, mats: gmats, inc: pp.type === "inc", end: G };
+        /* A ghost never casts a shadow (an erased play must leave nothing on the turf). */
+        parts.forEach(function (p) { if (p.mesh) p.mesh.traverse(function (o) { o.castShadow = false; }); if (p.list) p.list.forEach(function (b) { b.castShadow = false; }); });
         if (pp.type === "inc") {
           var gsm = m.clone(), gs = new THREE.Mesh(new THREE.TubeGeometry(ga, SEG, RAD, RADS, false), gsm);
           gs.visible = false; grp.add(gs); ghost.solid = { mesh: gs, mat: gsm };
@@ -420,13 +473,19 @@
     var sumLabel = B.setSummary(K.summaryState(spec, nR - 1, 1));
     /* Drive in progress: earlier plays stay dimmed exactly as the animation leaves them. */
     /* spec.focus: one play picked by tapping its lane; every other play is dimmed. */
+    /* Offsetting fouls: only the ghost of the snap is drawn (faint). */
+    B.rows.forEach(function (row, k) {
+      if (!row.ghost || !spec.rows[k].ghostOnly || !(row.alpha > 0)) return;
+      B.reveal(row.ghost, 1); if (row.ghost.solid) row.ghost.solid.mesh.visible = false;
+      row.ghost.mats.forEach(function (m) { m.transparent = true; m.opacity = 0.4 * row.alpha; m.needsUpdate = true; });
+    });
     var hasFocus = spec.focus != null && spec.focus >= 0;
     if (spec.dimFrom > 0 || hasFocus) {
       var grey = new THREE.Color(0x8d968f).convertSRGBToLinear(), dim = 0.85;
       B.rows.forEach(function (row, k) {
         if (hasFocus ? k === spec.focus : k >= spec.dimFrom) return;
-        row.mats.concat(row.ghost ? [row.ghost.mat] : []).forEach(function (m) {
-          m.transparent = true; m.opacity = (hasFocus ? 0.3 : 1 - 0.5 * dim) * (row.ghost && m === row.ghost.mat ? 0.35 : 1);
+        row.mats.concat(row.ghost ? row.ghost.mats : []).forEach(function (m) {
+          m.transparent = true; m.opacity = (hasFocus ? 0.3 : 1 - 0.5 * dim) * (row.ghost && row.ghost.mats.indexOf(m) >= 0 ? 0.4 : 1);
           m.color.lerp(grey, (hasFocus ? 0.6 : 0.35) * dim); m.emissive.multiplyScalar(1 - 0.6 * dim); m.needsUpdate = true;
         });
       });
@@ -486,7 +545,7 @@
     var grey = new THREE.Color(0x8d968f).convertSRGBToLinear();
     B.rows.forEach(function (row) {
       B.reveal(row, 0);
-      row.mats.concat(row.ghost ? [row.ghost.mat] : [], row.ghost && row.ghost.solid ? [row.ghost.solid.mat] : [], row.solid ? [row.solid.mat] : []).forEach(function (m) { m.userData.base = m.color.clone(); m.userData.baseE = m.emissive.clone(); m.transparent = true; m.needsUpdate = true; });
+      row.mats.concat(row.ghost ? row.ghost.mats : [], row.ghost && row.ghost.solid ? [row.ghost.solid.mat] : [], row.solid ? [row.solid.mat] : []).forEach(function (m) { m.userData.base = m.color.clone(); m.userData.baseE = m.emissive.clone(); m.transparent = true; m.needsUpdate = true; });
     });
     /* Scoring end zones get a brief tint in the team colour (replay only). */
     var tints = [-55, 55].map(function (x) {
@@ -546,8 +605,11 @@
         if (row.ghost) {
           var gf = k === cur ? fracOf(sg, t, "g") : k < cur ? 1 : 0;
           B.reveal(row.ghost, gf);
-          var fade = k < cur || t >= sg.walkAt ? 0.35 + 0.65 * (1 - ramp(t, sg.walkAt, 250)) : 1;
-          setDim(row.ghost.mat, dim, fade * (1 - undim) * la);
+          /* P3: the erased play goes away as the walk-off is drawn; offsetting fouls keep a faint ghost. */
+          var gOnly = !!spec.rows[k].ghostOnly, floor = gOnly ? 0.4 : 0;
+          var fade = k < cur || t >= sg.walkAt ? floor + (1 - floor) * (1 - ramp(t, sg.walkAt, 250)) : 1;
+          row.ghost.mats.forEach(function (gm) { setDim(gm, dim, fade * (gOnly ? 1 : 1 - undim) * la); });
+          if (!(fade > 0.002)) row.ghost.parts.forEach(function (p) { if (p.mesh) p.mesh.visible = false; if (p.list) p.list.forEach(function (b) { b.visible = false; }); });
           row.ghost.parts.forEach(function (p) { if (p.kind === "end") p.mesh.scale.setScalar(k === cur && t >= sg.ghostEnd ? backOut((t - sg.ghostEnd) / 240) : 1); });
           var gso = row.ghost.solid;
           if (gso) {   /* same rule as any incomplete: solid in flight, dotted once it lands */
@@ -608,13 +670,13 @@
         var dist = B.cam.position.distanceTo(ball.position), ppu = H / (2 * Math.tan(B.cam.fov * Math.PI / 360) * dist);
         var base = Math.max(0.6, 6 * u / (3 * ppu));
         ball.scale.setScalar(Math.max(0.0001, base * sc));
-        if (sc < 0.01) ball.visible = false;
+        if (sc < 0.01 || (g.type === "none" && !row.ghost)) ball.visible = false;
       }
       /* End-zone tint on a touchdown / good field goal: ~25 %, ~300 ms. */
       tints.forEach(function (pl) { pl.visible = false; });
       if (g && !outro && (g.kind === "td" || (g.kind === "fg" && !g.miss)) && t >= g.end) {
         var side = s.fe >= 50 ? 1 : 0, env = ramp(t, g.end, 80) * (1 - ramp(t, g.end + 300, 160));
-        if (env > 0) { var pl = tints[side]; pl.visible = true; pl.material.color.set(s.color).convertSRGBToLinear(); pl.material.opacity = 0.25 * env; }
+        if (env > 0) { var pl = tints[side]; pl.visible = true; pl.material.color.set(s.scoreColor || s.color).convertSRGBToLinear(); pl.material.opacity = 0.25 * env; }
       }
       var sumLabel = B.setSummary(K.summaryState(spec, cur, K.slideE(segs, cur, t)));
       r.render(B.scene, B.cam);

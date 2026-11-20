@@ -24,6 +24,7 @@
     walk: bez(0.45, 0, 0.55, 1),     /* penalty walk-off: deliberate */
     carom: bez(0.15, 0.45, 0.55, 1), /* ball off an upright: quick rebound, drops away */
     stub: bez(0.2, 0.6, 0.3, 1),
+    lin: function (x) { return clamp(x, 0, 1); },
     out: bez(0.2, 0.7, 0.3, 1)
   };
   function backOut(t) { t = Math.max(0, Math.min(1, t)); var c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
@@ -121,11 +122,12 @@
       /* Later in the drive only the pre-snap and the flight speed up; reading time never does. */
       var pace = Math.max(0.7, 1 - 0.04 * si), tempo = s.td ? 1 : Math.max(0.8, 1 - 0.025 * si);
       var gain = s.yds != null ? s.yds : Math.round(Math.abs(s.fe - s.fs));
-      var big = !s.td && s.kind !== "kick" && s.kind !== "ret" && s.kind !== "pen" && !s.to && gain >= 20;
-      var kind = s.td ? "td" : s.safety ? "safety" : s.to ? "to" : s.fg ? "fg" : s.type === "kick" ? "kick" : s.kind === "ret" ? "ret" :
-        s.kind === "pen" ? "pen" : s.type === "inc" ? "inc" : s.spike ? "spike" : s.type === "dot" ? "nogain" :
+      var big = !s.td && s.kind !== "kick" && s.kind !== "ret" && s.kind !== "pen" && s.kind !== "off" && !s.to && !s.poss && gain >= 20;
+      var kind = s.td ? "td" : s.safety ? "safety" : s.to ? "to" : s.fg ? "fg" : s.kind === "off" ? "off" : s.type === "none" ? "none" : s.type === "kick" ? "kick" : s.kind === "ret" ? "ret" :
+        s.kind === "pen" ? "pen" : s.type === "inc" ? "inc" : s.spike ? "spike" : s.kneel ? "kneel" : s.type === "dot" ? "nogain" :
         s.sack ? "sack" : s.type === "air" ? "pass" : "run";
-      var g = { k: k, kind: kind, type: s.type, yds: gain, big: big, cont: cont, t0: t, miss: !!s.fgMiss, gdd: !!(spec.easter && s.gdd) };
+      /* poss: the other team ends up with the ball (one look and one hold for every kind of turnover). */
+      var g = { k: k, kind: kind, type: s.type, yds: gain, big: big, cont: cont, t0: t, miss: !!s.fgMiss, poss: !!s.poss, gdd: !!(spec.easter && s.gdd) };
       var pre = cont ? 140 : k === 0 ? 700 : Math.max(320, 480 * pace);
       if (s.tmo && !cont) pre += 650;
       if (s.td && !cont) pre = Math.max(pre, 650);
@@ -144,10 +146,19 @@
         } else ph.push(["m", fl, 0, 1, EASE.kick]);
       }
       else if (kind === "kick") ph.push(["m", clamp(900 + 11 * len, 1100, 1800), 0, 1, EASE.kick]);
+      else if (kind === "none") ph.push(["m", 300, 0, 1, null]);
+      else if (kind === "off") {
+        /* Offsetting fouls: the snap as a ghost, then the ball goes back to the spot; no arrow. */
+        if (r.ghost) {
+          var ol = Math.abs(s.prePlay.len);
+          ph.push(["g", s.prePlay.type === "ground" ? runMs(ol) : s.prePlay.type === "kick" ? clamp(900 + 11 * ol, 1100, 1800) : airMs(ol), 0, 1, s.prePlay.type === "ground" ? EASE.run : s.prePlay.type === "kick" ? EASE.kick : EASE.air]);
+          ph.push(["m", 380, 0, 0, null]);
+        } else ph.push(["m", 300, 0, 0, null]);
+      }
       else if (kind === "pen") {
         if (r.ghost) {
-          var gl = Math.abs(s.prePlay.len);
-          ph.push(["g", s.prePlay.type === "ground" ? runMs(gl) : airMs(gl), 0, 1, s.prePlay.type === "ground" ? EASE.run : EASE.air]);
+          var gl = Math.abs(s.prePlay.len) + Math.abs(s.prePlay.ret || 0), gt = s.prePlay.type;
+          ph.push(["g", gt === "ground" ? runMs(gl) : gt === "kick" ? clamp(900 + 11 * gl, 1100, 1800) : gt === "int" ? airMs(Math.abs(s.prePlay.len)) + 280 + clamp(260 + 28 * Math.abs(s.prePlay.ret || 0), 300, 1200) : airMs(gl), 0, 1, gt === "ground" ? EASE.run : gt === "kick" ? EASE.kick : gt === "int" ? EASE.lin : EASE.air]);
           ph.push(["m", 380, 0, 0, null]);   /* the flag: the snap's result is replaced by the walk-off */
         } else ph.push(["m", 200, 0, 0, null]);
         ph.push(["m", clamp(320 + 16 * len, 420, 900), 0, 1, EASE.walk]);
@@ -171,9 +182,11 @@
       if (g.catchI) g.catchAt = g.phases[0].a + g.phases[0].d;
       if (g.contactI) g.contact = g.phases[0].a + g.phases[0].d;
       if (kind === "pen" && r.ghost) { g.ghostEnd = g.phases[0].a + g.phases[0].d; g.walkAt = g.phases[2].a; }
+      if (kind === "off" && r.ghost) { g.ghostEnd = g.phases[0].a + g.phases[0].d; g.walkAt = g.phases[1].a + g.phases[1].d; }
       g.end = tt;
       /* A missed kick holds a little longer (more so off an upright) so the miss can be seen. */
-      var emph = g.gdd ? 1300 : kind === "td" ? 1200 : kind === "to" ? 1300 : kind === "fg" ? (g.miss ? (g.contactI ? 1500 : 1200) : g.contactI ? 1300 : 1000) : kind === "safety" ? 1000 : big ? 350 : 0;
+      /* Every change of possession (and a missed field goal) holds the same 1300 ms; a doink a bit longer. */
+      var emph = g.gdd ? 1300 : kind === "td" ? 1200 : kind === "to" || g.poss ? 1300 : kind === "fg" ? (g.miss ? (g.contactI ? 1500 : 1300) : g.contactI ? 1300 : 1000) : kind === "safety" ? 1000 : big ? 350 : 0;
       /* Reading time counts only text the snap line did not already show. */
       g.newChars = newChars(s.callout || {});
       g.read = 400 + 30 * g.newChars;
@@ -207,27 +220,44 @@
     return res.length - k;
   }
   var FGCHIP = { wideL: "Wide left", wideR: "Wide right", short: "Short", upL: "Hit left upright", upR: "Hit right upright", blocked: "Blocked" };
+  /* The one way to write yards, on chips and in the info box: "18 yds", "1 yd", "\u22125 yds";
+     with a noun the unit stays singular: "\u22121 yd return", "44 yd punt", "15 yd penalty". True minus sign. */
+  function ydStr(n, noun) {
+    n = Math.round(+n || 0); var a = Math.abs(n), sg = n < 0 ? "\u2212" : "";
+    return noun ? sg + a + " yd " + noun : sg + a + (a === 1 ? " yd" : " yds");
+  }
+  var FLAG = "#ffd23f", GREY = "rgba(60,60,60,0.86)";
   function chipFor(s, g) {
-    /* Chips in words: "18 yards", "-4 yards", "TD, 5 yards", "22 yard return". */
-    var y = g.yds, GREY = "rgba(60,60,60,0.86)";
-    function yards(n) { var a = Math.abs(n); return (n < 0 ? "\u2212" : "") + a + (a === 1 ? " yard" : " yards"); }
-    function yardOf(n) { return (n < 0 ? "\u2212" : "") + Math.abs(n) + " yard"; }
+    /* A row can carry its own chip (kick outcomes, flags, turnovers, scores): null = no chip. */
+    if (s.chip !== undefined) return s.chip ? Object.assign({}, s.chip) : null;
+    var y = g.yds;
     switch (g.kind) {
-      case "kick": if (s.blocked) return { text: "Blocked", bg: "#c62828" }; return { text: Math.round(Math.abs(s.fe - s.fs)) + (s.punt ? " yard punt" : " yard kick") };
-      case "ret": return { text: yardOf(y) + " return" };
+      case "kick": if (s.blocked) return { text: "Blocked", bg: "#c62828" }; return { text: ydStr(Math.abs(s.fe - s.fs), s.punt ? "punt" : "kick") };
+      case "ret": return { text: ydStr(y, "return"), bg: s.retChip || undefined, fg: s.retChip ? s.ink : undefined };
       case "inc": return { text: "Incomplete", bg: GREY };
       case "spike": return { text: "Spike", bg: GREY };
+      case "kneel": return { text: "Kneel", bg: GREY };
       case "nogain": return { text: "No gain", bg: GREY };
-      case "sack": return { text: "Sack, " + yards(y), bg: "#b4441d" };
-      case "pen": return { text: yardOf(y) + " penalty", bg: "#ffd23f", fg: "#17201b" };
+      case "none": return null;
+      case "off": return { text: "Offsetting \u00b7 no play", bg: GREY };
+      case "sack": return { text: "Sack, " + ydStr(y), bg: "#b4441d" };
+      case "pen": return { text: "FLAG" + (s.flagTeam ? " " + s.flagTeam : "") + ", " + ydStr(Math.abs(s.fe - s.fs)), bg: FLAG, fg: "#17201b", flag: true };
       case "to":
-        if (s.intAt != null) { var ry = Math.round(Math.abs(s.fe - s.intAt)); return { text: ry >= 1 ? ry + " yard return" : "No return", bg: s.retColor || "#8f1d1d" }; }
+        if (s.intAt != null) { var ry = Math.round((s.fe - s.intAt) * -(s.dir || 1)); return { text: ry ? ydStr(ry, "return") : "No return", bg: s.retColor || "#8f1d1d", fg: s.retInk }; }
         return null;
       case "safety": return null;
       case "fg": return g.miss ? { text: FGCHIP[s.fgResult] || "No good", bg: "#c62828" } : null;
-      case "td": return s.defTD ? { text: "Defensive TD", bg: s.retColor || "#8f1d1d", big: true, td: true } : { text: "TD, " + yards(y), bg: s.color, big: true, td: true };
-      default: return y < 0 ? { text: yards(y), bg: "#b4441d" } : y === 0 ? { text: "No gain", bg: GREY } : g.big ? { text: yards(y), bg: "#ffd23f", fg: "#17201b", big: true } : { text: yards(y) };
+      case "td": return { text: (y ? "TD, " + ydStr(y) : "TD") + (s.tryNote ? " \u00b7 " + s.tryNote : ""), bg: s.scoreColor || s.color, fg: s.scoreInk || s.ink, big: true, td: true };
+      /* A big play: the offence's colour with a white ring (the penalty flag keeps the yellow). */
+      default: return y < 0 ? { text: ydStr(y), bg: "#b4441d" } : y === 0 ? { text: "No gain", bg: GREY } : g.big ? { text: ydStr(y), bg: s.color, fg: s.ink, ring: "#ffffff", big: true } : { text: ydStr(y) };
     }
+  }
+  /* A small penalty flag drawn inside a chip (x, y = left edge, cap middle; h = cap height). */
+  function flagMark(o, x, y, h) {
+    o.save(); o.lineWidth = Math.max(1, h * 0.16); o.strokeStyle = "#17201b"; o.fillStyle = "#17201b"; o.lineCap = "round";
+    o.beginPath(); o.moveTo(x, y + h * 0.62); o.lineTo(x, y - h * 0.62); o.stroke();
+    o.beginPath(); o.moveTo(x, y - h * 0.62); o.lineTo(x + h * 0.95, y - h * 0.36); o.lineTo(x, y - h * 0.08); o.closePath(); o.fill();
+    o.restore();
   }
 
   /* 2D text layer: score labels and the play callout. */
@@ -247,15 +277,17 @@
       if (!(c.a > 0) || !(c.s > 0)) return;
       var sp = scr(c.p), fs = 13 * u * (c.big ? 1.15 : 1);
       o.font = "italic 800 " + Math.round(fs) + "px " + DISPLAY;
-      var tw = o.measureText(c.text).width, ph = fs * 1.3, pw = tw + fs * 0.9, M = 8 * u;
+      var tw = o.measureText(c.text).width, ph = fs * 1.3, fw = c.flag ? fs * 0.75 : 0, pw = tw + fs * 0.9 + fw, M = 8 * u;
       /* Kept at least 8 px inside the frame, even for plays at the end zones. */
       var cx = Math.max(M + pw / 2, Math.min(W - M - pw / 2, sp[0])), cy = Math.max(M + ph / 2, Math.min(H - M - ph / 2, sp[1] - 13 * u - ph / 2));
       o.save(); o.globalAlpha = c.a; o.translate(cx, cy); o.scale(c.s, c.s);
       o.shadowColor = "rgba(0,0,0,0.3)"; o.shadowBlur = 4 * u;
       o.fillStyle = c.bg || "rgba(10,25,15,0.86)"; pill(o, -pw / 2, -ph / 2, pw, ph); o.fill(); o.shadowBlur = 0;
-      if (c.ring) { o.lineWidth = 1.6 * u; o.strokeStyle = c.ring; o.stroke(); }
+      if (c.ring) { o.lineWidth = 1.8 * u; o.strokeStyle = c.ring; o.stroke(); }
       o.fillStyle = c.fg || "#fff"; o.textAlign = "center"; o.textBaseline = "alphabetic";
-      o.fillText(c.text, 0, capMid(o));
+      var cm = capMid(o);
+      if (fw) flagMark(o, -pw / 2 + fs * 0.5, 0, cm * 1.6);
+      o.fillText(c.text, fw / 2, cm);
       o.restore();
     });
     var b = fx.banner;
@@ -269,7 +301,12 @@
       o.fillStyle = b.fg || "#fff"; o.textAlign = "center"; o.textBaseline = "alphabetic";
       o.fillText(b.text, 0, capMid(o));
       o.textBaseline = "middle";
-      if (b.sub) { o.font = "700 " + Math.round(bfs * 0.36) + "px " + DISPLAY; o.fillText(b.sub, 0, bh / 2 + bfs * 0.32); }
+      if (b.sub) {
+        o.font = "italic 800 " + Math.round(bfs * 0.46) + "px " + DISPLAY;
+        var sw2 = o.measureText(b.sub).width + bfs * 0.6, sh2 = bfs * 0.62;
+        o.fillStyle = "rgba(10,25,15,0.86)"; o.fillRect(-sw2 / 2, bh / 2, sw2, sh2);
+        o.fillStyle = "#fff"; o.fillText(b.sub, 0, bh / 2 + sh2 / 2);
+      }
       o.restore();
     }
   }
@@ -331,7 +368,7 @@
     o.fill(); o.restore();
     o.textAlign = "left"; o.fillStyle = "#17201b";
     o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif"; o.fillText(c.head, bx + pad, by + pad + lh / 2 - 2 * u);
-    if (fx && c.note) {
+    if (c.note) {
       var hw = o.measureText(c.head).width;
       o.font = "600 " + Math.round(10.5 * u) + "px Inter, system-ui, sans-serif"; o.fillStyle = "#8b958e";
       o.fillText("  ·  " + c.note, bx + pad + hw, by + pad + lh / 2 - 2 * u);
@@ -426,14 +463,24 @@
         var nx = segs[k + 1], fade = nx && t >= nx.t0 ? 1 - ramp(t, nx.t0, 220) : 1;
         if (k < cur && nx && nx.cont) fade = 1 - ramp(t, nx.end, 200);
         if (fade <= 0) continue;
-        fx.chips.push({ p: chipAt(k, sg), text: ch.text, bg: ch.bg, fg: ch.fg, big: ch.big, s: backOut(ramp(t, sg.end, 260)), a: fade });
+        fx.chips.push({ p: chipAt(k, sg), text: ch.text, bg: ch.bg, fg: ch.fg, big: ch.big, ring: ch.ring, flag: ch.flag, s: backOut(ramp(t, sg.end, 260)), a: fade });
         if (ch.td) chipRows[k] = 1;   /* "TD +3" replaces the TD label while it shows */
+      }
+      /* The flag: between the erased play and the walk-off, a flag chip where the foul is marked. */
+      if (g.kind === "pen" && g.ghostEnd != null && t >= g.ghostEnd && t < g.end) {
+        var fin = backOut(ramp(t, g.ghostEnd, 200)), fout = 1 - ramp(t, g.end - 120, 120);
+        fx.chips.push({ p: chipAt(cur, g), text: "FLAG", bg: FLAG, fg: "#17201b", flag: true, s: fin, a: fout });
       }
       if (g.gdd && t >= g.end) {
         var gin = backOut(ramp(t, g.end + 80, 300)), gout = 1 - ramp(t, Math.min(g.holdEnd - 220, g.end + 1700), 250);
         fx.banner = { text: "GOD DAMMIT DONALD", bg: s.color, fg: "#fff", s: gin, a: gout, size: 17 };
       }
-      else if (t >= g.end && !g.miss && (g.kind === "td" || g.kind === "to" || g.kind === "fg" || g.kind === "safety")) {
+      else if (t >= g.end && s.banner) {
+        /* The row says what its banner is: a score in the scoring team's colour, a turnover in red, named for the event. */
+        var bn = s.banner, bi = backOut(ramp(t, g.end + 120, 300)), bo = 1 - ramp(t, Math.min(g.holdEnd - 220, g.end + 1500), 250);
+        fx.banner = { text: bn.text, bg: bn.bg, fg: bn.fg || "#fff", sub: bn.sub || "", s: bi, a: bo, size: bn.size || 22 };
+      }
+      else if (s.banner === undefined && t >= g.end && !g.miss && (g.kind === "td" || g.kind === "to" || g.kind === "fg" || g.kind === "safety")) {
         var bt = g.kind === "td" ? "TOUCHDOWN" : g.kind === "fg" ? "FIELD GOAL" : g.kind === "safety" ? "SAFETY" : (/fumble/i.test((s.callout || {}).l1 + " " + (s.callout || {}).l2) ? "FUMBLE" : "INTERCEPTED");
         var bin = backOut(ramp(t, g.end + 120, 300)), bout = 1 - ramp(t, Math.min(g.holdEnd - 220, g.end + 1500), 250);
         fx.banner = { text: bt, bg: g.kind === "to" || g.kind === "safety" ? "#c62828" : s.color, fg: "#fff", s: bin, a: bout, size: g.kind === "fg" ? 18 : 22 };
@@ -446,8 +493,8 @@
         /* Pre-snap: the new situation on top, the previous result still readable in grey. */
         var pr = cur > 0 ? resultOf(cur - 1) : { l1: "", l2: "" };
         co = { head: head, l1: pr.l1, l2: pr.l2, hls: [], muted: true, note: s.tmo ? "after " + s.tmo : "" };
-      } else if (t < g.end) co = { head: head, l1: (c.pre || {}).l1 || "", l2: (c.pre || {}).l2 || "", hls: [] };
-      else co = { head: head, l1: c.l1, l2: c.l2, hls: c.hls };
+      } else if (t < g.end) co = { head: head, l1: (c.pre || {}).l1 || "", l2: (c.pre || {}).l2 || "", hls: [], note: c.preNote || "" };
+      else co = { head: head, l1: c.l1, l2: c.l2, hls: c.hls, note: c.note || "" };
     } else if (outro && spec.callout) co = spec.callout;   /* matches the still image that replaces the replay */
     return { labels: labels, co: co, fx: fx };
   }
@@ -460,6 +507,6 @@
     });
   }
   window.DriveCore = { drawBurst: drawBurst, GOAL: GOAL, fgPath: fgPath, fgSide: fgSide, doinkWatch: doinkWatch, DISPLAY: DISPLAY, bez: bez, EASE: EASE, backOut: backOut, clamp: clamp, ramp: ramp, plan: plan, newChars: newChars,
-    chipFor: chipFor, fracOf: fracOf, activeAt: activeAt, LANES: LANES, laneDepth: laneDepth, laneAlpha: laneAlpha, slideE: slideE, laneState: laneState, summaryState: summaryState, dimOf: dimOf, overlayState: overlayState, timelineOf: timelineOf,
+    chipFor: chipFor, ydStr: ydStr, flagMark: flagMark, fracOf: fracOf, activeAt: activeAt, LANES: LANES, laneDepth: laneDepth, laneAlpha: laneAlpha, slideE: slideE, laneState: laneState, summaryState: summaryState, dimOf: dimOf, overlayState: overlayState, timelineOf: timelineOf,
     pill: pill, drawOverlay: drawOverlay };
 })();

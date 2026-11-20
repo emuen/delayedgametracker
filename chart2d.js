@@ -61,6 +61,19 @@
       function cross(p, c) { parts.push({ kind: "end", cross: true, tip: [p.x, p.y], len: 1, col: c || col, size: w * 1.25, w: w, from: [p.x, p.y], to: [p.x, p.y] }); }
       function dotsAlong(pt, c) { measure(pt); var gap = Math.max(w * 1.35, 3 * u), k = Math.max(4, Math.round(pt.len / gap)); parts.push({ kind: "dots", pts: pt.pts, cum: pt.cum, len: pt.len, count: k, col: c || col, w: w }); return pt; }
       function stub(at, d) { var a = P(row.fs, v); a = { x: at.x - d * 3.4 * yd, y: at.y }; tube(line(a, { x: at.x - d * CONE * 0.9 * yd, y: at.y })); cone(at, d); }
+      /* Along the turf from p to q; at each lateral a short dotted hop back, then the next carrier's leg. */
+      function groundTo(p, q, qf, lats) {
+        var cur = p, bd = -(row.dir || 1);
+        (lats || []).forEach(function (lf) {
+          var Lp = X(lf), hb = X(lf + bd * 1.8);
+          if (Math.abs(Lp.x - cur.x) > 0.3 * yd) tube(line(cur, Lp));
+          dotsAlong(curve(Lp, hb, 1.8 * yd * 0.85));
+          cur = hb;
+        });
+        var dd = q.x >= cur.x ? 1 : -1;
+        if (Math.abs(q.x - cur.x) > CONE * 1.1 * yd) tube(line(cur, X(qf - dd * CONE * 0.9)));
+        cone(q, dd);
+      }
       var kick = row.type === "kick";
       function arcH(len) { return Math.max(1.6, Math.min(kick ? 17 : 12, len * (kick ? 0.36 : 0.3))) * yd * 0.85; }
       function arc(p, q, c) { return curve(p, q, arcH(Math.abs(q.x - p.x) / yd), c); }
@@ -98,7 +111,14 @@
         if (rl > CONE * 1.1) tube(line(I, X(row.fe - rd * CONE * 0.9), rc));
         if (rl >= 1) cone(E, rd, rc);
         end = E; split = preLen / (parts.reduce(function (a2, p2) { return a2 + p2.len; }, 0) || 1);
-      } else if (row.type === "dot") { stub(A, row.dir || 1); end = A; }
+      } else if (row.type === "none") { end = A; }
+      else if (row.lats && (row.type === "air" || row.type === "ground")) {
+        var clF = row.type === "air" ? (row.fc != null ? row.fc : row.lats[0]) : row.fs, Cl = X(clF);
+        if (row.type === "air") tube(arc(A, Cl));
+        groundTo(Cl, E, row.fe, row.lats); end = E;
+        if (row.type === "air") split = parts[0].len / parts.reduce(function (a2, p2) { return a2 + p2.len; }, 0);
+      }
+      else if (row.type === "dot") { stub(A, row.dir || 1); end = A; }
       else if (row.type === "air" || row.type === "inc" || kick) {
         var cF = row.fc != null ? row.fc : row.fe, C = X(cF), airLen = Math.abs(cF - row.fs);
         var glen = row.fc != null ? Math.abs(row.fe - row.fc) : 0, hasRun = glen > CONE * 1.1;
@@ -121,19 +141,29 @@
         if (Math.abs(row.fe - row.fs) > CONE * 1.1) tube(line(A, X(row.fe - d * CONE * 0.9)));
         cone(E, d);
       }
+      /* Where possession changed on a fumble or muff: a red ring on the turf. */
+      if (row.ring) parts.push({ kind: "end", ring: true, tip: [end.x, end.y], len: 1, col: rgb("#d32f2f"), size: w * 2.1, w: w, from: [end.x, end.y], to: [end.x, end.y] });
       /* Replay-only pieces (never drawn in the still image). */
       var solid = aiPt ? { pts: aiPt.pts, cum: aiPt.cum, len: aiPt.len, col: col } : null, ghost = null, missX = null;
       if (row.prePlay) {
         var keep = parts, pp = row.prePlay, gd = row.dir || 1, G = { x: A.x + gd * pp.len * yd, y: A.y }, gcol = rgb(row.ghostColor || "#1d3f8f");
         parts = [];
-        if (pp.type === "inc") { var ga = dotsAlong(arc(A, G, gcol), gcol); cross({ x: G.x, y: G.y - 0.3 * yd }, gcol); ghost = { solid: { pts: ga.pts, cum: ga.cum, len: ga.len, col: gcol } }; }
+        if (pp.type === "kick") {
+          var kd2 = pp.len >= 0 ? gd : -gd, kh = Math.max(1.6, Math.min(17, Math.abs(pp.len) * 0.36)) * yd * 0.85;
+          tube(curve(A, { x: G.x - kd2 * CONE * 0.85 * yd, y: A.y }, kh, gcol)); cone(G, kd2, gcol);
+        } else if (pp.type === "int") {
+          if (Math.abs(pp.len) >= 1) tube(arc(A, G, gcol));
+          cross({ x: G.x, y: G.y - 0.3 * yd }, rgb("#d32f2f"));
+          var R = { x: G.x + gd * (pp.ret || 0) * yd, y: A.y }, rc2 = rgb(pp.retColor || "#8f1d1d"), rd2 = R.x >= G.x ? 1 : -1;
+          if (Math.abs(R.x - G.x) >= yd) { if (Math.abs(R.x - G.x) > CONE * 1.1 * yd) tube(line(G, { x: R.x - rd2 * CONE * 0.9 * yd, y: A.y }, rc2)); cone(R, rd2, rc2); G = R; }
+        } else if (pp.type === "inc") { var ga = dotsAlong(arc(A, G, gcol), gcol); cross({ x: G.x, y: G.y - 0.3 * yd }, gcol); ghost = { solid: { pts: ga.pts, cum: ga.cum, len: ga.len, col: gcol } }; }
         else if (Math.abs(pp.len) < 1) stub(A, gd);
         else {
           var gdir = pp.len > 0 ? gd : -gd;
           if (pp.type === "air") { tube(arc(A, { x: G.x - gdir * Math.min(CONE * 0.85, Math.abs(pp.len) * 0.35) * yd, y: A.y }, gcol)); cone(G, gdir, gcol); }
           else { if (Math.abs(pp.len) > CONE * 1.1) tube(line(A, { x: G.x - gdir * CONE * 0.9 * yd, y: A.y }, gcol)); cone(G, gdir, gcol); }
         }
-        parts.forEach(function (p) { p.col = gcol; });
+        if (pp.type !== "int") parts.forEach(function (p) { p.col = gcol; });
         ghost = Object.assign(ghost || {}, { parts: parts, A: A, inc: pp.type === "inc", end: G, col: gcol });
         parts = keep;
       }
@@ -299,7 +329,11 @@
       } else if (f >= 0.999) {
         var sc = scaleOf ? scaleOf(p) : 1; if (sc <= 0) return;
         x.save(); x.translate(p.tip[0], p.tip[1]); x.scale(sc, sc);
-        if (p.cross) {
+        if (p.ring) {
+          var rx = p.size, ry = rx * 0.55;
+          x.lineWidth = p.w * 1.15; x.strokeStyle = "#fff"; x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); x.stroke();
+          x.lineWidth = p.w * 0.75; x.strokeStyle = c; x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); x.stroke();
+        } else if (p.cross) {
           var h = p.size * 0.5;
           if (p.outline) { x.strokeStyle = "#fff"; x.lineWidth = p.w * 1.0; x.beginPath(); x.moveTo(-h, -h); x.lineTo(h, h); x.moveTo(-h, h); x.lineTo(h, -h); x.stroke(); }
           x.strokeStyle = c; x.lineWidth = p.w * 0.55;
@@ -364,6 +398,7 @@
       if (!(r.alpha > 0)) return;
       var dim = spec.focus != null && spec.focus >= 0 ? (k === spec.focus ? 0 : 0.85) : spec.dimFrom > 0 && k < spec.dimFrom ? 0.85 : 0;
       var foc = spec.focus != null && spec.focus >= 0 && k !== spec.focus;
+      if (r.ghost && spec.rows[k].ghostOnly) { B.reveal(r.ghost, 1); drawParts(x, r, r.ghost.parts, foc ? 1 : dim, 0.4 * (foc ? r.alpha * 0.55 : r.alpha)); }
       B.reveal(r, 1); drawParts(x, r, r.parts, foc ? 1 : dim, foc ? r.alpha * 0.55 : r.alpha);
       if (r.missX) drawX(x, r, dim, 1, r.alpha);
     });
@@ -417,7 +452,7 @@
         var env = ramp(t, g.end, 80) * (1 - ramp(t, g.end + 300, 160));
         if (env > 0) {
           var f1 = s.fe >= 50 ? 100 : -10, f2 = f1 + 10, a = B.P(f1, 0), b = B.P(f2, 0), c = B.P(f2, 1), d = B.P(f1, 1);
-          x.save(); x.globalAlpha = 0.25 * env; x.fillStyle = s.color; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.lineTo(c.x, c.y); x.lineTo(d.x, d.y); x.closePath(); x.fill(); x.restore();
+          x.save(); x.globalAlpha = 0.25 * env; x.fillStyle = s.scoreColor || s.color; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.lineTo(c.x, c.y); x.lineTo(d.x, d.y); x.closePath(); x.fill(); x.restore();
         }
       }
       drawStart(x, spec, B, B.tbRow >= 0 && B.tbRow <= cur);
@@ -437,10 +472,12 @@
         if (row.ghost && k <= cur) {
           var gf = k === cur ? fracOf(sg, t, "g") : 1;
           B.reveal(row.ghost, gf);
-          var fade = k < cur || t >= sg.walkAt ? 0.35 + 0.65 * (1 - ramp(t, sg.walkAt, 250)) : 1, gso = row.ghost.solid, gparts = row.ghost.parts;
+          /* P3: the erased play goes away as the walk-off is drawn; offsetting fouls keep a faint ghost. */
+          var gOnly = !!spec.rows[k].ghostOnly, floor = gOnly ? 0.4 : 0;
+          var fade = k < cur || t >= sg.walkAt ? floor + (1 - floor) * (1 - ramp(t, sg.walkAt, 250)) : 1, gso = row.ghost.solid, gparts = row.ghost.parts;
           if (gso && k === cur && t < sg.ghostEnd) { gparts = gparts.filter(function (p) { return p.kind !== "dots"; }); drawSolid(x, row, gso, gf, la); }
           else if (gso && k === cur && t < sg.ghostEnd + 150) drawSolid(x, row, gso, 1, (1 - (t - sg.ghostEnd) / 150) * la);
-          drawParts(x, row, gparts, dim, fade * (1 - undim) * la, function (p) { return k === cur && t >= sg.ghostEnd ? backOut((t - sg.ghostEnd) / 240) : 1; });
+          drawParts(x, row, gparts, dim, fade * (gOnly ? 1 : 1 - undim) * la, function (p) { return k === cur && t >= sg.ghostEnd ? backOut((t - sg.ghostEnd) / 240) : 1; });
         }
         var parts = row.parts;
         /* Incomplete: solid arc in flight, dotted + X once the ball arrives (150 ms crossfade). */
@@ -485,7 +522,7 @@
           if ((s.type === "fg" || s.blocked) && t >= g.end) sc *= 1 - ramp(t, g.end + 120, 280);   /* a kick's ball doesn't rest in the air */
         }
         pos.y -= 0.35 * yd * 0.62;
-        if (sc > 0.01) drawBall(x, B, pos, ang, sc, lift, yd);
+        if (sc > 0.01 && !(g.type === "none" && !row.ghost)) drawBall(x, B, pos, ang, sc, lift, yd);
       }
       var st = K.overlayState(t, cur, g, s, outro, segs, spec,
         function (k) { return B.labelOf(k); },
