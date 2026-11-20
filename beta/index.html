@@ -257,6 +257,12 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .dcard.one .rows .row{grid-column:1}
 .dcard .row .kind{justify-self:start}
 .dcard .row .t{font:700 18px/1.1 var(--display);letter-spacing:.03em;font-variant-numeric:tabular-nums;min-width:0}
+.dcard .who{font:600 15px var(--body,inherit);letter-spacing:0}
+.dcard .sl{font-weight:500}.dcard .sl b{font-weight:700}
+.dcard .story{grid-column:1/-1;padding:2px 0 10px 4px;font-size:14px;line-height:1.4;animation:stin .25s ease both}
+.dcard .story.fade{opacity:0;transition:opacity .2s}
+@keyframes stin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.dcard .story p{margin:0}.dcard .story ul{margin:0;padding:0;list-style:none;display:grid;gap:2px}
 .dcard .chev{font-size:20px;color:var(--muted);padding:0 4px}
 .dcard .x{min-width:44px;min-height:44px;margin-left:auto;border:0;background:none;color:var(--muted);font-size:18px;cursor:pointer}
 .dcard .more{grid-column:1/-1;min-height:44px;border:0;background:none;color:var(--muted);font-size:13px;font-weight:600;text-align:left;padding:0;cursor:pointer;border-top:1px solid var(--line)}
@@ -2246,13 +2252,70 @@ function itemInfo(it){
     line:(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:""),
     when:(c.q+" "+c.clk).trim(),who:sc?(sc.nm||sc.ab):"",what:KINDWORD[kind]||"score",detail:scoreDetail(p)};
 }
+/* ---------- what happened on a scoring drive, in words ----------
+   outcome: "Touchdown · 8 plays, 75 yds, 4:12". stars: the drive's biggest contributors with their numbers
+   on the drive ("D.Achane · 4 carries, 38 yds, TD"); for a defensive score just the scorer. */
+function scoreStory(it){
+  var j=it.j, p=it.p, T=teamsOf(j), sc=scorerOf(j,p), kind=scoreKind(p,sc), d=null;
+  drivesOf(j).forEach(function(x){if((x.plays||[]).some(function(q){return q.id===p.id}))d=x});
+  var plays=d?(d.plays||[]).slice(0,(d.plays||[]).findIndex(function(q){return q.id===p.id})+1):[p];
+  var real=plays.filter(function(q){return !isNonPlay(q)&&!isOfficialTO(q)}), NM="([A-Z][a-z]{0,2}\\.\\s?[A-Z][A-Za-z'\\-]+(?: (?:Jr|Sr|II|III)\\.?)?)";
+  var off=d&&d.team?(T.byId[String(d.team.id)]||{}):{}, offNm=off.nm||off.ab||"";
+  var yds=0; real.forEach(function(q){if(typeof q.statYardage==="number"&&!/kick|punt|field goal|extra point|penalty|timeout/i.test((q.type||{}).text||""))yds+=q.statYardage});
+  var st=(d&&d.start)||{}, dt=d&&d.timeElapsed&&d.timeElapsed.displayValue;
+  var n=real.filter(function(q){return !/extra point|two.?point|kickoff/i.test((q.type||{}).text||"")}).length;
+  var what=kind==="FG"?"Field goal":kind==="SAFETY"?"Safety":kind==="DEF TD"?(/INTERCEPTED/i.test(p.text||"")?"Pick-six":"Fumble return TD"):"Touchdown";
+  var outcome=kind==="DEF TD"||kind==="SAFETY"?[what,offNm?"on the "+offNm+" drive":""].filter(Boolean).join(" "):[what,n+" play"+(n===1?"":"s")+", "+ydStr(yds)+(dt?", "+dt:""),st.text?"from "+st.text:""].filter(Boolean).join(" · ");
+  var t0=cleanText(ftext(p.text||"")), m, stars=[];
+  var tdY=(t0.match(/for (\d+) yards?, TOUCHDOWN/)||[])[1];
+  if(kind==="DEF TD"){
+    if((m=t0.match(new RegExp("INTERCEPTED by "+NM))))stars.push({n:m[1],s:"INT"+(tdY?", "+ydStr(+tdY,"return"):"")+", TD"});
+    else if((m=t0.match(new RegExp("RECOVERED by [A-Z]{2,4}-"+NM))))stars.push({n:m[1],s:"Fumble recovery"+(tdY?", "+ydStr(+tdY,"return"):"")+", TD"});
+    return {kind:kind,outcome:outcome,stars:stars};
+  }
+  /* Kick and punt return touchdowns: the returner is the story, not the drive. */
+  if(/kickoff return|punt return/i.test((p.type||{}).text||"")){
+    var ret=/punt/i.test((p.type||{}).text||"")?"Punt return TD":"Kickoff return TD";
+    var rm=t0.match(new RegExp("\\.\\s*"+NM+"(?: [^.]*?)? for (\\d+) yards?, TOUCHDOWN"))||t0.match(new RegExp(NM+"[^.]*? for (\\d+) yards?, TOUCHDOWN"));
+    if(rm)stars.push({n:rm[1],s:ydStr(+rm[2],"return")+", TD"});
+    return {kind:kind,outcome:ret,stars:stars};
+  }
+  if(kind==="SAFETY"){if((m=t0.match(new RegExp("\\(("+NM.slice(1,-1)+")\\)"))))stars.push({n:m[1],s:"Safety"});return {kind:kind,outcome:outcome,stars:stars}}
+  var P={};
+  function pl(nm){return P[nm]=P[nm]||{n:nm,att:0,cmp:0,py:0,car:0,ry:0,rec:0,cy:0,td:0,fg:0}}
+  real.forEach(function(q){
+    var t=cleanText(ftext(q.text||"")).replace(/^\s*\([^)]*\)\s*/,""), ty=(q.type||{}).text||"", mm;
+    if(/No Play|NULLIFIED/i.test(t)||/kickoff|punt|extra point|two.?point|timeout/i.test(ty))return;
+    t=t.split(/\.\s+PENALTY/i)[0];
+    var td=/TOUCHDOWN/.test(t);
+    if((mm=t.match(new RegExp("^"+NM+" (\\d+) yard field goal is GOOD"))))return void(pl(mm[1]).fg=+mm[2]);
+    if((mm=t.match(new RegExp("^"+NM+" pass incomplete"))))return void pl(mm[1]).att++;
+    if((mm=t.match(new RegExp("^"+NM+" pass [^.]*?to "+NM+"[^.]*? for (-?\\d+) yards?")))||(mm=t.match(new RegExp("^"+NM+" pass [^.]*?to "+NM+"[^.]*? for (no gain)")))){
+      var g=mm[3]==="no gain"?0:+mm[3], a=pl(mm[1]), r=pl(mm[2]); a.att++;a.cmp++;a.py+=g;r.rec++;r.cy+=g;if(td)r.td++;return}
+    if(/sacked/i.test(t))return;
+    if((mm=t.match(new RegExp("^"+NM+" (?:[a-z][^.]*? )?for (-?\\d+) yards?")))||(mm=t.match(new RegExp("^"+NM+" (?:[a-z][^.]*? )?for (no gain)")))){
+      var c=pl(mm[1]); c.car++; c.ry+=mm[2]==="no gain"?0:+mm[2]; if(td)c.td++;}
+  });
+  var list=Object.keys(P).map(function(k){var x=P[k];x.score=Math.abs(x.py)*0.6+Math.abs(x.ry)+Math.abs(x.cy)+x.td*15+(x.fg?30:0);return x})
+    .filter(function(x){return x.score>0}).sort(function(a,b){return b.score-a.score});
+  list.slice(0,3).forEach(function(x){
+    var bits=[];
+    if(x.att)bits.push(x.cmp+"/"+x.att+", "+ydStr(x.py));
+    if(x.car)bits.push(x.car+(x.car===1?" carry, ":" carries, ")+ydStr(x.ry));
+    if(x.rec)bits.push(x.rec+(x.rec===1?" catch, ":" catches, ")+ydStr(x.cy));
+    if(x.td)bits.push("TD");
+    if(x.fg)bits.push(x.fg+" yd FG");
+    stars.push({n:x.n,s:bits.join(", ")});
+  });
+  return {kind:kind,outcome:outcome,stars:stars};
+}
 function cardShow(items){
   var now=Date.now();
   items.forEach(function(it){
     if(DG.log.indexOf(it)<0){DG.log.push(it);if(DG.log.length>30)DG.log.shift()}
     var b=itemInfo(it); if(it.gid)DG.flash[it.gid]={until:now+10000,kind:b.kind,side:b.side};
   });
-  var merge=!!DG.card; DG.card={items:(merge?DG.card.items:[]).concat(items),t0:merge?DG.card.t0:now};
+  var merge=!!DG.card; DG.card={items:(merge?DG.card.items:[]).concat(items),t0:merge?DG.card.t0:now,open:merge?DG.card.open:null,stage:merge?DG.card.stage:0};
   cardDraw(); if(!merge)dongChime();
 }
 function cardDraw(){
@@ -2266,10 +2329,14 @@ function cardDraw(){
   var rows=its.map(function(it,k){return {it:it,k:k}}).reverse();
   html=(its.length>1?'<div class="top"><span class="hd">'+its.length+' scores</span><button class="x" data-act="later" aria-label="Close">✕</button></div>':'')+
     '<div class="rows">'+rows.slice(0,4).map(function(r,i){var b=itemInfo(r.it);
-      return '<button class="row" data-w="'+r.k+'"><span class="kind"'+kst(b)+'>'+esc(b.kind)+'</span><span class="t">'+esc(b.line)+'</span><span class="chev">›</span></button>'+
+      var lineH=esc(b.line).replace(new RegExp("^(\\S+ \\d+)"),b.side==="a"?"<b>$1</b>":"$1").replace(new RegExp("(\\d+ \\S+)$"),b.side==="h"?"<b>$1</b>":"$1");
+      var open=C.open===r.it;
+      return '<button class="row'+(open?' open':'')+'" data-w="'+r.k+'"><span class="kind"'+kst(b)+'>'+esc(b.kind)+'</span><span class="t"><span class="who">'+esc(b.who)+'</span> · <span class="sl">'+lineH+'</span></span><span class="chev">'+(open?'⌄':'›')+'</span></button>'+
+        (open?'<div class="story" data-st="'+(C.stage||0)+'">'+storyHTML(r.it,C.stage||0)+'</div>':'')+
         (its.length===1?'<button class="x" data-act="later" aria-label="Close">✕</button>':'')}).join("")+
     (rows.length>4?'<button class="more" data-act="all">+'+(rows.length-4)+' more ›</button>':'')+'</div>';
   dur=its.length===1?15:20;
+  if(C.open)el.classList.add("hold");
   /* Added to a card that's already up: the countdown carries on (with at least 6 s left), so a busy
      slate can't keep the card up for ever. */
   el.style.setProperty("--dur",dur+"s"); el.style.setProperty("--dl",-Math.max(0,Math.min((Date.now()-C.t0)/1000,dur-6))+"s");
@@ -2277,6 +2344,12 @@ function cardDraw(){
   el.classList.remove("hold"); el.classList.toggle("one",its.length===1); el.hidden=false; DG.cardItems=its; cardFit();
 }
 /* The card never reaches up over the score bar: if there isn't room, its rows scroll inside it. */
+function storyHTML(it,stage){
+  var S2=it._story||(it._story=scoreStory(it));
+  if(!stage)return '<p class="oc">'+esc(S2.outcome)+'</p>';
+  if(!S2.stars.length)return '<p class="oc">'+esc(S2.outcome)+'</p>';
+  return '<ul class="stars">'+S2.stars.map(function(x){return '<li><b>'+esc(x.n)+'</b> · '+esc(x.s)+'</li>'}).join("")+'</ul>';
+}
 function cardFit(){
   var el=$("dcard"), rows=el.querySelector(".rows"); if(el.hidden||!rows)return;
   rows.style.maxHeight=""; rows.style.overflowY="";
@@ -2289,13 +2362,21 @@ function cardHide(){DG.card=null;DG.cardItems=[];var el=$("dcard");el.hidden=tru
   var el=$("dcard");
   el.addEventListener("animationend",function(e){if(e.animationName==="dctime")cardHide()});
   el.addEventListener("pointerdown",function(){el.classList.add("hold")});
-  ["pointerup","pointercancel","pointerleave"].forEach(function(n){el.addEventListener(n,function(){el.classList.remove("hold")})});
+  ["pointerup","pointercancel","pointerleave"].forEach(function(n){el.addEventListener(n,function(){if(!(DG.card&&DG.card.open))el.classList.remove("hold")})});
   el.addEventListener("click",function(e){
     var b=e.target.closest("button"); if(!b)return;
     var its=DG.cardItems||[], w=b.getAttribute("data-w"), act=b.getAttribute("data-act");
-    if(act==="later"){cardHide();return}
+    if(act==="later"){clearTimeout(DG.storyT);cardHide();return}
     if(act==="all"){cardHide();dongList();return}
-    if(w!=null){var it=its[+w];cardHide();if(it)dongOpen(it,its.length>1)}
+    if(w!=null){
+      /* Tap a score: it opens in place. First the drive's outcome for 3 s, then its biggest contributors.
+         Tap it again to fold it. The other scores stay; the card waits while one is open. */
+      var it=its[+w], C=DG.card; if(!it||!C)return;
+      clearTimeout(DG.storyT); it.watched=true;
+      if(C.open===it){C.open=null;C.stage=0;el.classList.remove("hold");cardDraw();return}
+      C.open=it; C.stage=0; cardDraw();
+      DG.storyT=setTimeout(function(){if(DG.card&&DG.card.open===it){DG.card.stage=1;var sx=el.querySelector('.story');if(sx){sx.classList.add('fade');setTimeout(function(){if(DG.card&&DG.card.open===it)cardDraw()},220)}else cardDraw()}},3000);
+    }
   });
 })();
 /* Your game, pinned at the top of the replay and list overlay. */
