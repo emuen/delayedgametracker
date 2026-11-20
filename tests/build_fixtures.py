@@ -47,5 +47,8 @@ def ed_text(s):
 synth('ko_touchback','ko_fair','Kickoff fair catch',ed_text('B.Pinion kicks 60 yards from SF 35 to LAR 5, fair catch by X.Smith.'))
 synth('fg_good','fg_doink_in','Field goal off the upright and in',ed_text('J.Tucker 48 yard field goal is GOOD, Hit Left Upright, Center-N.Moore, Holder-J.Stout.'))
 synth('fg_blocked','fg_blocked_ret','Blocked FG returned',ed_text('J.Myers 44 yard field goal is BLOCKED (A.Booker), Center-C.Stoll, Holder-M.Dickson, RECOVERED by CHI-J.Johnson at CHI 30. J.Johnson to SEA 32 for 38 yards (M.Dickson).'))
+def ed_live_downs(p):
+    p['end']=dict(p.get('end') or {}); p['end']['team']=dict((p.get('start') or {}).get('team') or {})
+synth('downs','downs_live','Turnover on downs, live (ESPN end spot not updated yet)',ed_live_downs)
 json.dump(fx,open(OUT,'w'),separators=(',',':'))
 print(len(fx),'fixtures,',len({f['type'] for f in fx}),'types,',round(os.path.getsize(OUT)/1e6,2),'MB')

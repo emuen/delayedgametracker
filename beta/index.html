@@ -540,8 +540,14 @@ function endOf(p){
   if(/interception/.test(ty)||/\bintercepted\b/i.test(t))return "Interception";
   if(/fumble recovery \(opponent\)|fumble return|muffed punt recovery \(opponent\)/.test(ty))return "Fumble";
   if(/safety/.test(ty))return "Safety";
-  var a=teamIdOf(p.start), b=teamIdOf(p.end);
-  if((p.start||{}).down===4&&a&&b&&a!==b)return "Downs";
+  var a=teamIdOf(p.start), b=teamIdOf(p.end), st=p.start||{};
+  if(st.down===4&&a&&b&&a!==b)return "Downs";
+  /* Live, ESPN often still has the offence on the end spot of a failed 4th down for a while: decide from
+     the play itself (4th down, short of the line to gain, no score, no accepted penalty, not a kick). */
+  if(st.down===4&&!p.scoringPlay&&!/kneels|spiked/i.test(t)&&!(/PENALTY/.test(t)&&!/declined/i.test(t))&&!/kick|punt|field goal|timeout|end of|two-minute/.test(ty)){
+    var dist=+st.distance||0, gain=/\bincomplete\b/i.test(t)?0:(typeof p.statYardage==="number"?p.statYardage:null);
+    if(dist>0&&gain!=null&&gain<dist)return "Downs";
+  }
   return null;
 }
 /* One table for drive results, whether the label comes from ESPN or from the page itself. */
