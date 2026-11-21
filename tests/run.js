@@ -45,13 +45,9 @@ async function launch() {
   await pg.route('https://cdnjs.cloudflare.com/**', r => r.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(THREE, 'utf8') }));
   await pg.route('https://site.api.espn.com/**', r => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{"events":[],"leagues":[{"calendar":[]}]}' }));
   await pg.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await pg.route('http://localhost:8765/index.html', r => {           /* expose the page's private functions, test only */
-    let h = fs.readFileSync(path.join(REPO, 'index.html'), 'utf8'); const i = h.lastIndexOf('})();');
-    h = h.slice(0, i) + 'window.__P={latestDrive:latestDrive,fieldChart3D:fieldChart3D,teamsOf:teamsOf,allPlays:allPlays,S:S};\n' + h.slice(i);
-    r.fulfill({ contentType: 'text/html', body: h });
-  });
   await pg.goto('http://localhost:8765/index.html');
-  await pg.waitForFunction(() => window.Chart2D && window.DriveCore && window.__P && (window.Chart3D || true), null, { timeout: 30000 });
+  await pg.waitForFunction(() => window.Chart2D && window.DriveCore && typeof window.latestDrive === 'function', null, { timeout: 30000 });
+  await pg.evaluate(() => { window.__P = { latestDrive: latestDrive, fieldChart3D: fieldChart3D, teamsOf: teamsOf, allPlays: allPlays, S: S }; });
   await pg.evaluate(HARNESS);
   return { b, pg };
 }
