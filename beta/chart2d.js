@@ -212,18 +212,8 @@
     }
     /* Long-drive modes: "off" lanes may go above the far edge until just under the info box. */
     var yCap = 78 * u, cap = spec.laneMode === "off" ? (vNear - (yCap - yT) / (yB - yT)) / vStep : 0;
-    /* "summary": one thin, dimmer arrow on the farthest lane, drive start -> first play shown on its own. */
-    function summaryDraw(x, st) {
-      if (!st || !(st.alpha > 0)) return null;
-      var v = vOf(st.depth), yd = s * sc(v), lw = Math.max(3.5 * k, Math.min(1.25 * yd, laneGapPx * 0.9)), w = Math.max(2.5 * k, lw * 0.55);
-      var a = P(st.f0, v), b = P(st.f1, v), d = st.f1 >= st.f0 ? 1 : -1, L = Math.abs(b.x - a.x), hl = w * 1.9;
-      x.save(); x.globalAlpha = 0.6 * st.alpha; x.lineCap = "round";
-      x.strokeStyle = x.fillStyle = mix(rgb(st.color), 0.15);
-      if (L > hl) { x.lineWidth = w; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x - d * hl * 0.9, b.y); x.stroke(); }
-      if (L >= yd) { x.beginPath(); x.moveTo(b.x, b.y); x.lineTo(b.x - d * hl, b.y - hl * 0.55); x.lineTo(b.x - d * hl, b.y + hl * 0.55); x.closePath(); x.fill(); }
-      x.restore();
-      return { p: { x: b.x, y: b.y }, z: v, dir: d, text: st.text, a: st.alpha };
-    }
+    function summaryDraw() { return null; }
+
     /* Goal posts at one end (es = 1: right end line, -1: left), drawn flat; hit = {zs, amt, k} makes
        one upright flash white and sway (a doink). */
     var GL = K.GOAL;

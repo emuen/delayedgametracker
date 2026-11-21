@@ -395,9 +395,9 @@
       }
       return last.clone();
     }
-    /* Long-drive modes (spec.laneMode). "off": a hint of ground behind the far sideline so plays slid
-       past it still read, and the last usable depth before the info box. "summary": one thin arrow. */
-    var cap = 0, summary = null, mode = spec.laneMode;
+    /* Long drives: a hint of ground behind the far sideline so plays slid past it still read, and the
+       last usable depth before the info box. */
+    var cap = 0, mode = spec.laneMode;
     if (mode === "off") {
       var u0 = W / 360, yMin = 78 * u0, pv = new V3();
       for (var dd2 = K.LANES; dd2 < 80; dd2 += 0.25) {
@@ -411,24 +411,8 @@
       var back = new THREE.Mesh(new THREE.PlaneGeometry(400, depthBack), new THREE.MeshBasicMaterial({ map: gt, transparent: true, depthWrite: false }));
       back.rotation.x = -Math.PI / 2; back.position.set(0, -0.03, -FIELD_W / 2 - depthBack / 2); scene.add(back);
     }
-    if (mode === "summary") {
-      var sm2 = mat((spec.start && spec.start.color) || "#1d3f8f"); sm2.transparent = true;
-      var sBody = new THREE.Mesh(new THREE.BoxGeometry(1, RAD * 0.7, RAD * 0.7), sm2), sHead = new THREE.Mesh(new THREE.ConeGeometry(RAD * 1.2, CONE * 0.8, 14), sm2);
-      sBody.position.y = Y; sHead.position.y = Y; summary = { body: sBody, head: sHead, mat: sm2, label: null };
-      scene.add(sBody); scene.add(sHead); sBody.visible = sHead.visible = false;
-    }
-    function setSummary(st) {
-      if (!summary) return null;
-      summary.body.visible = summary.head.visible = !!st && st.alpha > 0;
-      if (!st || !(st.alpha > 0)) return null;
-      var z = zNear - st.depth * STEP, a = wx(st.f0), b = wx(st.f1), d = b >= a ? 1 : -1, len = Math.abs(b - a);
-      summary.mat.opacity = 0.6 * st.alpha;
-      var bodyLen = Math.max(0.01, len - CONE * 0.7);
-      summary.body.scale.x = bodyLen; summary.body.position.set(a + d * bodyLen / 2, Y, z);
-      summary.head.position.set(b - d * CONE * 0.4, Y, z); summary.head.rotation.set(0, 0, d > 0 ? -Math.PI / 2 : Math.PI / 2);
-      summary.body.visible = bodyLen > 0.05; summary.head.visible = len >= 1;
-      return { p: new V3(b, Y, z), z: z, dir: d, text: st.text, a: st.alpha };
-    }
+    function setSummary() { return null; }
+
     return {
       cap: cap, setSummary: setSummary, shake: shake,
       scene: scene, cam: cam, rows: rows, reveal: reveal, tipAt: tipAt, ball: ball, ltgM: ltgM, wx: wx, setLines: setLines, startAt: startAt, startLabel: spec.start && spec.start.label,
