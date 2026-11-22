@@ -248,13 +248,12 @@ function dockRender(){
   if(dock.hidden){dock.hidden=false;document.body.classList.add("hasdock")}
   dock.classList.toggle("recede",DG.hot>0);
   var html=(DG.pending.length?'<button class="tk wait" data-act="wait" aria-label="'+DG.pending.length+' scores waiting. Show now."><span class="ln">'+DG.pending.length+' waiting</span><small>for a break</small></button>':'')+
-    list.map(function(G){return chipHTML(G,D,now)}).join("")+'<button class="tk all" data-act="all" aria-label="All scores elsewhere">All ›</button>';
+    list.map(function(G){return chipHTML(G,D,now)}).join("");
   if(html!==DG.dockHtml){DG.dockHtml=html;$("tkrow").innerHTML=html}
 }
 $("tkrow").addEventListener("click",function(e){
   var b=e.target.closest(".tk"); if(!b)return;
   var act=b.getAttribute("data-act");
-  if(act==="all"){dongList();return}
   if(act==="wait"){dongRelease();dockRender();return}
   var gid=b.getAttribute("data-g"); if(gid)dockOpen(gid);
 });
@@ -428,7 +427,6 @@ function scoreStory(it){
 function cardShow(items){
   var now=Date.now();
   items.forEach(function(it){
-    if(DG.log.indexOf(it)<0){DG.log.push(it);if(DG.log.length>30)DG.log.shift()}
     var b=itemInfo(it); if(it.gid)DG.flash[it.gid]={until:now+10000,kind:b.kind,side:b.side};
   });
   var merge=!!DG.card; DG.card={items:(merge?DG.card.items:[]).concat(items),t0:merge?DG.card.t0:now,open:merge?DG.card.open:null,stage:merge?DG.card.stage:0};
@@ -440,17 +438,16 @@ function cardDraw(){
   if(!its.length){cardHide();return}
   function kst(b){return b.col?' style="--tc:'+b.col.bg+';--tci:'+b.col.ink+'"':''}
   /* Calm by design: one line per score (kind, score line), tap a line to watch, one ✕. No drive details,
-     no visible countdown; the card quietly goes after a while and every score stays in "All ›". */
+     no visible countdown; the card quietly goes after a while. */
   el.style.cssText="";
   var rows=its.map(function(it,k){return {it:it,k:k}}).reverse();
   html=(its.length>1?'<div class="top"><span class="hd">'+its.length+' scores</span><button class="x" data-act="later" aria-label="Close">✕</button></div>':'')+
-    '<div class="rows">'+rows.slice(0,4).map(function(r,i){var b=itemInfo(r.it);
+    '<div class="rows">'+rows.map(function(r,i){var b=itemInfo(r.it);
       var lineH=esc(b.line).replace(new RegExp("^(\\S+ \\d+)"),b.side==="a"?"<b>$1</b>":"$1").replace(new RegExp("(\\d+ \\S+)$"),b.side==="h"?"<b>$1</b>":"$1");
       var open=C.open===r.it;
       return '<button class="row'+(open?' open':'')+'" data-w="'+r.k+'"><span class="kind"'+kst(b)+'>'+esc(b.kind)+'</span><span class="t"><span class="who">'+esc(b.who)+'</span> · <span class="sl">'+lineH+'</span></span><span class="chev">'+(open?'⌄':'›')+'</span></button>'+
         (open?'<div class="story" data-st="'+(C.stage||0)+'">'+storyHTML(r.it,C.stage||0)+'</div>':'')+
-        (its.length===1?'<button class="x" data-act="later" aria-label="Close">✕</button>':'')}).join("")+
-    (rows.length>4?'<button class="more" data-act="all">+'+(rows.length-4)+' more ›</button>':'')+'</div>';
+        (its.length===1?'<button class="x" data-act="later" aria-label="Close">✕</button>':'')}).join("")+'</div>';
   dur=its.length===1?15:20;
   if(C.open)el.classList.add("hold");
   /* Added to a card that's already up: the countdown carries on (with at least 6 s left), so a busy
@@ -483,7 +480,6 @@ function cardHide(){DG.card=null;DG.cardItems=[];var el=$("dcard");el.hidden=tru
     var b=e.target.closest("button"); if(!b)return;
     var its=DG.cardItems||[], w=b.getAttribute("data-w"), act=b.getAttribute("data-act");
     if(act==="later"){clearTimeout(DG.storyT);cardHide();return}
-    if(act==="all"){cardHide();dongList();return}
     if(w!=null){
       /* Tap a score: it opens in place. First the drive's outcome for 3 s, then its biggest contributors.
          Tap it again to fold it. The other scores stay; the card waits while one is open. */
@@ -512,25 +508,8 @@ function dongMsg(title,msg,gid){
   $("dvTitle").textContent=title; $("dvSub").textContent="At your delay"; $("dvClose").textContent="Close";
   $("dongView").hidden=false; cardHide(); bugUpdate();
 }
-function dongList(){
-  DG.cur=null; DG.msgFor=null; $("dvHint").hidden=true;
-  var ul=$("dvList"); ul.innerHTML="";
-  var items=DG.log.filter(function(it){return gamePrefOf(it.j)!=="x"});
-  items.slice().reverse().forEach(function(item){
-    var b=itemInfo(item), li=document.createElement("li"), bt=document.createElement("button");
-    bt.className=item.watched?"seen":""; if(b.col)bt.style.cssText="--tc:"+b.col.bg+";--tci:"+b.col.ink;
-    bt.innerHTML='<span class="dk">'+esc(b.kind)+'</span><span><b>'+esc(b.line)+'</b><small>'+esc((b.who?b.who+" "+b.what+" · ":"")+b.when)+'</small></span><span class="'+(item.watched?"":"new")+'">'+(item.watched?"Watch again ▸":"NEW ▸")+'</span>';
-    bt.onclick=function(){dongOpen(item,true)};
-    li.appendChild(bt); ul.appendChild(li);
-  });
-  if(!items.length)ul.innerHTML='<li class="msg">No alerts yet. When a followed team scores, it shows up here.</li>';
-  if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}
-  $("dvChart").innerHTML=""; ul.hidden=false;
-  $("dvTitle").textContent="Scores elsewhere"; $("dvSub").textContent=items.length?items.length+" this session · newest first":"At your delay"; $("dvClose").textContent="Close"; DG.fromList=false;
-  $("dongView").hidden=false; cardHide(); bugUpdate();
-}
 function dongOpen(item,fromList){
-  item.watched=true; DG.fromList=!!fromList; $("dvList").hidden=true; $("dvClose").textContent=fromList?"Back":"Close";
+  item.watched=true; DG.fromList=!!fromList; $("dvList").hidden=true; $("dvClose").textContent="Close";
   var j=item.j,p=item.p,T=teamsOf(j),plays=allPlays(j),k=plays.indexOf(p);if(k<0)return;
   var ids={};for(var q=0;q<=k;q++)ids[plays[q].id]=1;
   var keep=S.chartDrive;S.chartDrive=null;
@@ -578,7 +557,7 @@ function dongFocus(k){
   $("dvChart").innerHTML='<img alt="Play '+(k+1)+' of the drive" style="display:block;width:100%;border-radius:6px" src="'+url+'">';
 }
 function dongClose(){DG.cur=null;DG.msgFor=null;if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dongView").hidden=true;DG.fromList=false}
-$("dvClose").onclick=function(){if(DG.fromList)dongList();else dongClose()};
+$("dvClose").onclick=dongClose;
 $("dongView").addEventListener("click",function(e){if(e.target===this)dongClose()});
 setInterval(dongTick,1000);
 setInterval(dongPollLive,15000);
