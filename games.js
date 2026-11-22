@@ -23,7 +23,7 @@ function loadWeek(){
     if(wkKey(LS.sel)!==asked)return;
     if(!LS.cal)buildCal(sb);
     if(!w)LS.cur={year:+sb.season.year,type:+sb.season.type,week:+sb.week.number};
-    LS.data=sb; LS.err=""; lsKeep(sb);
+    LS.data=sb; LS.err=""; lsKeep(sb); lsEarly(sb);
   }).catch(function(e){LS.err=/fetch|network|load/i.test(e.message||"")?"Offline · retrying":"Couldn't load games ("+e.message+")"})
   .then(function(){
     if(S.view!=="list")return;
@@ -68,7 +68,7 @@ var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",
   f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);favChip();if(S.view==="list")renderList()}})();
 (function(){var l=$("linger");l.value=String(S.linger);if(!l.value){l.value="1"}l.onchange=function(){S.linger=+l.value||1;save("db_linger",S.linger)}})();
 (function(){var l=$("lead");l.value=String(S.lead);if(!l.value){l.value="5"}l.onchange=function(){S.lead=+l.value||5;save("db_lead",S.lead)}})();
-(function(){var d=$("dongMode");d.value=S.dongMode;if(!d.value)d.value="sound";d.onchange=function(){S.dongMode=d.value;save("db_dong",S.dongMode);if(S.dongMode==="off"||S.dongMode==="ticker"){DG.queue=[];DG.pending=[];cardHide()}dockRender(true)}})();
+(function(){var d=$("dongMode");d.value=S.dongMode;if(!d.value)d.value="sound";d.onchange=function(){S.dongMode=d.value;save("db_dong",S.dongMode);if(S.dongMode==="off"||S.dongMode==="ticker"){DG.queue=[];DG.pending=[];DG.flash={}}dockRender(true)}})();
 (function(){var b=$("sounds");b.setAttribute("aria-checked",S.sounds?"true":"false");b.onclick=function(){S.sounds=!S.sounds;save("db_sounds",S.sounds);b.setAttribute("aria-checked",S.sounds?"true":"false")}})();
 function favChip(){$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
 favChip();
@@ -83,14 +83,32 @@ function lsKeep(sb){
   LS.hist.push({t:now,m:m});
   var cut=now-S.delay*1000, i=0; while(i<LS.hist.length-1&&LS.hist[i+1].t<=cut-120000)i++;
   if(i>0)LS.hist=LS.hist.slice(i);
+  try{localStorage.setItem("db_lshist",JSON.stringify({k:key,h:LS.hist}))}catch(e){}
+}
+/* A reload keeps the scoreboards already collected, so delayed scores show at once instead of
+   starting over. Only if they're recent (within your delay plus 2 min); older ones are dropped. */
+(function(){try{
+  var o=JSON.parse(localStorage.getItem("db_lshist")||"null"), H=o&&o.h||[];
+  if(H.length&&Date.now()-H[H.length-1].t<S.delay*1000+120000){LS.hist=H;LS.histKey=o.k}
+}catch(e){}})();
+/* Just opened, so nothing collected is your delay old yet: each live game's score as it stood one
+   delay ago comes from its play-by-play (delayedState), until the collected scoreboards catch up. */
+function lsEarly(sb){
+  if(!LS.scores)return;
+  (sb.events||[]).forEach(function(e){
+    if(evState(e)!=="in"||!lsView(e).sync)return;
+    fetchEarly(e.id,function(){if(S.view==="list")renderList()});
+  });
 }
 function lsView(e){
   var live={st:evState(e),a:+((evTeam(e,"away")||{}).score)||0,h:+((evTeam(e,"home")||{}).score)||0}, H=LS.hist||[];
-  if(!H.length){live.sync=live.st==="in";return live}
+  var E=earlyOf(e.id);
+  if(!H.length){live.sync=live.st==="in";return live.sync&&E?{st:"in",a:E.a,h:E.h}:live}
   var cut=Date.now()-S.delay*1000, pick=null;
   for(var i=H.length-1;i>=0;i--){if(H[i].t<=cut){pick=H[i];break}}
   var v=(pick||H[0]).m[e.id];
   if(!v){live.sync=live.st!=="pre";return live}
+  if(!pick&&v.st==="in"&&E)return {st:"in",a:E.a,h:E.h};
   return {st:v.st,a:v.a,h:v.h,sync:!pick&&v.st==="in"};
 }
 function gameRow(e){
@@ -101,7 +119,7 @@ function gameRow(e){
   var aw=show&&dl.a>dl.h, hw=show&&dl.h>dl.a;
   function tr(t,sty,win,opp,pts){
     var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.shortDisplayName||tm.displayName||tm.name||"To be decided", rec=recordOf(t,opp,evState(e),!show||st!=="post");
-    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(isFav(t)?'<span class="star" aria-label="Favourite">★</span>':'')+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(pts):"")+'</span></div>';
+    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(isFav(t)?'<span class="star" aria-label="Favourite">★</span>':'')+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(pts):LS.scores&&dl.sync&&!nos&&t?'<span class="pend" aria-label="Score shows once it matches your delay">–</span>':"")+'</span></div>';
   }
   var nets=evNets(e).slice(0,2).join(", "), meta;
   var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
@@ -159,7 +177,7 @@ $("wkSel").onchange=function(){var e=LS.flat.filter(function(x){return wkKey(x)=
 $("wkPrev").onclick=function(){var i=LS.flat.map(wkKey).indexOf(wkKey(LS.sel||LS.cur));if(i>0)goWeek(LS.flat[i-1])};
 $("wkNext").onclick=function(){var i=LS.flat.map(wkKey).indexOf(wkKey(LS.sel||LS.cur));if(i>=0&&i<LS.flat.length-1)goWeek(LS.flat[i+1])};
 function goWeek(e){location.hash=LS.cur&&wkKey(e)===wkKey(LS.cur)?"":"w-"+wkKey(e)}
-$("showScores").onclick=function(){LS.scores=!LS.scores;save("db_scores",LS.scores);renderList()};
+$("showScores").onclick=function(){LS.scores=!LS.scores;save("db_scores",LS.scores);if(LS.data)lsEarly(LS.data);renderList()};
 
 /* ---------- routing: #g-<game> opens the tracker, #w-<year>-<type>-<week> a week, nothing = this week ---------- */
 var listHash="";
@@ -222,11 +240,11 @@ function teamsDraw(){
 function teamsSet(ab,v){
   if(v==="f")delete S.teams[ab];else S.teams[ab]=v;
   save("db_teams",S.teams); teamsDraw();
-  if(DG.card)cardDraw(); DG.dockHtml=""; dockRender();
+  DG.dockHtml=""; dockRender();
 }
 function teamsOpen(open){$("teamSheet").hidden=!open;if(open){teamsDraw();$("teamDone").focus()}else{teamSum();$("openTeams").focus()}}
 $("openTeams").onclick=function(){teamsOpen(true)};
 $("teamDone").onclick=function(){teamsOpen(false)};
 $("teamList").addEventListener("click",function(e){var b=e.target.closest(".tchip");if(!b)return;var ab=b.getAttribute("data-t"),v=teamPref(ab);teamsSet(ab,v==="f"?"n":v==="n"?"x":"f");var nb=document.querySelector('.tchip[data-t="'+ab+'"]');if(nb)nb.focus()});
-$("teamReset").onclick=function(){S.teams={};save("db_teams",S.teams);teamsDraw();if(DG.card)cardDraw();DG.dockHtml="";dockRender()};
+$("teamReset").onclick=function(){S.teams={};save("db_teams",S.teams);teamsDraw();DG.dockHtml="";dockRender()};
 $("retry").onclick=function(){$("status").textContent="Retrying…";poll()};

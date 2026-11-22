@@ -43,6 +43,26 @@ function allPlays(j){
   out.sort(function(a,b){return (+a.sequenceNumber||0)-(+b.sequenceNumber||0)});
   return out;
 }
+/* A game as it stood one delay ago, from its play-by-play: the score, quarter, clock and team with the
+   ball after the last play that happened at least your delay ago (play time plus ESPN's usual lag).
+   Used right after opening, before anything collected is your delay old. EARLY caches it per game. */
+var EARLY={};
+function delayedState(j){
+  var cut=Date.now()-S.delay*1000-lagEst()*1000, best=null;
+  allPlays(j).forEach(function(p){var w=Date.parse(p.wallclock);if(!isNaN(w)&&w<=cut&&p.homeScore!=null)best=p});
+  if(!best)return null;
+  return {a:+best.awayScore||0,h:+best.homeScore||0,period:+((best.period||{}).number)||0,clock:((best.clock||{}).displayValue)||"",pos:teamIdOf(best.end||best.start)};
+}
+/* Usable for 3 min after it was read; asked again after 1 min. */
+function earlyOf(id){var E=EARLY[id];return E&&!E.loading&&Date.now()-E.t<180000?E:null}
+function fetchEarly(id,done){
+  var E=EARLY[id]; if(E&&(E.loading||Date.now()-E.t<60000))return;
+  EARLY[id]={loading:1};
+  getJSON(API+"/summary?event="+id).then(function(j){
+    var d=delayedState(j); if(!d){delete EARLY[id];return}
+    d.t=Date.now(); EARLY[id]=d; if(done)done(j);
+  }).catch(function(){delete EARLY[id]});
+}
 function teamIdOf(s){if(!s||s.team==null)return null;return String(typeof s.team==="object"?s.team.id:s.team)}
 function playTime(p){
   var seen=S.seen[p.id]||Date.now();
