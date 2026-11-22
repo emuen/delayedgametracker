@@ -1,4 +1,4 @@
-/* Delay Booth · Other games: the dock (ticker), holding alerts, score cards, scoring-drive overlay, sounds (dong, doink, sack shout). */
+/* Delay Booth · Other games: the dock (ticker), holding alerts, score lines in the ticker, scoring-drive overlay, sounds (dong, doink, sack shout). */
 "use strict";
 /* ---------- Other games: the dock (ticker) and score alerts ("dong") ----------
    One clock: everything about other games is shown at your delay.
@@ -8,10 +8,10 @@
    re-times both. Simulation: the other games in the same window are replayed alongside the simulated
    one, by game clock.
    Alerts only come for followed games (Settings › Teams). They wait silently while a play in your game
-   is under way (snap to settled result) and come out together right after, as one card with one chime.
-   Tapping an alert replays the scoring drive (for a defensive score, the drive of the team that
+   is under way (snap to settled result) and come out together right after: one chime, and each scoring chip shows a short line for 10 s.
+   Tapping a chip replays the scoring drive (for a defensive score, the drive of the team that
    had the ball, which is where ESPN files that play). */
-var DG={scores:null,seen:{},queue:[],pending:[],heldSince:0,hot:0,snaps:[],seq:0,dispSeq:-1,simCur:0,sums:{},first:{},flash:{},card:null,cardItems:[],audio:null,sim:null,view:null,log:[]};
+var DG={scores:null,seen:{},queue:[],pending:[],heldSince:0,hot:0,snaps:[],seq:0,dispSeq:-1,simCur:0,sums:{},first:{},flash:{},audio:null,sim:null,view:null,log:[]};
 var DIVS=[["AFC East",["BUF","MIA","NE","NYJ"]],["AFC North",["BAL","CIN","CLE","PIT"]],["AFC South",["HOU","IND","JAX","TEN"]],["AFC West",["DEN","KC","LV","LAC"]],
   ["NFC East",["DAL","NYG","PHI","WSH"]],["NFC North",["CHI","DET","GB","MIN"]],["NFC South",["ATL","CAR","NO","TB"]],["NFC West",["ARI","LAR","SF","SEA"]]];
 /* Teams: "f" follow (default), "n" not interested (ticker, no alerts), "x" no spoilers (hidden). */
@@ -175,8 +175,8 @@ function mainHot(now){
   if(!on)return 0;
   if(Lv&&Lv.attached&&on.id)DG.big=isBig(on); return 2;
 }
-function dongReset(){DG.queue=[];DG.pending=[];DG.heldSince=0;DG.scores=null;DG.first={};DG.snaps=[];DG.dispSeq=-1;DG.simCur=0;DG.sim=null;DG.log=[];DG.flash={};DG.dockHtml="";cardHide()}
-function dongRelease(){var items=DG.pending;DG.pending=[];DG.heldSince=0;if(items.length)cardShow(items)}
+function dongReset(){DG.queue=[];DG.pending=[];DG.heldSince=0;DG.scores=null;DG.first={};DG.snaps=[];DG.dispSeq=-1;DG.simCur=0;DG.sim=null;DG.log=[];DG.flash={};DG.dockHtml=""}
+function dongRelease(){var items=DG.pending;DG.pending=[];DG.heldSince=0;if(items.length)scoreShow(items)}
 function dongTick(){
   if(S.view!=="game"){return}
   var now=Date.now();
@@ -227,7 +227,7 @@ function chipHTML(G,D,now){
   }
   var l2, lbl;
   if(sync)l2="Syncing…";
-  else if(fl)l2=esc(fl.kind);
+  else if(fl)l2=esc(fl.kind+(fl.detail?" · "+fl.detail:""));
   else if(G.state==="pre")l2=esc(kickText(G.date));
   else if(G.state==="post")l2=G.period>4||/OT/.test(G.detail)?"Final/OT":"Final";
   else l2=esc(statusText(G))+(G.rz&&G.pos?'<span class="rz">RZ</span>':'')+(G.to?" · "+G.to:"");
@@ -238,11 +238,16 @@ function chipHTML(G,D,now){
 function dockRender(){
   var dock=$("dock"), now=Date.now(), on=S.view==="game"&&S.dongMode!=="off"&&!!S.sum;
   var D=on?dispGames(now):null, list=D?dockGames(D):[];
-  var vis=on&&(list.some(function(G){return G.state==="in"||G.state==="pre"})||!!DG.card);
-  if(!vis){if(!dock.hidden){dock.hidden=true;document.body.classList.remove("hasdock");cardHide()}return}
+  var vis=on&&(list.some(function(G){return G.state==="in"||G.state==="pre"})||Object.keys(DG.flash).some(function(k){return DG.flash[k].until>now}));
+  if(!vis){if(!dock.hidden){dock.hidden=true;document.body.classList.remove("hasdock")}return}
   if(dock.hidden){dock.hidden=false;document.body.classList.add("hasdock")}
   var html=list.map(function(G){return chipHTML(G,D,now)}).join("");
   if(html!==DG.dockHtml){DG.dockHtml=html;$("tkrow").innerHTML=html}
+  if(DG.scrollTo){
+    var row=$("tkrow"), c=row.querySelector('[data-g="'+DG.scrollTo+'"]'); DG.scrollTo=null;
+    if(c){var R=row.getBoundingClientRect(), C=c.getBoundingClientRect();
+      if(C.left<R.left||C.right>R.right)row.scrollTo({left:Math.max(0,row.scrollLeft+C.left-R.left-10),behavior:"smooth"})}
+  }
 }
 $("tkrow").addEventListener("click",function(e){
   var b=e.target.closest(".tk"); if(!b)return;
@@ -337,9 +342,6 @@ document.addEventListener("pointerdown",function(){
   if(DG.audio)return;
   try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume();gddLoad()}}catch(e){}
 },true);
-/* ---------- alert card (grows up out of the dock) ----------
-   One line per score: kind and score line; tap a line for the story and Watch drive; ✕, swipe down or tap outside to close. One chime per card. It quietly
-   goes after 15 s (20 s for several), paused while you touch it; there's no visible countdown. */
 var KINDWORD={TD:"touchdown",FG:"field goal",SAFETY:"safety","DEF TD":"defensive touchdown"};
 /* A short detail line: "Z.Gonzalez, 53 yds", "D.Jones to L.Treadwell, 7 yds". */
 function scoreDetail(p){
@@ -416,76 +418,23 @@ function scoreStory(it){
   });
   return {kind:kind,outcome:outcome,stars:stars};
 }
-function cardShow(items){
-  var now=Date.now();
+/* A score comes out: one chime, and each scoring game's chip shows a short line for 10 s
+   ("TD · J.Gibbs, 12 yds"). The ticker scrolls the newest one into view if it's off-screen. */
+function scoreShow(items){
+  var now=Date.now(), any=false;
   items.forEach(function(it){
-    var b=itemInfo(it); if(it.gid)DG.flash[it.gid]={until:now+10000,kind:b.kind,side:b.side};
+    if(!it.gid||gamePrefOf(it.j)!=="f")return; any=true;
+    var b=itemInfo(it); DG.flash[it.gid]={until:now+10000,kind:b.kind,side:b.side,detail:b.detail}; DG.scrollTo=it.gid;
   });
-  var merge=!!DG.card; DG.card={items:(merge?DG.card.items:[]).concat(items),t0:merge?DG.card.t0:now,open:merge?DG.card.open:null,stage:0};
-  cardDraw(); if(!merge)dongChime();
+  if(!any)return; dongChime(); DG.dockHtml=""; dockRender();
 }
-function cardDraw(){
-  var el=$("dcard"), C=DG.card; if(!C)return;
-  var its=C.items.filter(function(it){return gamePrefOf(it.j)!=="x"}), html, dur;
-  if(!its.length){cardHide();return}
-  function kst(b){return b.col?' style="--tc:'+b.col.bg+';--tci:'+b.col.ink+'"':''}
-  /* Calm by design: one line per score (kind, score line), tap a line to watch, one ✕. No drive details,
-     no visible countdown; the card quietly goes after a while. */
-  el.style.cssText=""; var nb=itemInfo(its[its.length-1]); if(nb.col)el.style.setProperty("--tc",nb.col.bg);
-  var rows=its.map(function(it,k){return {it:it,k:k}}).reverse();
-  html=(its.length>1?'<div class="top"><span class="hd">'+its.length+' scores</span><button class="x" data-act="later" aria-label="Close">✕</button></div>':'')+
-    '<div class="rows">'+rows.map(function(r,i){var b=itemInfo(r.it);
-      var lineH=esc(b.line).replace(new RegExp("^(\\S+ \\d+)"),b.side==="a"?"<b>$1</b>":"$1").replace(new RegExp("(\\d+ \\S+)$"),b.side==="h"?"<b>$1</b>":"$1");
-      var open=C.open===r.it;
-      return '<button class="row'+(open?' open':'')+'" data-w="'+r.k+'"><span class="kind"'+kst(b)+'>'+esc(b.kind)+'</span><span class="t"><span class="who">'+esc(b.who)+'</span> · <span class="sl">'+lineH+'</span></span><span class="chev">'+(open?'⌄':'›')+'</span></button>'+
-        (open?'<div class="story">'+storyHTML(r.it,r.k)+'</div>':'')+
-        (its.length===1?'<button class="x" data-act="later" aria-label="Close">✕</button>':'')}).join("")+'</div>';
-  dur=its.length===1?15:20;
-  /* Added to a card that's already up: the countdown carries on (with at least 6 s left), so a busy
-     slate can't keep the card up for ever. */
-  el.style.setProperty("--dur",dur+"s"); el.style.setProperty("--dl",-Math.max(0,Math.min((Date.now()-C.t0)/1000,dur-6))+"s");
-  el.innerHTML=html+'<div class="timer"></div>';
-  el.classList.toggle("hold",!!C.open); el.classList.toggle("one",its.length===1); el.hidden=false; DG.cardItems=its; cardFit();
-}
-/* The card never reaches up over the score bar: if there isn't room, its rows scroll inside it. */
-function storyHTML(it,k){
+/* Under a scoring-drive replay: the drive's outcome and its biggest contributors. */
+function storyHTML(it){
   var S2=it._story||(it._story=scoreStory(it));
-  return '<p class="oc">'+esc(S2.outcome)+'</p>'+
-    (S2.stars.length?'<ul class="stars">'+S2.stars.map(function(x){return '<li><b>'+esc(x.n)+'</b> · '+esc(x.s)+'</li>'}).join("")+'</ul>':'')+
-    '<button class="btn watch" data-act="watch" data-w="'+k+'">Watch drive ▸</button>';
+  /* The header already has the drive recap; repeat the outcome only when it says something new (pick-six, return TD, safety). */
+  var oc=/^(Touchdown|Field goal) ·/.test(S2.outcome)?"":'<p>'+esc(S2.outcome)+'</p>';
+  return oc+(S2.stars.length?'<ul>'+S2.stars.map(function(x){return '<li><b>'+esc(x.n)+'</b> · '+esc(x.s)+'</li>'}).join("")+'</ul>':'');
 }
-function cardFit(){
-  var el=$("dcard"), rows=el.querySelector(".rows"); if(el.hidden||!rows)return;
-  rows.style.maxHeight=""; rows.style.overflowY="";
-  var bar=document.querySelector("#gameView .bar"), lim=window.innerHeight-(bar?bar.offsetHeight:0)-$("tkrow").offsetHeight-24, over=el.offsetHeight-lim;
-  if(over>0){rows.style.maxHeight=Math.max(48,rows.offsetHeight-over)+"px";rows.style.overflowY="auto"}
-}
-window.addEventListener("resize",cardFit);
-function cardHide(){DG.card=null;DG.cardItems=[];var el=$("dcard");el.hidden=true;el.innerHTML="";el.classList.remove("hold")}
-(function(){
-  var el=$("dcard");
-  el.addEventListener("animationend",function(e){if(e.animationName==="dctime")cardHide()});
-  el.addEventListener("pointerdown",function(){el.classList.add("hold")});
-  ["pointerup","pointercancel","pointerleave"].forEach(function(n){el.addEventListener(n,function(){if(!(DG.card&&DG.card.open))el.classList.remove("hold")})});
-  var y0=null;
-  el.addEventListener("touchstart",function(e){var r=el.querySelector(".rows");y0=(!r||r.scrollTop<=0)&&e.touches.length===1?e.touches[0].clientY:null},{passive:true});
-  el.addEventListener("touchmove",function(e){if(y0!=null&&e.touches[0].clientY-y0>50){y0=null;cardHide()}},{passive:true});
-  el.addEventListener("touchend",function(){y0=null});
-  document.addEventListener("pointerdown",function(e){if(!el.hidden&&!el.contains(e.target))cardHide()},true);
-  el.addEventListener("click",function(e){
-    var b=e.target.closest("button"); if(!b)return;
-    var its=DG.cardItems||[], w=b.getAttribute("data-w"), act=b.getAttribute("data-act");
-    if(act==="later"){cardHide();return}
-    if(act==="watch"){var wi=its[+w];cardHide();if(wi)dongOpen(wi);return}
-    if(w!=null){
-      /* Tap a score: it opens in place with the drive's outcome, its biggest contributors and Watch drive.
-         The card stays until you fold it, close it, swipe it down or tap outside it. */
-      var it=its[+w], C=DG.card; if(!it||!C)return;
-      it.watched=true;
-      C.open=C.open===it?null:it; cardDraw();
-    }
-  });
-})();
 /* Your game, pinned at the top of the replay and list overlay. */
 function bugUpdate(){
   var B=S.bug, el=$("dvBug"); if($("dongView").hidden)return;
@@ -496,12 +445,13 @@ function bugUpdate(){
   if(el.innerHTML!==html)el.innerHTML=html; el.hidden=false;
 }
 function dongMsg(title,msg,gid){
+  $("dvStory").hidden=true;
   if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}
   DG.cur=null; DG.fromList=false; DG.msgFor=gid||null;
   $("dvChart").innerHTML=""; $("dvHint").hidden=true;
   $("dvList").innerHTML='<li class="msg">'+esc(msg)+'</li>'; $("dvList").hidden=false;
   $("dvTitle").textContent=title; $("dvSub").textContent="At your delay"; $("dvClose").textContent="Close";
-  $("dongView").hidden=false; cardHide(); bugUpdate();
+  $("dongView").hidden=false;  bugUpdate();
 }
 function dongOpen(item,fromList){
   item.watched=true; DG.fromList=!!fromList; $("dvList").hidden=true; $("dvClose").textContent="Close";
@@ -523,7 +473,7 @@ function dongOpen(item,fromList){
   }
   var score=(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:"");
   $("dvSub").innerHTML=(recap?esc(recap)+"<br>":"")+esc(score);
-  var holder=$("dvChart");holder.innerHTML="";DG.msgFor=null;$("dongView").hidden=false;$("dvHint").hidden=false;cardHide();bugUpdate();
+  var holder=$("dvChart");holder.innerHTML="";DG.msgFor=null;$("dongView").hidden=false;$("dvHint").hidden=false;$("dvStory").innerHTML=storyHTML(item);$("dvStory").hidden=false;bugUpdate();
   DG.cur={E:E,spec:spec,hits:null,focus:null};
   try{DG.view=E.replay(holder,spec,{linger:S.linger,fromLast:true,onDoink:window.dbDoink})}catch(e){console.log("Scoring drive failed",e);dongClose()}
 }
@@ -551,7 +501,7 @@ function dongFocus(k){
   C.focus=k;
   $("dvChart").innerHTML='<img alt="Play '+(k+1)+' of the drive" style="display:block;width:100%;border-radius:6px" src="'+url+'">';
 }
-function dongClose(){DG.cur=null;DG.msgFor=null;if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dongView").hidden=true;DG.fromList=false}
+function dongClose(){DG.cur=null;DG.msgFor=null;if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dvStory").hidden=true;$("dongView").hidden=true;DG.fromList=false}
 $("dvClose").onclick=dongClose;
 $("dongView").addEventListener("click",function(e){if(e.target===this)dongClose()});
 setInterval(dongTick,1000);

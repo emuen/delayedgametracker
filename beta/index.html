@@ -233,47 +233,10 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .tk.flash{background:var(--fg);border-color:var(--fg)}
 .tk.flash .ln em,.tk.flash .ln b,.tk.flash small{color:var(--bg)}
 .tk.flash .ln b.sc{text-decoration:underline;text-underline-offset:3px}
-.dcard{margin:0 max(10px,env(safe-area-inset-right,0px)) 8px max(10px,env(safe-area-inset-left,0px));border:1px solid var(--line);border-left:5px solid var(--tc,var(--fg));border-radius:12px;background:var(--surface);
-  padding:10px 12px 12px;display:grid;gap:6px;position:relative;overflow:hidden;animation:dcup .45s cubic-bezier(.2,.8,.3,1) both}
-@media (min-width:600px){.dcard{max-width:560px;margin-left:auto;margin-right:auto}}
-@keyframes dcup{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
-.dcard .top{display:flex;align-items:center;gap:8px;min-width:0}
-.dcard .kind{font:700 13px var(--display);letter-spacing:.06em;background:var(--tc,var(--fg));color:var(--tci,var(--bg));border-radius:6px;padding:3px 7px;white-space:nowrap}
-.dcard .hd{font:700 19px/1.1 var(--display);letter-spacing:.03em;font-variant-numeric:tabular-nums;min-width:0}
-.dcard .when{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}
-.dcard p{margin:0;font-size:14px;line-height:1.4}
-.dcard p small{display:block;color:var(--muted);font-size:13px}
-.dcard .acts{display:flex;gap:8px;margin-top:2px}
-.dcard .btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer;flex:1;white-space:nowrap}
-.dcard .btn.ghost{background:none;color:var(--fg);border-color:var(--line);flex:0 0 auto}
-.dcard .top .btn{margin-left:auto}
-.dcard .rows{display:grid;grid-template-columns:1fr auto}
-.dcard .row{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;min-height:48px;padding:2px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer}
-.dcard .row:first-child{border-top:0}
-.dcard.one .rows .row{grid-column:1}
-.dcard .row .kind{justify-self:start}
-.dcard .row .t{font:700 18px/1.1 var(--display);letter-spacing:.03em;font-variant-numeric:tabular-nums;min-width:0}
-.dcard .who{font:600 15px var(--body,inherit);letter-spacing:0}
-.dcard .sl{font-weight:500}.dcard .sl b{font-weight:700}
-.dcard .story{grid-column:1/-1;padding:2px 0 10px 4px;font-size:14px;line-height:1.4;animation:stin .25s ease both}
-.dcard .story .watch{margin-top:8px;width:100%}
-@keyframes stin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.dcard .story p{margin:0}.dcard .story ul{margin:0;padding:0;list-style:none;display:grid;gap:2px}
-.dcard .chev{font-size:20px;color:var(--muted);padding:0 4px}
-.dcard .x{min-width:44px;min-height:44px;margin-left:auto;border:0;background:none;color:var(--muted);font-size:18px;cursor:pointer}
-.dcard .timer{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--line);opacity:0}
-.dcard .timer::after{content:"";position:absolute;inset:0;background:var(--muted);transform-origin:left;animation:dctime var(--dur,10s) linear var(--dl,0s) forwards}
-.dcard.hold .timer::after{animation-play-state:paused}
-@keyframes dctime{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-@media (prefers-reduced-motion:reduce){.dcard{animation:none}}
-/* Short screens (landscape): a single alert goes on two lines with its buttons beside it. */
-@media (max-height:500px){
-  .dcard.one{grid-template-columns:1fr auto;column-gap:12px}
-  .dcard.one .top,.dcard.one p{grid-column:1}
-  .dcard.one p small{display:none}
-  .dcard.one .acts{grid-column:2;grid-row:1/3;align-self:center;margin:0}
-  .dcard.one .acts .btn{flex:0 0 auto}
-}
+/* A score in the ticker: the chip shows a short line for 10 s. Under a scoring-drive replay: what the drive was and who did it. */
+.tk.flash small{max-width:62vw;overflow:hidden;text-overflow:ellipsis}
+.dvstory{padding:8px max(14px,env(safe-area-inset-left,0px)) 0;font-size:14px;line-height:1.45;display:grid;gap:4px}
+.dvstory p{margin:0;font-weight:600}.dvstory ul{margin:0;padding:0;list-style:none;display:grid;gap:2px}
 /* Teams sheet: Follow / Not interested / No spoilers, grouped by division */
 .sheet.top2{z-index:22}
 .tlegend{display:grid;gap:2px;font-size:12px;color:var(--muted);margin:0}
@@ -369,7 +332,6 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 </div>
 
 <div class="dock" id="dock" hidden>
-  <div class="dcard" id="dcard" hidden role="status" aria-live="polite"></div>
   <div class="tkrow" id="tkrow" aria-label="Other games, at your delay"></div>
 </div>
 <div class="dongview" id="dongView" hidden role="dialog" aria-modal="true" aria-labelledby="dvTitle"><div class="dvin">
@@ -378,6 +340,7 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
   <ul class="dlist" id="dvList" hidden></ul>
   <div id="dvChart"></div>
   <small id="dvHint" class="dvhint" hidden>Tap a play on the field to see it</small>
+  <div id="dvStory" class="dvstory" hidden></div>
 </div></div>
 <div class="scrim" id="scrim" hidden></div>
 <div class="sheet top2" id="teamSheet" hidden role="dialog" aria-modal="true" aria-labelledby="teamTitle"><div class="in">
@@ -430,9 +393,9 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 <script src="render.js?v=1"></script>
 <script src="chartspec.js?v=1"></script>
 <script src="stats.js?v=1"></script>
-<script src="games.js?v=1"></script>
+<script src="games.js?v=2"></script>
 <script src="live.js?v=1"></script>
-<script src="alerts.js?v=5"></script>
+<script src="alerts.js?v=6"></script>
 <script src="main.js?v=1"></script>
 </body>
 </html>

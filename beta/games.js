@@ -68,7 +68,7 @@ var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",
   f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);favChip();if(S.view==="list")renderList()}})();
 (function(){var l=$("linger");l.value=String(S.linger);if(!l.value){l.value="1"}l.onchange=function(){S.linger=+l.value||1;save("db_linger",S.linger)}})();
 (function(){var l=$("lead");l.value=String(S.lead);if(!l.value){l.value="5"}l.onchange=function(){S.lead=+l.value||5;save("db_lead",S.lead)}})();
-(function(){var d=$("dongMode");d.value=S.dongMode;if(!d.value)d.value="sound";d.onchange=function(){S.dongMode=d.value;save("db_dong",S.dongMode);if(S.dongMode==="off"||S.dongMode==="ticker"){DG.queue=[];DG.pending=[];cardHide()}dockRender(true)}})();
+(function(){var d=$("dongMode");d.value=S.dongMode;if(!d.value)d.value="sound";d.onchange=function(){S.dongMode=d.value;save("db_dong",S.dongMode);if(S.dongMode==="off"||S.dongMode==="ticker"){DG.queue=[];DG.pending=[];DG.flash={}}dockRender(true)}})();
 (function(){var b=$("sounds");b.setAttribute("aria-checked",S.sounds?"true":"false");b.onclick=function(){S.sounds=!S.sounds;save("db_sounds",S.sounds);b.setAttribute("aria-checked",S.sounds?"true":"false")}})();
 function favChip(){$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
 favChip();
@@ -222,11 +222,11 @@ function teamsDraw(){
 function teamsSet(ab,v){
   if(v==="f")delete S.teams[ab];else S.teams[ab]=v;
   save("db_teams",S.teams); teamsDraw();
-  if(DG.card)cardDraw(); DG.dockHtml=""; dockRender();
+  DG.dockHtml=""; dockRender();
 }
 function teamsOpen(open){$("teamSheet").hidden=!open;if(open){teamsDraw();$("teamDone").focus()}else{teamSum();$("openTeams").focus()}}
 $("openTeams").onclick=function(){teamsOpen(true)};
 $("teamDone").onclick=function(){teamsOpen(false)};
 $("teamList").addEventListener("click",function(e){var b=e.target.closest(".tchip");if(!b)return;var ab=b.getAttribute("data-t"),v=teamPref(ab);teamsSet(ab,v==="f"?"n":v==="n"?"x":"f");var nb=document.querySelector('.tchip[data-t="'+ab+'"]');if(nb)nb.focus()});
-$("teamReset").onclick=function(){S.teams={};save("db_teams",S.teams);teamsDraw();if(DG.card)cardDraw();DG.dockHtml="";dockRender()};
+$("teamReset").onclick=function(){S.teams={};save("db_teams",S.teams);teamsDraw();DG.dockHtml="";dockRender()};
 $("retry").onclick=function(){$("status").textContent="Retrying…";poll()};
