@@ -118,6 +118,7 @@ function dongPollLive(){
     if(S.view!=="game")return;
     var now=Date.now(), games=(sb.events||[]).map(sbGame);
     DG.snaps.push({t:now,seq:++DG.seq,games:games});
+    if(DG.dispSeq<0)games.forEach(function(G){if(G.state==="post"&&!finalSafe(G.id))checkFinal(G.id,function(){DG.dockHtml="";dockRender()})});
     if(DG.dispSeq<0)games.forEach(function(G){if(G.state==="in"&&G.id!==String(S.pick)&&gamePref(G.a.ab,G.h.ab)!=="x")fetchEarly(G.id,function(j){DG.sums[G.id]=DG.sums[G.id]||j;DG.dockHtml="";dockRender()})});
     var cut=now-900000-120000, i=0; while(i<DG.snaps.length-1&&DG.snaps[i+1].t<cut&&DG.snaps[i+1].seq<=DG.dispSeq)i++;
     if(i>0)DG.snaps=DG.snaps.slice(i);
@@ -146,8 +147,10 @@ function dispGames(now){
   DG.snaps.forEach(function(sn){if(sn.seq===DG.dispSeq)cur=sn});
   if(cur)return {games:cur.games};
   /* Just opened: nothing collected is old enough yet. Live games show how they stood one delay ago,
-     from their play-by-play (EARLY); the rest say "Syncing…" for now. */
+     from their play-by-play (EARLY), finished games show Final once it's known they ended at least your
+     delay ago (finalSafe); the rest say "Syncing…" for now. */
   return {games:DG.snaps[DG.snaps.length-1].games.map(function(G){
+    if(G.state==="post"&&finalSafe(G.id)){var y=JSON.parse(JSON.stringify(G));y.early=true;return y}
     var E=earlyOf(G.id); if(G.state!=="in"||!E)return G;
     var x=JSON.parse(JSON.stringify(G)); x.a.score=E.a; x.h.score=E.h; x.period=E.period; x.clock=E.clock; x.pos=E.pos;
     x.name=""; x.detail=""; x.rz=false; x.to=""; x.early=true; return x;
