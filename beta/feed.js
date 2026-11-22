@@ -63,6 +63,22 @@ function fetchEarly(id,done){
     d.t=Date.now(); EARLY[id]=d; if(done)done(j);
   }).catch(function(){delete EARLY[id]});
 }
+/* Finished games: "Final" is only shown once the game ended at least your delay ago. Known-safe games are
+   kept (FINALOK, saved) so this is checked once per game: from the game list's saved scoreboards if
+   they already show it finished that long ago, otherwise from its play-by-play (last play's time). */
+var FINALOK=load("db_finalok",{}), FINALTRY={};
+function finalSafe(id){return !!FINALOK[id]}
+function checkFinal(id,done){
+  if(FINALOK[id]||(FINALTRY[id]&&Date.now()-FINALTRY[id]<60000))return;
+  var cut=Date.now()-S.delay*1000;
+  function ok(){FINALOK[id]=1;save("db_finalok",FINALOK);if(done)done()}
+  if((window.LS&&LS.hist||[]).some(function(x){return x.t<=cut&&x.m[id]&&x.m[id].st==="post"}))return ok();
+  FINALTRY[id]=Date.now();
+  getJSON(API+"/summary?event="+id).then(function(j){
+    var last=0; allPlays(j).forEach(function(p){var w=Date.parse(p.wallclock);if(!isNaN(w)&&w>last)last=w});
+    if(last&&last+lagEst()*1000<=Date.now()-S.delay*1000)ok();
+  }).catch(function(){});
+}
 function teamIdOf(s){if(!s||s.team==null)return null;return String(typeof s.team==="object"?s.team.id:s.team)}
 function playTime(p){
   var seen=S.seen[p.id]||Date.now();
