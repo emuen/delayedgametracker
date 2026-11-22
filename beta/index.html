@@ -269,7 +269,9 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .dlist b{font-weight:600;font-variant-numeric:tabular-nums}.dlist small{display:block;color:var(--muted);font-size:12px}
 .dlist .new{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.05em}
 .dlist .go{font-size:18px;color:var(--muted)}
-.dongview{position:fixed;inset:0;z-index:31;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
+.dongview .dvin{touch-action:pan-y}
+.dongview{overscroll-behavior:contain;touch-action:none;position:fixed;inset:0;z-index:31;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:calc(10px + env(safe-area-inset-top,0px))}
 .dongview .dvin{width:min(640px,100%);background:var(--surface);border-radius:0 0 14px 14px;padding:10px 0 12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 @media (min-width:701px){.dongview .dvin{border-radius:14px;padding:10px 12px 12px}}
 .dongview .dvh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 max(14px,env(safe-area-inset-left,0px)) 8px}
@@ -396,7 +398,7 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 <script src="stats.js?v=1"></script>
 <script src="games.js?v=5"></script>
 <script src="live.js?v=1"></script>
-<script src="alerts.js?v=11"></script>
+<script src="alerts.js?v=12"></script>
 <script src="main.js?v=1"></script>
 </body>
 </html>
