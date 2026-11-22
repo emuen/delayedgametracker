@@ -150,7 +150,7 @@ function dispGames(now){
 /* ---------- holding alerts while a play is under way in your game ----------
    An alert never pops up from the snap until the play's result has settled. Between plays (usually 20–40 s)
    it comes straight out. Waiting is silent: nothing in the ticker says an alert is waiting.
-   isBig (3rd/4th down, turnover, 20+ yd gain, TD) now only dims the ticker a little during that play. */
+   The ticker never dims. */
 function isBig(P){
   if(!P||isNonPlay(P))return false;
   var st=P.start||{}, ty=((P.type||{}).text||""), t=ftext(P.text||"");
@@ -241,7 +241,6 @@ function dockRender(){
   var vis=on&&(list.some(function(G){return G.state==="in"||G.state==="pre"})||!!DG.card);
   if(!vis){if(!dock.hidden){dock.hidden=true;document.body.classList.remove("hasdock");cardHide()}return}
   if(dock.hidden){dock.hidden=false;document.body.classList.add("hasdock")}
-  dock.classList.toggle("recede",!!DG.big);
   var html=list.map(function(G){return chipHTML(G,D,now)}).join("");
   if(html!==DG.dockHtml){DG.dockHtml=html;$("tkrow").innerHTML=html}
 }
