@@ -407,38 +407,15 @@
     return (cur - 1 - k) + EASE.out(ramp(t, segs[cur].t0, SLIDE));
   }
   function laneAlpha(depth) { return clamp(LANES - depth, 0, 1); }
-  /* Long drives, alternative modes (spec.laneMode, from ?lanes=):
-     - "summary": once a drive needs more than LANES lanes, the oldest plays merge into one thin
-       summary arrow on the farthest lane (drive start -> first play still shown on its own).
-     - "off": no fading; older plays keep sliding back beyond the far sideline until they would reach
-       the info box (cap = the renderer's last usable depth).
-     e = slide progress of the current play (0..1; 1 in a still picture). */
+  /* Long drives: older plays keep sliding back beyond the far sideline until they would reach the
+     info box (cap = the renderer's last usable depth). e = slide progress of the current play
+     (0..1; 1 in a still picture). */
   function slideE(segs, cur, t) { return cur > 0 && segs ? EASE.out(ramp(t, segs[cur].t0, SLIDE)) : 1; }
   function laneState(spec, k, cur, e, cap) {
-    var depth = k >= cur ? 0 : cur - 1 - k + e, mode = spec.laneMode;
-    if (mode === "off") return { depth: depth, alpha: clamp(cap - depth, 0, 1) };
-    if (mode === "summary") {
-      var td = cur - k, now = cur + 1 > LANES, before = cur > LANES, alpha = 1;
-      if (now && td >= LANES - 1) alpha = before && td - 1 >= LANES - 1 ? 0 : 1 - e;   /* merging into the summary */
-      return { depth: depth, alpha: alpha };
-    }
-    return { depth: depth, alpha: laneAlpha(depth) };
+    var depth = k >= cur ? 0 : cur - 1 - k + e;
+    return { depth: depth, alpha: clamp(cap - depth, 0, 1) };
   }
-  function summaryText(spec, kFirst, f1) {
-    var plays = 0, f0 = spec.start && spec.start.f != null ? spec.start.f : spec.rows[0].fs, dir = spec.rows[0].dir || 1;
-    for (var k = 0; k < kFirst; k++) { var r = spec.rows[k]; if (r.kind !== "kick" && r.kind !== "ret") plays++; }
-    var yds = Math.round((f1 - f0) * dir);
-    return plays ? plays + (plays === 1 ? " play" : " plays") + " · " + yds + (Math.abs(yds) === 1 ? " yd" : " yds") : "Kickoff";
-  }
-  /* The summary arrow at slide progress e, or null. */
-  function summaryState(spec, cur, e) {
-    if (spec.laneMode !== "summary" || cur + 1 <= LANES) return null;
-    var f0 = spec.start && spec.start.f != null ? spec.start.f : spec.rows[0].fs;
-    var kNew = cur - (LANES - 2), fNew = spec.rows[kNew].fs, before = cur > LANES;
-    if (!before) return { depth: LANES - 1, alpha: e, f0: f0, f1: fNew, text: summaryText(spec, kNew, fNew), color: (spec.start && spec.start.color) || spec.rows[0].color };
-    var fOld = spec.rows[kNew - 1].fs;
-    return { depth: LANES - 1, alpha: 1, f0: f0, f1: fOld + (fNew - fOld) * e, text: e < 0.5 ? summaryText(spec, kNew - 1, fOld) : summaryText(spec, kNew, fNew), color: (spec.start && spec.start.color) || spec.rows[0].color };
-  }
+  function summaryState() { return null; }
   function activeAt(segs, t) { for (var k = segs.length - 1; k >= 0; k--) if (t >= segs[k].t0) return k; return -1; }
   /* How dimmed a finished play is: it fades as the next snap (after a kick's return) is spotted. */
   function dimOf(segs, k, cur, t, undim) {
