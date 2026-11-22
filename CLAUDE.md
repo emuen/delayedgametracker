@@ -35,7 +35,7 @@ Rules:
 | stats.js | Game info and stats tabs |
 | games.js | Game list, routing (`#g-<id>`, `#w-...`), settings, teams sheet |
 | live.js | Live animation of each new play (heads-up `S.lead`, snap, reveal at `playTime + delay`) |
-| alerts.js | Other games: dock (ticker) at the user's delay, holding alerts while a play is under way (`mainHot`), score lines (a scoring chip shows "TD · J.Gibbs, 12 yds" for 10 s and scrolls into view; tap a chip for the scoring-drive replay with outcome and top contributors via `scoreStory` underneath), sounds (dong chime, doink, Colts sack-shout easter egg, live only) |
+| alerts.js | Other games: dock (ticker) at the user's delay, holding alerts while a play is under way (`mainHot`), score lines (a scoring chip moves to the front of the ticker for good (newest score first) and shows "TD · J.Gibbs, 12 yds" for 10 s; tap a chip for the scoring-drive replay with outcome and top contributors via `scoreStory` underneath), sounds (dong chime, doink, Colts sack-shout easter egg, live only) |
 | main.js | Drive replay, tabs, keep-screen-on, startup |
 
 Bump the `?v=` number in index.html for every JS file you change.

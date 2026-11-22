@@ -11,7 +11,7 @@
    is under way (snap to settled result) and come out together right after: one chime, and each scoring chip shows a short line for 10 s.
    Tapping a chip replays the scoring drive (for a defensive score, the drive of the team that
    had the ball, which is where ESPN files that play). */
-var DG={scores:null,seen:{},queue:[],pending:[],heldSince:0,hot:0,snaps:[],seq:0,dispSeq:-1,simCur:0,sums:{},first:{},flash:{},audio:null,sim:null,view:null,log:[]};
+var DG={scores:null,seen:{},queue:[],pending:[],heldSince:0,hot:0,snaps:[],seq:0,dispSeq:-1,simCur:0,sums:{},first:{},flash:{},last:{},audio:null,sim:null,view:null,log:[]};
 var DIVS=[["AFC East",["BUF","MIA","NE","NYJ"]],["AFC North",["BAL","CIN","CLE","PIT"]],["AFC South",["HOU","IND","JAX","TEN"]],["AFC West",["DEN","KC","LV","LAC"]],
   ["NFC East",["DAL","NYG","PHI","WSH"]],["NFC North",["CHI","DET","GB","MIN"]],["NFC South",["ATL","CAR","NO","TB"]],["NFC West",["ARI","LAR","SF","SEA"]]];
 /* Teams: "f" follow (default), "n" not interested (ticker, no alerts), "x" no spoilers (hidden). */
@@ -175,7 +175,7 @@ function mainHot(now){
   if(!on)return 0;
   if(Lv&&Lv.attached&&on.id)DG.big=isBig(on); return 2;
 }
-function dongReset(){DG.queue=[];DG.pending=[];DG.heldSince=0;DG.scores=null;DG.first={};DG.snaps=[];DG.dispSeq=-1;DG.simCur=0;DG.sim=null;DG.log=[];DG.flash={};DG.dockHtml=""}
+function dongReset(){DG.queue=[];DG.pending=[];DG.heldSince=0;DG.scores=null;DG.first={};DG.snaps=[];DG.dispSeq=-1;DG.simCur=0;DG.sim=null;DG.log=[];DG.flash={};DG.last={};DG.dockHtml=""}
 function dongRelease(){var items=DG.pending;DG.pending=[];DG.heldSince=0;if(items.length)scoreShow(items)}
 function dongTick(){
   if(S.view!=="game"){return}
@@ -215,7 +215,7 @@ function dockGames(D){
   var day=etDay(hdrComp(S.sum||{}).date||Date.now()), main=String(S.pick), rank={"in":0,pre:1,post:2};
   function r(G){return rank[G.state]!=null?rank[G.state]:1}
   return D.games.filter(function(G){return G.id!==main&&gamePref(G.a.ab,G.h.ab)!=="x"&&etDay(G.date)===day})
-    .sort(function(x,y){return (r(x)-r(y))||((Date.parse(x.date)||0)-(Date.parse(y.date)||0))||(x.id<y.id?-1:1)});
+    .sort(function(x,y){return ((DG.last[y.id]||0)-(DG.last[x.id]||0))||(r(x)-r(y))||((Date.parse(x.date)||0)-(Date.parse(y.date)||0))||(x.id<y.id?-1:1)});
 }
 function chipHTML(G,D,now){
   var sync=D.sync&&G.state!=="pre", fl=DG.flash[G.id]&&DG.flash[G.id].until>now?DG.flash[G.id]:null;
@@ -246,7 +246,7 @@ function dockRender(){
   if(DG.scrollTo){
     var row=$("tkrow"), c=row.querySelector('[data-g="'+DG.scrollTo+'"]'); DG.scrollTo=null;
     if(c){var R=row.getBoundingClientRect(), C=c.getBoundingClientRect();
-      if(C.left<R.left||C.right>R.right)row.scrollTo({left:Math.max(0,row.scrollLeft+C.left-R.left-10),behavior:"smooth"})}
+      if(C.left<R.left||C.right>R.right)row.scrollTo({left:0,behavior:"smooth"})}
   }
 }
 $("tkrow").addEventListener("click",function(e){
@@ -419,12 +419,13 @@ function scoreStory(it){
   return {kind:kind,outcome:outcome,stars:stars};
 }
 /* A score comes out: one chime, and each scoring game's chip shows a short line for 10 s
-   ("TD · J.Gibbs, 12 yds"). The ticker scrolls the newest one into view if it's off-screen. */
+   ("TD · J.Gibbs, 12 yds"). The game that scored most recently is always first in the ticker
+   (then the usual order: live, to come, finished), and the ticker scrolls back to the start. */
 function scoreShow(items){
   var now=Date.now(), any=false;
   items.forEach(function(it){
     if(!it.gid||gamePrefOf(it.j)!=="f")return; any=true;
-    var b=itemInfo(it); DG.flash[it.gid]={until:now+10000,kind:b.kind,side:b.side,detail:b.detail}; DG.scrollTo=it.gid;
+    var b=itemInfo(it); DG.flash[it.gid]={until:now+10000,kind:b.kind,side:b.side,detail:b.detail}; DG.last[it.gid]=++DG.seq; DG.scrollTo=it.gid;
   });
   if(!any)return; dongChime(); DG.dockHtml=""; dockRender();
 }
