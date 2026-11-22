@@ -118,6 +118,7 @@ function dongPollLive(){
     if(S.view!=="game")return;
     var now=Date.now(), games=(sb.events||[]).map(sbGame);
     DG.snaps.push({t:now,seq:++DG.seq,games:games});
+    if(DG.dispSeq<0)games.forEach(function(G){if(G.state==="in"&&G.id!==String(S.pick)&&gamePref(G.a.ab,G.h.ab)!=="x")fetchEarly(G.id,function(j){DG.sums[G.id]=DG.sums[G.id]||j;DG.dockHtml="";dockRender()})});
     var cut=now-900000-120000, i=0; while(i<DG.snaps.length-1&&DG.snaps[i+1].t<cut&&DG.snaps[i+1].seq<=DG.dispSeq)i++;
     if(i>0)DG.snaps=DG.snaps.slice(i);
     var first=!DG.scores; DG.scores=DG.scores||{};
@@ -144,7 +145,13 @@ function dispGames(now){
   for(var i=DG.snaps.length-1;i>=0;i--){if(DG.snaps[i].t<=cut){if(DG.snaps[i].seq>DG.dispSeq)DG.dispSeq=DG.snaps[i].seq;break}}
   DG.snaps.forEach(function(sn){if(sn.seq===DG.dispSeq)cur=sn});
   if(cur)return {games:cur.games};
-  return {games:DG.snaps[DG.snaps.length-1].games,sync:true};   /* just opened: nothing is old enough yet */
+  /* Just opened: nothing collected is old enough yet. Live games show how they stood one delay ago,
+     from their play-by-play (EARLY); the rest say "Syncing…" for now. */
+  return {games:DG.snaps[DG.snaps.length-1].games.map(function(G){
+    var E=earlyOf(G.id); if(G.state!=="in"||!E)return G;
+    var x=JSON.parse(JSON.stringify(G)); x.a.score=E.a; x.h.score=E.h; x.period=E.period; x.clock=E.clock; x.pos=E.pos;
+    x.name=""; x.detail=""; x.rz=false; x.to=""; x.early=true; return x;
+  }),sync:true};
 }
 
 /* ---------- holding alerts while a play is under way in your game ----------
@@ -218,7 +225,7 @@ function dockGames(D){
     .sort(function(x,y){return (r(x)-r(y))||((Date.parse(x.date)||0)-(Date.parse(y.date)||0))||(x.id<y.id?-1:1)});
 }
 function chipHTML(G,D,now){
-  var sync=D.sync&&G.state!=="pre", fl=DG.flash[G.id]&&DG.flash[G.id].until>now?DG.flash[G.id]:null;
+  var sync=D.sync&&G.state!=="pre"&&!G.early, fl=DG.flash[G.id]&&DG.flash[G.id].until>now?DG.flash[G.id]:null;
   var a=G.a, h=G.h, show=G.state!=="pre"&&!sync&&a.score!=null&&h.score!=null;
   function side(t,sc,other,s){
     var po=G.state==="in"&&!sync&&G.pos&&G.pos===t.id;
@@ -260,7 +267,7 @@ function dockOpen(gid){
   if(!G)return;
   var title=(G.a.nm||G.a.ab)+" at "+(G.h.nm||G.h.ab), tot=(G.a.score||0)+(G.h.score||0);
   if(G.state==="pre"){dongMsg(title,"Kickoff "+kickText(G.date)+".");return}
-  if(D.sync){dongMsg(title,"Lining up with your delay. Try again in a moment.");return}
+  if(D.sync&&!G.early){dongMsg(title,"Lining up with your delay. Try again in a moment.");return}
   if(!tot){dongMsg(title,"No scores yet.");return}
   function open(j,plays){
     var best=null; plays.forEach(function(p){if(isScore(p)&&scoreTotal(p)<=tot&&(!SIM||p._gs<=DG.simCur))best=p});

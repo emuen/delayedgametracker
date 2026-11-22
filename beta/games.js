@@ -91,33 +91,24 @@ function lsKeep(sb){
   var o=JSON.parse(localStorage.getItem("db_lshist")||"null"), H=o&&o.h||[];
   if(H.length&&Date.now()-H[H.length-1].t<S.delay*1000+120000){LS.hist=H;LS.histKey=o.k}
 }catch(e){}})();
-/* Just opened, so nothing collected is your delay old yet: for each live game, read its play-by-play
-   once and take the score after the last play that happened at least your delay ago (play time plus
-   ESPN's usual lag). Shown until the collected scoreboards catch up. Never ahead of your delay. */
-LS.early={};
+/* Just opened, so nothing collected is your delay old yet: each live game's score as it stood one
+   delay ago comes from its play-by-play (delayedState), until the collected scoreboards catch up. */
 function lsEarly(sb){
   if(!LS.scores)return;
   (sb.events||[]).forEach(function(e){
-    if(evState(e)!=="in"||LS.early[e.id]||!lsView(e).sync)return;
-    LS.early[e.id]={loading:1};
-    getJSON(API+"/summary?event="+e.id).then(function(j){
-      var cut=Date.now()-S.delay*1000-(typeof lagEst==="function"?lagEst()*1000:0), best=null;
-      allPlays(j).forEach(function(p){var w=Date.parse(p.wallclock);if(!isNaN(w)&&w<=cut&&p.homeScore!=null)best=p});
-      if(!best){delete LS.early[e.id];return}
-      LS.early[e.id]={a:+best.awayScore||0,h:+best.homeScore||0};
-      if(S.view==="list")renderList();
-    }).catch(function(){delete LS.early[e.id]});
+    if(evState(e)!=="in"||!lsView(e).sync)return;
+    fetchEarly(e.id,function(){if(S.view==="list")renderList()});
   });
 }
 function lsView(e){
   var live={st:evState(e),a:+((evTeam(e,"away")||{}).score)||0,h:+((evTeam(e,"home")||{}).score)||0}, H=LS.hist||[];
-  var E=LS.early[e.id];
-  if(!H.length){live.sync=live.st==="in";return live.sync&&E&&!E.loading?{st:"in",a:E.a,h:E.h}:live}
+  var E=earlyOf(e.id);
+  if(!H.length){live.sync=live.st==="in";return live.sync&&E?{st:"in",a:E.a,h:E.h}:live}
   var cut=Date.now()-S.delay*1000, pick=null;
   for(var i=H.length-1;i>=0;i--){if(H[i].t<=cut){pick=H[i];break}}
   var v=(pick||H[0]).m[e.id];
   if(!v){live.sync=live.st!=="pre";return live}
-  if(!pick&&v.st==="in"&&E&&!E.loading)return {st:"in",a:E.a,h:E.h};
+  if(!pick&&v.st==="in"&&E)return {st:"in",a:E.a,h:E.h};
   return {st:v.st,a:v.a,h:v.h,sync:!pick&&v.st==="in"};
 }
 function gameRow(e){
