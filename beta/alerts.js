@@ -346,7 +346,7 @@ document.addEventListener("pointerdown",function(){
   try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume();gddLoad()}}catch(e){}
 },true);
 /* ---------- alert card (grows up out of the dock) ----------
-   One line per score: kind and score line; tap a line to watch, ✕ to close. One chime per card. It quietly
+   One line per score: kind and score line; tap a line for the story and Watch drive; ✕, swipe down or tap outside to close. One chime per card. It quietly
    goes after 15 s (20 s for several), paused while you touch it; there's no visible countdown. */
 var KINDWORD={TD:"touchdown",FG:"field goal",SAFETY:"safety","DEF TD":"defensive touchdown"};
 /* A short detail line: "Z.Gonzalez, 53 yds", "D.Jones to L.Treadwell, 7 yds". */
@@ -429,7 +429,7 @@ function cardShow(items){
   items.forEach(function(it){
     var b=itemInfo(it); if(it.gid)DG.flash[it.gid]={until:now+10000,kind:b.kind,side:b.side};
   });
-  var merge=!!DG.card; DG.card={items:(merge?DG.card.items:[]).concat(items),t0:merge?DG.card.t0:now,open:merge?DG.card.open:null,stage:merge?DG.card.stage:0};
+  var merge=!!DG.card; DG.card={items:(merge?DG.card.items:[]).concat(items),t0:merge?DG.card.t0:now,open:merge?DG.card.open:null,stage:0};
   cardDraw(); if(!merge)dongChime();
 }
 function cardDraw(){
@@ -439,29 +439,28 @@ function cardDraw(){
   function kst(b){return b.col?' style="--tc:'+b.col.bg+';--tci:'+b.col.ink+'"':''}
   /* Calm by design: one line per score (kind, score line), tap a line to watch, one ✕. No drive details,
      no visible countdown; the card quietly goes after a while. */
-  el.style.cssText="";
+  el.style.cssText=""; var nb=itemInfo(its[its.length-1]); if(nb.col)el.style.setProperty("--tc",nb.col.bg);
   var rows=its.map(function(it,k){return {it:it,k:k}}).reverse();
   html=(its.length>1?'<div class="top"><span class="hd">'+its.length+' scores</span><button class="x" data-act="later" aria-label="Close">✕</button></div>':'')+
     '<div class="rows">'+rows.map(function(r,i){var b=itemInfo(r.it);
       var lineH=esc(b.line).replace(new RegExp("^(\\S+ \\d+)"),b.side==="a"?"<b>$1</b>":"$1").replace(new RegExp("(\\d+ \\S+)$"),b.side==="h"?"<b>$1</b>":"$1");
       var open=C.open===r.it;
       return '<button class="row'+(open?' open':'')+'" data-w="'+r.k+'"><span class="kind"'+kst(b)+'>'+esc(b.kind)+'</span><span class="t"><span class="who">'+esc(b.who)+'</span> · <span class="sl">'+lineH+'</span></span><span class="chev">'+(open?'⌄':'›')+'</span></button>'+
-        (open?'<div class="story" data-st="'+(C.stage||0)+'">'+storyHTML(r.it,C.stage||0)+'</div>':'')+
+        (open?'<div class="story">'+storyHTML(r.it,r.k)+'</div>':'')+
         (its.length===1?'<button class="x" data-act="later" aria-label="Close">✕</button>':'')}).join("")+'</div>';
   dur=its.length===1?15:20;
-  if(C.open)el.classList.add("hold");
   /* Added to a card that's already up: the countdown carries on (with at least 6 s left), so a busy
      slate can't keep the card up for ever. */
   el.style.setProperty("--dur",dur+"s"); el.style.setProperty("--dl",-Math.max(0,Math.min((Date.now()-C.t0)/1000,dur-6))+"s");
   el.innerHTML=html+'<div class="timer"></div>';
-  el.classList.remove("hold"); el.classList.toggle("one",its.length===1); el.hidden=false; DG.cardItems=its; cardFit();
+  el.classList.toggle("hold",!!C.open); el.classList.toggle("one",its.length===1); el.hidden=false; DG.cardItems=its; cardFit();
 }
 /* The card never reaches up over the score bar: if there isn't room, its rows scroll inside it. */
-function storyHTML(it,stage){
+function storyHTML(it,k){
   var S2=it._story||(it._story=scoreStory(it));
-  if(!stage)return '<p class="oc">'+esc(S2.outcome)+'</p>';
-  if(!S2.stars.length)return '<p class="oc">'+esc(S2.outcome)+'</p>';
-  return '<ul class="stars">'+S2.stars.map(function(x){return '<li><b>'+esc(x.n)+'</b> · '+esc(x.s)+'</li>'}).join("")+'</ul>';
+  return '<p class="oc">'+esc(S2.outcome)+'</p>'+
+    (S2.stars.length?'<ul class="stars">'+S2.stars.map(function(x){return '<li><b>'+esc(x.n)+'</b> · '+esc(x.s)+'</li>'}).join("")+'</ul>':'')+
+    '<button class="btn watch" data-act="watch" data-w="'+k+'">Watch drive ▸</button>';
 }
 function cardFit(){
   var el=$("dcard"), rows=el.querySelector(".rows"); if(el.hidden||!rows)return;
@@ -476,18 +475,22 @@ function cardHide(){DG.card=null;DG.cardItems=[];var el=$("dcard");el.hidden=tru
   el.addEventListener("animationend",function(e){if(e.animationName==="dctime")cardHide()});
   el.addEventListener("pointerdown",function(){el.classList.add("hold")});
   ["pointerup","pointercancel","pointerleave"].forEach(function(n){el.addEventListener(n,function(){if(!(DG.card&&DG.card.open))el.classList.remove("hold")})});
+  var y0=null;
+  el.addEventListener("touchstart",function(e){var r=el.querySelector(".rows");y0=(!r||r.scrollTop<=0)&&e.touches.length===1?e.touches[0].clientY:null},{passive:true});
+  el.addEventListener("touchmove",function(e){if(y0!=null&&e.touches[0].clientY-y0>50){y0=null;cardHide()}},{passive:true});
+  el.addEventListener("touchend",function(){y0=null});
+  document.addEventListener("pointerdown",function(e){if(!el.hidden&&!el.contains(e.target))cardHide()},true);
   el.addEventListener("click",function(e){
     var b=e.target.closest("button"); if(!b)return;
     var its=DG.cardItems||[], w=b.getAttribute("data-w"), act=b.getAttribute("data-act");
-    if(act==="later"){clearTimeout(DG.storyT);cardHide();return}
+    if(act==="later"){cardHide();return}
+    if(act==="watch"){var wi=its[+w];cardHide();if(wi)dongOpen(wi);return}
     if(w!=null){
-      /* Tap a score: it opens in place. First the drive's outcome for 3 s, then its biggest contributors.
-         Tap it again to fold it. The other scores stay; the card waits while one is open. */
+      /* Tap a score: it opens in place with the drive's outcome, its biggest contributors and Watch drive.
+         The card stays until you fold it, close it, swipe it down or tap outside it. */
       var it=its[+w], C=DG.card; if(!it||!C)return;
-      clearTimeout(DG.storyT); it.watched=true;
-      if(C.open===it){C.open=null;C.stage=0;el.classList.remove("hold");cardDraw();return}
-      C.open=it; C.stage=0; cardDraw();
-      DG.storyT=setTimeout(function(){if(DG.card&&DG.card.open===it){DG.card.stage=1;var sx=el.querySelector('.story');if(sx){sx.classList.add('fade');setTimeout(function(){if(DG.card&&DG.card.open===it)cardDraw()},220)}else cardDraw()}},3000);
+      it.watched=true;
+      C.open=C.open===it?null:it; cardDraw();
     }
   });
 })();
