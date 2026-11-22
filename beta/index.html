@@ -268,7 +268,7 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .dlist .dk{font:700 13px var(--display);letter-spacing:.06em;background:var(--tc,var(--fg));color:var(--tci,var(--bg));border-radius:6px;padding:3px 7px}
 .dlist b{font-weight:600;font-variant-numeric:tabular-nums}.dlist small{display:block;color:var(--muted);font-size:12px}
 .dlist .new{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.05em}
-.dlist .seen{opacity:.7}
+.dlist .go{font-size:18px;color:var(--muted)}
 .dongview{position:fixed;inset:0;z-index:31;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:calc(10px + env(safe-area-inset-top,0px))}
 .dongview .dvin{width:min(640px,100%);background:var(--surface);border-radius:0 0 14px 14px;padding:10px 0 12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 @media (min-width:701px){.dongview .dvin{border-radius:14px;padding:10px 12px 12px}}
@@ -336,7 +336,7 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
   <div class="tkrow" id="tkrow" aria-label="Other games, at your delay"></div>
 </div>
 <div class="dongview" id="dongView" hidden role="dialog" aria-modal="true" aria-labelledby="dvTitle"><div class="dvin">
-  <div class="dvbug" id="dvBug" aria-label="Your game"></div>
+  <div class="dvbug" id="dvBug" hidden></div>
   <div class="dvh"><div><b id="dvTitle">Scoring drive</b><small id="dvSub"></small></div><button id="dvClose">Close</button></div>
   <ul class="dlist" id="dvList" hidden></ul>
   <div id="dvChart"></div>
@@ -396,7 +396,7 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 <script src="stats.js?v=1"></script>
 <script src="games.js?v=5"></script>
 <script src="live.js?v=1"></script>
-<script src="alerts.js?v=9"></script>
+<script src="alerts.js?v=11"></script>
 <script src="main.js?v=1"></script>
 </body>
 </html>

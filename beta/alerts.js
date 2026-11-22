@@ -261,24 +261,48 @@ $("tkrow").addEventListener("click",function(e){
   var act=b.getAttribute("data-act");
   var gid=b.getAttribute("data-g"); if(gid)dockOpen(gid);
 });
-/* Tap a chip: that game's latest scoring drive, as far as your stream has got. */
+/* Tap a chip: that game, as far as your stream has got. The score and quarter at the top, then every
+   scoring play so far, newest first; tap one for its drive and top players. If the chip is showing a
+   new score, that score opens straight away (Back goes to the game's scores). */
+function gameLine(G){return G.a.ab+" "+(G.a.score||0)+"–"+(G.h.score||0)+" "+G.h.ab}
 function dockOpen(gid){
   var D=dispGames(Date.now()), G=null; if(D)D.games.forEach(function(x){if(x.id===gid)G=x});
   if(!G)return;
-  var title=(G.a.nm||G.a.ab)+" at "+(G.h.nm||G.h.ab), tot=(G.a.score||0)+(G.h.score||0);
+  var title=G.a.ab+" at "+G.h.ab, tot=(G.a.score||0)+(G.h.score||0), auto=!!(DG.flash[gid]&&DG.flash[gid].until>Date.now());
   if(G.state==="pre"){dongMsg(title,"Kickoff "+kickText(G.date)+".");return}
   if(D.sync&&!G.early){dongMsg(title,"Lining up with your delay. Try again in a moment.");return}
-  if(!tot){dongMsg(title,"No scores yet.");return}
+  var sub=G.state==="post"?(G.period>4?"Final/OT":"Final"):statusText(G);
+  if(!tot){dongMsg(gameLine(G),"No scores yet.",null,sub);return}
   function open(j,plays){
-    var best=null; plays.forEach(function(p){if(isScore(p)&&scoreTotal(p)<=tot&&(!SIM||p._gs<=DG.simCur))best=p});
-    if(best)dongOpen({j:j,p:best,gid:gid});else dongMsg(title,"No scores yet.");
+    var items=[]; plays.forEach(function(p){if(isScore(p)&&scoreTotal(p)<=tot&&(!SIM||p._gs<=DG.simCur))items.push({j:j,p:p,gid:gid})});
+    if(!items.length){dongMsg(gameLine(G),"No scores yet.",null,sub);return}
+    DG.game={title:gameLine(G),sub:sub,items:items.reverse()};
+    if(auto)dongOpen(DG.game.items[0],true);else dongGame();
   }
   if(SIM){var ent=DG.sim&&DG.sim.by[gid];if(ent)open(ent.g,ent.plays);else dongMsg(title,"No scoring plays to show.");return}
   var j=DG.sums[gid];
-  if(j&&allPlays(j).some(function(p){return isScore(p)&&scoreTotal(p)===tot})){open(j,allPlays(j));return}
-  dongMsg(title,"Loading…",gid);
+  if(j&&allPlays(j).some(function(p){return scoreTotal(p)>=tot})){open(j,allPlays(j));return}   /* the saved play-by-play already reaches this score */
+  dongMsg(gameLine(G),"Loading…",gid,sub);
   getJSON(API+"/summary?event="+gid).then(function(x){DG.sums[gid]=x;if(!$("dongView").hidden&&DG.msgFor===gid)open(x,allPlays(x))})
-    .catch(function(){if(DG.msgFor===gid)dongMsg(title,"Couldn't load this game. Try again.")});
+    .catch(function(){if(DG.msgFor===gid)dongMsg(gameLine(G),"Couldn't load this game. Try again.",null,sub)});
+}
+/* The game's scores, newest first. */
+function dongGame(){
+  var g=DG.game; if(!g)return;
+  if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}
+  DG.cur=null; DG.msgFor=null; DG.fromList=false;
+  $("dvChart").innerHTML=""; $("dvHint").hidden=true; $("dvStory").hidden=true;
+  var ul=$("dvList"); ul.innerHTML="";
+  g.items.forEach(function(item){
+    var b=itemInfo(item), li=document.createElement("li"), bt=document.createElement("button");
+    if(b.col)bt.style.cssText="--tc:"+b.col.bg+";--tci:"+b.col.ink;
+    bt.innerHTML='<span class="dk">'+esc(b.kind)+'</span><span><b>'+esc(b.who+" "+b.what)+'</b><small>'+esc(b.detail)+'</small><small>'+esc(b.line+" · "+b.when)+'</small></span><span class="go">▸</span>';
+    bt.onclick=function(){dongOpen(item,true)};
+    li.appendChild(bt); ul.appendChild(li);
+  });
+  ul.hidden=false;
+  $("dvTitle").textContent=g.title; $("dvSub").textContent=g.sub; $("dvClose").textContent="Close";
+  $("dongView").hidden=false;
 }
 /* The "dong": a two-tone chime made by the page itself. */
 function dongChime(){
@@ -442,45 +466,30 @@ function storyHTML(it){
   var oc=/^(Touchdown|Field goal) ·/.test(S2.outcome)?"":'<p>'+esc(S2.outcome)+'</p>';
   return oc+(S2.stars.length?'<ul>'+S2.stars.map(function(x){return '<li><b>'+esc(x.n)+'</b> · '+esc(x.s)+'</li>'}).join("")+'</ul>':'');
 }
-/* Your game, pinned at the top of the replay and list overlay. */
-function bugUpdate(){
-  var B=S.bug, el=$("dvBug"); if($("dongView").hidden)return;
-  if(!B){el.hidden=true;return}
-  var a=+B.ap||0, h=+B.hp||0, known=B.ap!==""&&B.ap!=="–";
-  function ab(x,po){return po?'<span class="po">'+esc(x)+'</span>':esc(x)}
-  var html='<b><em'+(!known||a>=h?' class="up"':'')+'>'+ab(B.a,B.pos==="a")+' '+esc(B.ap)+'</em>–<em'+(!known||h>=a?' class="up"':'')+'>'+esc(B.hp)+' '+ab(B.h,B.pos==="h")+'</em></b><span>'+esc([B.clk,B.sit].filter(Boolean).join(" · "))+'</span>';
-  if(el.innerHTML!==html)el.innerHTML=html; el.hidden=false;
-}
-function dongMsg(title,msg,gid){
+/* The strip with your own game is no longer shown here. */
+function bugUpdate(){$("dvBug").hidden=true}
+function dongMsg(title,msg,gid,sub){
   $("dvStory").hidden=true;
   if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}
   DG.cur=null; DG.fromList=false; DG.msgFor=gid||null;
   $("dvChart").innerHTML=""; $("dvHint").hidden=true;
   $("dvList").innerHTML='<li class="msg">'+esc(msg)+'</li>'; $("dvList").hidden=false;
-  $("dvTitle").textContent=title; $("dvSub").textContent="At your delay"; $("dvClose").textContent="Close";
-  $("dongView").hidden=false;  bugUpdate();
+  $("dvTitle").textContent=title; $("dvSub").textContent=sub||"At your delay"; $("dvClose").textContent="Close";
+  $("dongView").hidden=false;
 }
 function dongOpen(item,fromList){
-  item.watched=true; DG.fromList=!!fromList; $("dvList").hidden=true; $("dvClose").textContent="Close";
+  item.watched=true; DG.fromList=!!fromList&&!!DG.game; $("dvList").hidden=true; $("dvClose").textContent=DG.fromList?"Back":"Close";
   var j=item.j,p=item.p,T=teamsOf(j),plays=allPlays(j),k=plays.indexOf(p);if(k<0)return;
   var ids={};for(var q=0;q<=k;q++)ids[plays[q].id]=1;
   var keep=S.chartDrive;S.chartDrive=null;
   var L=latestDrive(j,T,{ids:ids,plays:plays,last:k});S.chartDrive=keep;
   if(!L)return;
   var E=(S.engine==="3d"&&window.Chart3D&&window.THREE)?window.Chart3D:window.Chart2D;if(!E||!window.DriveCore)return;
-  var spec=fieldChart3D(L,true),kind=scoreKind(p,scorerOf(j,p));
-  $("dvTitle").textContent=L.offAb+" drive · "+(kind==="FG"?"field goal":kind==="SAFETY"?"safety":kind==="DEF TD"?"defensive touchdown":"touchdown");
-  /* Recap as on your own drives: "5 plays, 13 yards, 2:40 · From ARI 35 · Q4 12:15". */
-  var d=null; drivesOf(j).forEach(function(x){if((x.plays||[]).some(function(q){return q.id===p.id}))d=x});
-  var recap="";
-  if(d){
-    var n=(d.plays||[]).filter(function(q){return !isNonPlay(q)&&!isOfficialTO(q)}).length, st=d.start||{}, sc=clockText(st);
-    var desc=String(d.description||(n+" play"+(n===1?"":"s"))).replace(/(-?\d+) yards?\b/g,function(_,y){return ydStr(+y)});   /* "−10 yds", as everywhere else */
-    recap=[desc, st.text?"From "+st.text:"", sc.q?sc.q+" "+sc.clk:""].filter(Boolean).join(" · ");
-  }
-  var score=(T.away?T.away.ab:"")+" "+(+p.awayScore||0)+"–"+(+p.homeScore||0)+" "+(T.home?T.home.ab:"");
-  $("dvSub").innerHTML=(recap?esc(recap)+"<br>":"")+esc(score);
-  var holder=$("dvChart");holder.innerHTML="";DG.msgFor=null;$("dongView").hidden=false;$("dvHint").hidden=false;$("dvStory").innerHTML=storyHTML(item);$("dvStory").hidden=false;bugUpdate();
+  var spec=fieldChart3D(L,true), b=itemInfo(item);
+  /* "Bills touchdown" / "J.Allen, 12 yds" / "MIA 7–21 BUF · Q2 3:40" */
+  $("dvTitle").textContent=b.who+" "+b.what;
+  $("dvSub").innerHTML=esc(b.detail)+"<br>"+esc(b.line+" · "+b.when);
+  var holder=$("dvChart");holder.innerHTML="";DG.msgFor=null;$("dongView").hidden=false;$("dvHint").hidden=false;$("dvStory").innerHTML=storyHTML(item);$("dvStory").hidden=false;
   DG.cur={E:E,spec:spec,hits:null,focus:null};
   try{DG.view=E.replay(holder,spec,{linger:S.linger,fromLast:true,onDoink:window.dbDoink})}catch(e){console.log("Scoring drive failed",e);dongClose()}
 }
@@ -508,8 +517,8 @@ function dongFocus(k){
   C.focus=k;
   $("dvChart").innerHTML='<img alt="Play '+(k+1)+' of the drive" style="display:block;width:100%;border-radius:6px" src="'+url+'">';
 }
-function dongClose(){DG.cur=null;DG.msgFor=null;if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dvStory").hidden=true;$("dongView").hidden=true;DG.fromList=false}
-$("dvClose").onclick=dongClose;
+function dongClose(){DG.cur=null;DG.msgFor=null;if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dvStory").hidden=true;$("dongView").hidden=true;DG.fromList=false;DG.game=null}
+$("dvClose").onclick=function(){if(DG.fromList)dongGame();else dongClose()};
 $("dongView").addEventListener("click",function(e){if(e.target===this)dongClose()});
 setInterval(dongTick,1000);
 setInterval(dongPollLive,15000);
