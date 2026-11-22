@@ -83,7 +83,14 @@ function lsKeep(sb){
   LS.hist.push({t:now,m:m});
   var cut=now-S.delay*1000, i=0; while(i<LS.hist.length-1&&LS.hist[i+1].t<=cut-120000)i++;
   if(i>0)LS.hist=LS.hist.slice(i);
+  try{localStorage.setItem("db_lshist",JSON.stringify({k:key,h:LS.hist}))}catch(e){}
 }
+/* A reload keeps the scoreboards already collected, so delayed scores show at once instead of
+   starting over. Only if they're recent (within your delay plus 2 min); older ones are dropped. */
+(function(){try{
+  var o=JSON.parse(localStorage.getItem("db_lshist")||"null"), H=o&&o.h||[];
+  if(H.length&&Date.now()-H[H.length-1].t<S.delay*1000+120000){LS.hist=H;LS.histKey=o.k}
+}catch(e){}})();
 function lsView(e){
   var live={st:evState(e),a:+((evTeam(e,"away")||{}).score)||0,h:+((evTeam(e,"home")||{}).score)||0}, H=LS.hist||[];
   if(!H.length){live.sync=live.st==="in";return live}
@@ -101,7 +108,7 @@ function gameRow(e){
   var aw=show&&dl.a>dl.h, hw=show&&dl.h>dl.a;
   function tr(t,sty,win,opp,pts){
     var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.shortDisplayName||tm.displayName||tm.name||"To be decided", rec=recordOf(t,opp,evState(e),!show||st!=="post");
-    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(isFav(t)?'<span class="star" aria-label="Favourite">★</span>':'')+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(pts):"")+'</span></div>';
+    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(isFav(t)?'<span class="star" aria-label="Favourite">★</span>':'')+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(pts):LS.scores&&dl.sync&&!nos&&t?'<span class="pend" aria-label="Score shows once it matches your delay">–</span>':"")+'</span></div>';
   }
   var nets=evNets(e).slice(0,2).join(", "), meta;
   var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
