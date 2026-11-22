@@ -35,7 +35,7 @@ Rules:
 | stats.js | Game info and stats tabs |
 | games.js | Game list, routing (`#g-<id>`, `#w-...`), settings, teams sheet |
 | live.js | Live animation of each new play (heads-up `S.lead`, snap, reveal at `playTime + delay`) |
-| alerts.js | Other games: dock (ticker) at the user's delay, holding alerts during hot plays (`isBig`, `mainHot`), the calm score card (tap a score for outcome, then top contributors via `scoreStory`), sounds (dong chime, doink, Colts sack-shout easter egg, live only) |
+| alerts.js | Other games: dock (ticker) at the user's delay, holding alerts while a play is under way (`mainHot`), the calm score card (tap a score for outcome, then top contributors via `scoreStory`), sounds (dong chime, doink, Colts sack-shout easter egg, live only) |
 | main.js | Drive replay, tabs, keep-screen-on, startup |
 
 Bump the `?v=` number in index.html for every JS file you change.
@@ -47,5 +47,5 @@ Bump the `?v=` number in index.html for every JS file you change.
 - No line of scrimmage, no resting football. Drive start stripe without a flag. Yellow line to gain. Newest play nearest, fixed lane spacing, older plays slide off the far side on long drives.
 - Every change of possession gets one look: red mark, the recovering team's colour, a red banner naming it. Defensive scores are in the scoring team's colour. A play wiped out by a penalty animates, then is redrawn as the penalty and doesn't stay.
 - Edge-to-edge phone layout, tap targets of 44 px or more. Avoid things moving, inconsistent labels, clutter, and too little time to read.
-- Hot plays that hold other-game alerts: 3rd/4th down (not routine punts), turnovers, 20+ yd gains, TDs.
+- Other-game alerts wait silently only while a play in the main game is under way (snap to settled result), then come out between plays. No "waiting" indicator.
 - Teams settings: Follow (default) / Not interested (ticker only) / No spoilers (hidden everywhere). The watched game is never affected.

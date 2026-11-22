@@ -7,14 +7,11 @@
    score alert becomes due when the scoreboard that first showed it is that old. So changing the delay
    re-times both. Simulation: the other games in the same window are replayed alongside the simulated
    one, by game clock.
-   Alerts only come for followed games (Settings › Teams). They wait while your game has a big moment
-   coming up or playing: a 3rd or 4th down, a turnover, a gain of 20+ yards or a touchdown. Those plays
-   are already in the page (held back for the delay), so the page knows they're coming. Waiting alerts
-   come out together at the next quiet moment, as one card with one chime.
+   Alerts only come for followed games (Settings › Teams). They wait silently while a play in your game
+   is under way (snap to settled result) and come out together right after, as one card with one chime.
    Tapping an alert replays the scoring drive (for a defensive score, the drive of the team that
    had the ball, which is where ESPN files that play). */
 var DG={scores:null,seen:{},queue:[],pending:[],heldSince:0,hot:0,snaps:[],seq:0,dispSeq:-1,simCur:0,sums:{},first:{},flash:{},card:null,cardItems:[],audio:null,sim:null,view:null,log:[]};
-var MAXHOLD=150000;   /* an alert never waits more than 2.5 min (but never pops up during a big play) */
 var DIVS=[["AFC East",["BUF","MIA","NE","NYJ"]],["AFC North",["BAL","CIN","CLE","PIT"]],["AFC South",["HOU","IND","JAX","TEN"]],["AFC West",["DEN","KC","LV","LAC"]],
   ["NFC East",["DAL","NYG","PHI","WSH"]],["NFC North",["CHI","DET","GB","MIN"]],["NFC South",["ATL","CAR","NO","TB"]],["NFC West",["ARI","LAR","SF","SEA"]]];
 /* Teams: "f" follow (default), "n" not interested (ticker, no alerts), "x" no spoilers (hidden). */
@@ -150,12 +147,10 @@ function dispGames(now){
   return {games:DG.snaps[DG.snaps.length-1].games,sync:true};   /* just opened: nothing is old enough yet */
 }
 
-/* ---------- holding alerts during big moments in your game ----------
-   A big moment is a 3rd or 4th down (not a routine punt), a turnover, a gain of 20+ yards or a touchdown. Such a play is
-   "hot" from its heads-up (when the box switches to its down and distance) until its result has been
-   up for the hold, plus a short margin. Level 2 is the play itself: nothing is ever released then.
-   Level 1 is the margin around it, or any other play animating: alerts wait, unless they've waited
-   the maximum. In simulation the margins after the play shrink with the speed. */
+/* ---------- holding alerts while a play is under way in your game ----------
+   An alert never pops up from the snap until the play's result has settled. Between plays (usually 20–40 s)
+   it comes straight out. Waiting is silent: nothing in the ticker says an alert is waiting.
+   isBig (3rd/4th down, turnover, 20+ yd gain, TD) now only dims the ticker a little during that play. */
 function isBig(P){
   if(!P||isNonPlay(P))return false;
   var st=P.start||{}, ty=((P.type||{}).text||""), t=ftext(P.text||"");
@@ -166,19 +161,19 @@ function isBig(P){
   if(/touchdown/i.test(ty)||(P.scoringPlay&&/TOUCHDOWN/.test(t)))return true;
   return !isKick(P)&&typeof P.statYardage==="number"&&P.statYardage>=20;
 }
+/* 2 while a play in your game is under way (snap until its result has settled, plus a moment), else 0.
+   DG.big: that play is a big one (the ticker dims a little). */
 function mainHot(now){
-  var V=S.V; if(S.view!=="game"||!S.sum||!V||S.state!=="in")return 0;
-  var sp=SIM?SIM.speed:1, d=S.delay*1000, lvl=0, Lv=S.live;
-  for(var k=Math.max(0,V.last-3);k<V.plays.length;k++){
-    var P=V.plays[k]; if(!isBig(P))continue;
-    var tR=playTime(P)+d, tPre, tEnd;
-    if(Lv&&Lv.id===P.id){tPre=Lv.tPre;tEnd=Lv.settleAt}
-    else{tPre=tR-(S.lead*1000+6000)/sp;tEnd=tR+1800/sp}
-    if(now>=tPre&&now<=tEnd)return 2;
-    if(now>=tPre-1500&&now<=tEnd+3000/sp)lvl=1;   /* 1.5 s lead-in (alerts are checked once a second) */
+  var V=S.V; DG.big=false; if(S.view!=="game"||!S.sum||!V||S.state!=="in")return 0;
+  var sp=SIM?SIM.speed:1, d=S.delay*1000, Lv=S.live, on=null;
+  if(Lv&&Lv.attached&&now>=Lv.tSnap-500&&now<=Lv.settleAt+1000/sp){V.plays.forEach(function(P){if(P.id===Lv.id)on=P});on=on||{}}
+  else for(var k=Math.max(0,V.last-3);k<V.plays.length;k++){
+    var P=V.plays[k], tR=playTime(P)+d; if(isNonPlay(P))continue;
+    if(Lv&&Lv.id===P.id)continue;
+    if(now>=tR-8000/sp&&now<=tR+2800/sp){on=P;if(isBig(P))DG.big=true}
   }
-  if(Lv&&Lv.attached&&now>=Lv.tSnap-500&&now<=Lv.settleAt)lvl=Math.max(lvl,1);
-  return lvl;
+  if(!on)return 0;
+  if(Lv&&Lv.attached&&on.id)DG.big=isBig(on); return 2;
 }
 function dongReset(){DG.queue=[];DG.pending=[];DG.heldSince=0;DG.scores=null;DG.first={};DG.snaps=[];DG.dispSeq=-1;DG.simCur=0;DG.sim=null;DG.log=[];DG.flash={};DG.dockHtml="";cardHide()}
 function dongRelease(){var items=DG.pending;DG.pending=[];DG.heldSince=0;if(items.length)cardShow(items)}
@@ -196,7 +191,7 @@ function dongTick(){
     else{
       if(!DG.heldSince)DG.heldSince=now;
       var busy=!$("dongView").hidden||!$("sheet").hidden||!$("teamSheet").hidden||document.hidden;
-      if(!busy&&(DG.hot===0||(DG.hot<2&&now-DG.heldSince>=MAXHOLD/(SIM?SIM.speed:1))))dongRelease();
+      if(!busy&&DG.hot===0)dongRelease();
     }
   }
   dockRender();
@@ -246,15 +241,13 @@ function dockRender(){
   var vis=on&&(list.some(function(G){return G.state==="in"||G.state==="pre"})||!!DG.card);
   if(!vis){if(!dock.hidden){dock.hidden=true;document.body.classList.remove("hasdock");cardHide()}return}
   if(dock.hidden){dock.hidden=false;document.body.classList.add("hasdock")}
-  dock.classList.toggle("recede",DG.hot>0);
-  var html=(DG.pending.length?'<button class="tk wait" data-act="wait" aria-label="'+DG.pending.length+' scores waiting. Show now."><span class="ln">'+DG.pending.length+' waiting</span><small>for a break</small></button>':'')+
-    list.map(function(G){return chipHTML(G,D,now)}).join("");
+  dock.classList.toggle("recede",!!DG.big);
+  var html=list.map(function(G){return chipHTML(G,D,now)}).join("");
   if(html!==DG.dockHtml){DG.dockHtml=html;$("tkrow").innerHTML=html}
 }
 $("tkrow").addEventListener("click",function(e){
   var b=e.target.closest(".tk"); if(!b)return;
   var act=b.getAttribute("data-act");
-  if(act==="wait"){dongRelease();dockRender();return}
   var gid=b.getAttribute("data-g"); if(gid)dockOpen(gid);
 });
 /* Tap a chip: that game's latest scoring drive, as far as your stream has got. */
