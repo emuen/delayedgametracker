@@ -23,7 +23,7 @@ function loadWeek(){
     if(wkKey(LS.sel)!==asked)return;
     if(!LS.cal)buildCal(sb);
     if(!w)LS.cur={year:+sb.season.year,type:+sb.season.type,week:+sb.week.number};
-    LS.data=sb; LS.err=""; lsKeep(sb);
+    LS.data=sb; LS.err=""; lsKeep(sb); lsEarly(sb);
   }).catch(function(e){LS.err=/fetch|network|load/i.test(e.message||"")?"Offline · retrying":"Couldn't load games ("+e.message+")"})
   .then(function(){
     if(S.view!=="list")return;
@@ -91,13 +91,33 @@ function lsKeep(sb){
   var o=JSON.parse(localStorage.getItem("db_lshist")||"null"), H=o&&o.h||[];
   if(H.length&&Date.now()-H[H.length-1].t<S.delay*1000+120000){LS.hist=H;LS.histKey=o.k}
 }catch(e){}})();
+/* Just opened, so nothing collected is your delay old yet: for each live game, read its play-by-play
+   once and take the score after the last play that happened at least your delay ago (play time plus
+   ESPN's usual lag). Shown until the collected scoreboards catch up. Never ahead of your delay. */
+LS.early={};
+function lsEarly(sb){
+  if(!LS.scores)return;
+  (sb.events||[]).forEach(function(e){
+    if(evState(e)!=="in"||LS.early[e.id]||!lsView(e).sync)return;
+    LS.early[e.id]={loading:1};
+    getJSON(API+"/summary?event="+e.id).then(function(j){
+      var cut=Date.now()-S.delay*1000-(typeof lagEst==="function"?lagEst()*1000:0), best=null;
+      allPlays(j).forEach(function(p){var w=Date.parse(p.wallclock);if(!isNaN(w)&&w<=cut&&p.homeScore!=null)best=p});
+      if(!best){delete LS.early[e.id];return}
+      LS.early[e.id]={a:+best.awayScore||0,h:+best.homeScore||0};
+      if(S.view==="list")renderList();
+    }).catch(function(){delete LS.early[e.id]});
+  });
+}
 function lsView(e){
   var live={st:evState(e),a:+((evTeam(e,"away")||{}).score)||0,h:+((evTeam(e,"home")||{}).score)||0}, H=LS.hist||[];
-  if(!H.length){live.sync=live.st==="in";return live}
+  var E=LS.early[e.id];
+  if(!H.length){live.sync=live.st==="in";return live.sync&&E&&!E.loading?{st:"in",a:E.a,h:E.h}:live}
   var cut=Date.now()-S.delay*1000, pick=null;
   for(var i=H.length-1;i>=0;i--){if(H[i].t<=cut){pick=H[i];break}}
   var v=(pick||H[0]).m[e.id];
   if(!v){live.sync=live.st!=="pre";return live}
+  if(!pick&&v.st==="in"&&E&&!E.loading)return {st:"in",a:E.a,h:E.h};
   return {st:v.st,a:v.a,h:v.h,sync:!pick&&v.st==="in"};
 }
 function gameRow(e){
@@ -166,7 +186,7 @@ $("wkSel").onchange=function(){var e=LS.flat.filter(function(x){return wkKey(x)=
 $("wkPrev").onclick=function(){var i=LS.flat.map(wkKey).indexOf(wkKey(LS.sel||LS.cur));if(i>0)goWeek(LS.flat[i-1])};
 $("wkNext").onclick=function(){var i=LS.flat.map(wkKey).indexOf(wkKey(LS.sel||LS.cur));if(i>=0&&i<LS.flat.length-1)goWeek(LS.flat[i+1])};
 function goWeek(e){location.hash=LS.cur&&wkKey(e)===wkKey(LS.cur)?"":"w-"+wkKey(e)}
-$("showScores").onclick=function(){LS.scores=!LS.scores;save("db_scores",LS.scores);renderList()};
+$("showScores").onclick=function(){LS.scores=!LS.scores;save("db_scores",LS.scores);if(LS.data)lsEarly(LS.data);renderList()};
 
 /* ---------- routing: #g-<game> opens the tracker, #w-<year>-<type>-<week> a week, nothing = this week ---------- */
 var listHash="";
