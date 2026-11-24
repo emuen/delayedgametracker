@@ -43,7 +43,7 @@ button,select,input{font:inherit;color:inherit}
 .mid{text-align:center;font:800 24px/1.15 var(--display);letter-spacing:.03em;min-width:0;padding-top:34px}
 .mid small{display:block;font:500 12px var(--body);color:var(--muted);letter-spacing:0;margin-top:2px}
 .sit{margin-top:8px;text-align:center;font:800 26px/1.2 var(--display);letter-spacing:.04em;min-height:1.2em;text-transform:uppercase;padding:6px 0;border-radius:var(--r);background:var(--surface);border:2px solid var(--fg)}
-.sit:empty{display:none}
+.sit,.sit:empty{display:none}
 .dial{display:grid;gap:6px}
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-radius:16px 16px 0 0;max-height:88vh;overflow-y:auto;
@@ -235,8 +235,10 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .tk small{font:500 11.5px/1.25 var(--body);color:var(--muted);white-space:nowrap}
 .tk small .rz{font:700 10px var(--body);letter-spacing:.05em;border:1px solid var(--muted);border-radius:4px;padding:0 3px;margin-left:4px}
 .tk.done{opacity:.75}
-.tk.flash{background:var(--fg);border-color:var(--fg)}
-.tk.flash .ln em,.tk.flash .ln b,.game .sc .pend{color:var(--muted);font-weight:500}
+.tk.flash{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.tk.flash .ln em,.tk.flash .ln b{color:var(--bg);opacity:.72;font-weight:500}
+.tk.flash .ln b.up,.tk.flash .ln b.sc{opacity:1;font-weight:700}
+.game .sc .pend{color:var(--muted);font-weight:500}
 .tk.flash small{color:var(--bg)}
 .tk.flash .ln b.sc{text-decoration:underline;text-underline-offset:3px}
 /* A score in the ticker: the chip shows a short line for 10 s. Under a scoring-drive replay: what the drive was and who did it. */
