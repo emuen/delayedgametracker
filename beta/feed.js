@@ -102,6 +102,13 @@ function cleanText(t){
     .replace(/\s*\((?:[A-Z][a-zA-Z]{0,2}\.\s?[A-Za-z'\-]+(?:\s*[;,]\s*)?)+\)(\.?)\s*$/,"$1")
     .trim();
 }
+/* Drive list text: drop feed bookkeeping (eligible-receiver reports, injury updates). */
+function dropNoise(t){
+  return String(t||"")
+    .replace(/\s*\*\*\s*Injury Update:[^*]*?(?=\s*\*\*|$)/gi,"")
+    .replace(/(?:^|\s)(?:(?:[A-Z][\w'-]*\.\s?)+[A-Z][\w'-]*(?:\s(?:Jr|Sr|II|III|IV)\.?)?(?:\s*(?:,|and)\s*)?)+\s+(?:reported|reports|report) in as (?:an )?eligible(?: receiver)?\.\s*/g," ")
+    .replace(/\s*\*\*\s*$/,"").trim();
+}
 var NOYARD=/timeout|end of|two-minute|kickoff|punt|extra point|field goal|coin toss|end period|official/i;
 /* Timeouts, quarter breaks and warnings: listed, but not plays. */
 function isNonPlay(p){var ty=((p.type||{}).text||""),t=p.text||"";return /timeout|end of|end period|end quarter|end game|two-minute|coin toss/i.test(ty)||/^\s*(official\s+)?timeout\b|^\s*end (of )?(quarter|half|game)|^\s*two-minute warning/i.test(t)}

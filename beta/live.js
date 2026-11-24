@@ -23,11 +23,11 @@ function liveTick(j,T,V){
   L2.rows.forEach(function(r,i){if(r.p===P){if(k0<0)k0=i;k1=i}});
   if(k0<0){S.liveDone[P.id]=1;return}
   var tmp=document.createElement("div"), ctrl;
-  try{ctrl=E.replay(tmp,spec,{clock:true,linger:S.linger,onDoink:window.dbDoink,onGdd:gddSound,doinkOnSeek:true})}catch(e){console.log("Live animation failed",e);S.liveDone[P.id]=1;return}
+  try{ctrl=E.replay(tmp,spec,{clock:true,linger:S.linger,onDoink:window.dbDoink,onGdd:gddSound,onHurt:hurtSound,doinkOnSeek:true})}catch(e){console.log("Live animation failed",e);S.liveDone[P.id]=1;return}
   var g0=ctrl.timeline[k0], g1=ctrl.timeline[k1], F=g1.end-g0.snap;
   var tSnap=tReveal-F, tPre=tSnap-S.lead*1000;
   S.live={ctrl:ctrl,tmp:tmp,attached:false,id:P.id,tPre:tPre,tSnap:tSnap,t0:g0.t0,preEnd:g0.snap-1,snap:g0.snap,
-    freeze:Math.min(g1.holdEnd-30,g1.end+1800),settleAt:tReveal+1800};
+    freeze:g1.hurtEnd?g1.hurtEnd+50:Math.min(g1.holdEnd-30,g1.end+1800),settleAt:tReveal+(g1.hurtEnd?g1.hurtEnd-g1.end+300:1800)};
   requestAnimationFrame(liveFrame);
 }
 function liveFrame(){
