@@ -68,6 +68,11 @@ button,select,input{font:inherit;color:inherit}
 .field input{width:5.5em;text-transform:uppercase}
 .help{font-size:13px;color:var(--muted);margin:0}
 .opt select{min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:12em}
+/* Dropdowns: our own chevron with room to the right edge (the phone's arrow sat flush against it). */
+select{-webkit-appearance:none;appearance:none;padding-right:36px!important;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%)!important;
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%!important;background-size:5px 5px,5px 5px!important;background-repeat:no-repeat!important;
+  text-overflow:ellipsis;cursor:pointer}
 .dialrow{display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;gap:6px;align-items:center}
 .dialrow button{height:44px;border:1px solid var(--line);background:var(--bg);border-radius:10px;font:600 17px var(--display);cursor:pointer}
 .dialrow button:active{background:var(--accent);color:var(--accent-ink)}
