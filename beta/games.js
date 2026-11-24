@@ -127,7 +127,7 @@ function teamMark(tm,ab,sty){
   if(!u)return badge;
   return '<span class="logo"><img src="'+esc(u)+'" alt="'+esc(ab)+'" width="36" height="36" onerror="var p=this.parentNode;p.nextSibling.hidden=false;p.remove()"></span>'+badge;
 }
-function gameRow(e){
+function gameRow(e,withDay){
   var dl=lsView(e), st=dl.st, c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
   function isFav(t){return !!(S.fav&&t&&t.team&&t.team.abbreviation===S.fav)}
   var fav=isFav(a)||isFav(h), nos=a&&h&&a.team&&h.team&&gamePref(a.team.abbreviation,h.team.abbreviation)==="x";
@@ -145,6 +145,8 @@ function gameRow(e){
     var d=new Date(e.date), det=((((c.status||{}).type)||{}).shortDetail)||"";
     var special=/postponed|canceled|cancelled|delayed|suspended/i.test(det);
     meta='<b>'+(special?esc(det):tbd?"TBD":esc(d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hourCycle:"h23"})))+'</b>';
+    /* "Your game" sits outside the day headings, so it carries its own day (your local date). */
+    if(withDay&&!special&&!isNaN(d))meta+='<small>'+esc(d.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}))+'</small>';
   }
   var playable=a&&h&&a.team&&h.team&&a.team.abbreviation&&h.team.abbreviation&&!/tbd/i.test(a.team.abbreviation+h.team.abbreviation);
   var inner='<div class="teams">'+tr(a,as.css,aw,h,dl.a)+tr(h,hs.css,hw,a,dl.h)+'</div><div class="gmeta">'+meta+'</div>';
@@ -177,7 +179,7 @@ function renderList(){
     byDay[k].push(e);
   });
   var html=[];
-  if(mine.length)html.push('<h2 class="day live">Your game</h2>'+mine.map(gameRow).join(""));
+  if(mine.length)html.push('<h2 class="day live">Your game</h2>'+mine.map(function(e){return gameRow(e,true)}).join(""));
   if(live.length)html.push('<h2 class="day live">Live now</h2>'+live.map(gameRow).join(""));
   days.forEach(function(k){
     var label=k==="zz"?"Date to be decided":new Date(byDay[k][0].date).toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"});

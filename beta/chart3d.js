@@ -107,10 +107,11 @@
        across the field's width direction and two uprights. Each upright has its own material so a
        doink can flash and shake just the one that was hit. */
     var GL = K.GOAL, uprights = {}, ycol = lin("#f4c430");
+    var postParts = [];
     var ymat = new THREE.MeshStandardMaterial({ color: ycol, roughness: 0.4, metalness: 0.2, emissive: ycol.clone().multiplyScalar(0.18) });
     [-1, 1].forEach(function (es) {
       var x0 = es * 60, xb = es * (60 + GL.back), baseH = GL.cb - 1.3;
-      function add(geo, mm) { var me = new THREE.Mesh(geo, mm || ymat); me.castShadow = true; scene.add(me); return me; }
+      function add(geo, mm) { var me = new THREE.Mesh(geo, mm || ymat); scene.add(me); postParts.push({ m: me, es: es }); return me; }
       add(new THREE.CylinderGeometry(0.3, 0.34, baseH, 10)).position.set(xb, baseH / 2, 0);
       add(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(xb, baseH - 0.05, 0), new THREE.Vector3(xb, GL.cb, 0), new THREE.Vector3(x0, GL.cb, 0)), 12, 0.28, 8, false));
       var bar = add(new THREE.CylinderGeometry(0.25, 0.25, 2 * GL.hw + 0.5, 10)); bar.rotation.x = Math.PI / 2; bar.position.set(x0, GL.cb, 0);
@@ -120,6 +121,17 @@
         ug.translate(0, (GL.top - GL.cb) / 2, 0);   /* pivot at the crossbar, so a shake sways the top */
         var up2 = add(ug, um); up2.position.set(x0, GL.cb, zs * GL.hw); up2.userData.baseE = um.emissive.clone(); uprights[es][zs] = up2;
       });
+    });
+    /* Post shadows: the sun lights the field from the left, so real shadows would put the left
+       posts' shadow across that end zone's logo and drop the right one off the field. Instead each
+       goal gets a flat drawn shadow falling outward, behind its end line, mirrored on both sides. */
+    var shMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false });
+    postParts.forEach(function (pp) {
+      pp.m.updateMatrixWorld(true);
+      var kx = pp.es * 25 / 60, kz = -35 / 60, P = new THREE.Matrix4();
+      P.set(1, kx, 0, 0,  0, 0, 0, 0.01,  0, kz, 1, 0,  0, 0, 0, 1);
+      var sh = new THREE.Mesh(pp.m.geometry, shMat);
+      sh.matrixAutoUpdate = false; sh.matrix.multiplyMatrices(P, pp.m.matrixWorld); sh.renderOrder = -1; scene.add(sh);
     });
     /* Doink: the hit upright flashes and sways for a moment (amt 0..1, k = ms since contact). */
     function shake(es, zs, amt, k) {
@@ -134,11 +146,17 @@
       m.position.y = 0.04; m.visible = false; scene.add(m); return m;
     }
     var ltgM = lineMesh(0xffd23f), losM = lineMesh(0x2f7cff);
-    var ball = new THREE.Group();
+    /* Ball: the outer group holds a fixed tilt (top turned toward the camera, nose slightly up) so
+       the white laces read as a football, not a bean; the inner group spins in flight. */
+    var ball = new THREE.Group(), spin = new THREE.Group(); ball.add(spin); ball.userData.spin = spin;
     var bm = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 18), new THREE.MeshStandardMaterial({ color: lin(0x7a3b12), roughness: 0.6 }));
-    bm.scale.set(1.5, 0.9, 0.9); bm.castShadow = true; ball.add(bm);
-    var lace = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    lace.position.y = 0.88; ball.add(lace);
+    bm.scale.set(1.5, 0.9, 0.9); bm.castShadow = true; spin.add(bm);
+    var lmat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    var lace = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.12, 0.2), lmat);
+    lace.position.y = 0.9; spin.add(lace);
+    [-0.36, -0.12, 0.12, 0.36].forEach(function (lx) {
+      var st = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.46), lmat); st.position.set(lx, 0.88, 0); spin.add(st);
+    });
     ball.position.set(0, 0.95, FIELD_W / 2 - 3); ball.visible = false; scene.add(ball);
     /* Only the line to gain is drawn: the line of scrimmage is where the previous arrow ended. */
     function setLines(los, ltg) {
@@ -623,7 +641,7 @@
       var ball = B.ball, row = B.rows[cur];
       ball.visible = false;
       if (g && !outro) {
-        ball.visible = true; ball.rotation.set(0, 0, 0);
+        ball.visible = true; ball.rotation.set(0.55, 0, 0.18); ball.userData.spin.rotation.set(0, 0, 0);
         var lift = 0.35, sc = 1, pos, isWorld = false;
         if (t < g.snap) {
           /* Hop from where the last play ended (that play is sliding back) to the new spot on the near lane. */
@@ -632,7 +650,7 @@
           if (prev && !g.cont) pos.y += Math.sin(Math.PI * m) * 1.2;
           if (cur === 0) sc *= backOut(ramp(t, g.t0 + 150, 300));
         } else if (row.ghost && t < g.walkAt) {
-          if (t < g.ghostEnd) { pos = B.tipAt(row.ghost, fracOf(g, t, "g")); ball.rotation.x = row.ghost.inc || s.prePlay.type === "air" ? (t - g.snap) / 40 : 0; }
+          if (t < g.ghostEnd) { pos = B.tipAt(row.ghost, fracOf(g, t, "g")); ball.userData.spin.rotation.x = row.ghost.inc || s.prePlay.type === "air" ? (t - g.snap) / 40 : 0; }
           else {
             /* Flag: the ball goes back to the spot of the foul. */
             var bk = EASE.out(ramp(t, g.ghostEnd + 80, 260));
@@ -644,7 +662,7 @@
           if (g.type === "dot" && t >= g.end) pos.x += Math.sin((t - g.end) / 22) * 0.35 * (1 - ramp(t, g.end, 260));
           if (g.kind === "pen" && !row.ghost && t < g.phases[0].a + g.phases[0].d) pos = row.A.clone();
           var flying = t < g.end && (g.type === "air" || g.type === "inc" || g.type === "kick" || g.kind === "fg") && (g.catchAt == null || t < g.catchAt);
-          if (flying) ball.rotation.x = (t - g.snap) / 40;
+          if (flying) ball.userData.spin.rotation.x = (t - g.snap) / 40;
           if (g.kind === "inc" && t >= g.end) { sc *= 1 - ramp(t, g.end, 260); pos.y -= 0.6 * ramp(t, g.end, 260); }
           if ((s.type === "fg" || s.blocked) && t >= g.end) sc *= 1 - ramp(t, g.end + 120, 280);   /* a kick's ball doesn't rest in the air */
         }

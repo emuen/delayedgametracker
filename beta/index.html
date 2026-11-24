@@ -246,7 +246,8 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .tk .ln{display:flex;align-items:center;gap:4px;font:700 16px/1.1 var(--display);letter-spacing:.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tk .ln i{display:inline-block;width:4px;height:13px;border-radius:2px;background:var(--tc,var(--line));margin-right:1px}
 .tk .ln em{font-style:normal;font-weight:600;color:var(--muted)}
-.tk .ln em.po::after{content:"\25CF";font-size:9px;color:var(--accent);margin-left:2px;vertical-align:2px}
+.tk .ln em{text-decoration:underline 4px transparent;text-underline-offset:4px;text-decoration-skip-ink:none}
+.tk .ln em.po{text-decoration-color:var(--accent)}
 .tk .ln b{font-weight:700;color:var(--muted);margin-right:5px}
 .tk .ln b.up{color:var(--fg)}
 .tk small{font:500 11.5px/1.25 var(--body);color:var(--muted);white-space:nowrap}
@@ -420,9 +421,9 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 <script src="render.js?v=3"></script>
 <script src="chartspec.js?v=2"></script>
 <script src="stats.js?v=1"></script>
-<script src="games.js?v=9"></script>
+<script src="games.js?v=10"></script>
 <script src="live.js?v=1"></script>
 <script src="alerts.js?v=13"></script>
-<script src="main.js?v=3"></script>
+<script src="main.js?v=4"></script>
 </body>
 </html>
