@@ -12,13 +12,15 @@ function simView(full){
     plays.sort(function(a,b){return (+a.sequenceNumber||0)-(+b.sequenceNumber||0)});
     var t=0,pw=null,at={};
     plays.forEach(function(p){var w=Date.parse(p.wallclock);if(pw!=null&&!isNaN(w))t+=Math.max(2500,Math.min(40000,w-pw));if(!isNaN(w))pw=w;at[p.id]=t});
-    var s0=plays.filter(function(p){return ((p.period||{}).number||0)>=SIM.from})[0], off=s0?at[s0.id]-6000*SIM.speed:0;
-    SIM.rel={};plays.forEach(function(p){SIM.rel[p.id]=(at[p.id]-off)/SIM.speed});
+    /* Game clock: SIM.at = each play's time in the real game (ms); first[q] = the first play of quarter q. */
+    SIM.at=at; SIM.first={};
+    [1,2,3,4,5].forEach(function(q){var s0=plays.filter(function(p){return ((p.period||{}).number||0)>=q})[0];if(s0)SIM.first[q]=at[s0.id]});
     SIM.total=plays.length; SIM.src=full;
+    if(SIM.base==null)simStartAt(SIM.from);
   }
-  var el=Date.now()-SIM.t0, src=SIM.src, out=[], n=0;
+  var el=simNow(), src=SIM.src, out=[], n=0;
   ((src.drives||{}).previous||[]).concat((src.drives||{}).current?[src.drives.current]:[]).forEach(function(d){
-    var ps=(d.plays||[]).filter(function(p){return SIM.rel[p.id]<=el});
+    var ps=(d.plays||[]).filter(function(p){return SIM.at[p.id]<=el});
     if(ps.length){n+=ps.length;out.push(Object.assign({},d,{plays:ps}))}
   });
   var done=n>=SIM.total, j=Object.assign({},src);
@@ -27,6 +29,22 @@ function simView(full){
   var c=((j.header.competitions||[])[0]||{});c.status=c.status||{};c.status.type=Object.assign({},c.status.type||{},{state:done?"post":"in"});
   j.boxscore=null;
   return j;
+}
+/* The simulation's clock runs in game time: base (game ms) at anchor (wall time), times the speed.
+   Changing the speed keeps the clock where it is; jumping to a quarter restarts the game view there.
+   Both update the address (so a reload keeps them) without reloading the page. */
+function simNow(){return SIM.base+(Date.now()-SIM.anchor)*SIM.speed}
+function simStartAt(q){var f=SIM.first&&(SIM.first[q]!=null?SIM.first[q]:SIM.first[1]);SIM.base=(f||0)-6000*SIM.speed;SIM.anchor=Date.now()}
+function simUrl(){try{history.replaceState(null,"",location.pathname+"?sim=1&speed="+SIM.speed+"&from="+SIM.from+(/[?&]chart=2d\b/.test(location.search)?"&chart=2d":"")+location.hash)}catch(e){}}
+function simSetSpeed(v){if(!SIM||v===SIM.speed)return;if(SIM.base!=null){SIM.base=simNow();SIM.anchor=Date.now()}SIM.speed=v;simUrl();simBar()}
+function simJump(q){
+  if(!SIM)return; SIM.from=q; simUrl(); simBar();
+  if(!SIM.src){SIM.base=null;return}
+  simStartAt(q);
+  if(S.live)endLive(); if(S.replay&&typeof stopReplay==="function")stopReplay();
+  S.sum=null;S.seen={};S.estimated={};S.shownAt={};S.synced={};S.loaded=false;S.snaps=[];S.openState={};S.keys={};S.liveDone={};S.lastOk=0;
+  if(typeof dongSimJump==="function")dongSimJump();
+  poll();
 }
 /* The 3D drive chart is the default; ?chart=2d forces the flat chart. If 3D can't load, the
    flat chart is used automatically. (The name TEST3D is kept from the test-page days.) */
@@ -57,7 +75,7 @@ function poll(){
   Promise.resolve().then(function(){
     if(id!==S.eventId){S.eventId=id;S.sum=null;S.seen={};S.estimated={};S.shownAt={};S.synced={};S.loaded=false;S.snaps=[];S.openState={};S.keys={}}
     if(SIM&&SIM.src&&SIM.id===id){if(!DG.sim)dongSimSetup(SIM.src);return simView()}
-    return getJSON(API+"/summary?event="+id).then(function(j){if(!SIM)return j;SIM.src=null;SIM.id=id;SIM.t0=Date.now();return simView(j)});
+    return getJSON(API+"/summary?event="+id).then(function(j){if(!SIM)return j;SIM.src=null;SIM.id=id;SIM.base=null;return simView(j)});
   }).then(function(j){
     if(id!==S.pick)return;
     var now=Date.now();

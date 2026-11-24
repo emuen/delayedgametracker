@@ -77,6 +77,9 @@ function dongSimSetup(j){
     DG.sim.ready=true;
   }).catch(function(){});
 }
+/* Simulator jumped to another quarter: other games keep their loaded data; alerts start over, and
+   scores already in the past at the new spot are marked seen (as at setup) once the main game is back. */
+function dongSimJump(){var keep=DG.sim;dongReset();DG.sim=keep;if(DG.sim)DG.sim.resync=true;dongClose&&dongClose();dockRender()}
 function dongSimNow(){if(!S.sum)return 0;var V=visibleIds(S.sum),p=V.plays[V.last];return p?gameSecs(p):0}
 function simGame(e,ent,cur){
   var G=sbGame(e), ps=ent.plays, k=-1;
@@ -190,7 +193,10 @@ function dongRelease(){var items=DG.pending;DG.pending=[];DG.heldSince=0;if(item
 function dongTick(){
   if(S.view!=="game"){return}
   var now=Date.now();
-  if(SIM&&DG.sim&&DG.sim.ready&&S.sum)DG.simCur=Math.max(DG.simCur||0,dongSimNow());
+  if(SIM&&DG.sim&&DG.sim.ready&&S.sum){
+    if(DG.sim.resync&&S.loaded){var c0=dongSimNow();Object.keys(DG.sim.by).forEach(function(id){DG.sim.by[id].plays.forEach(function(p){if(isScore(p)&&p._gs<=c0)DG.seen[p.id]=1})});DG.simCur=c0;DG.sim.resync=false}
+    if(!DG.sim.resync)DG.simCur=Math.max(DG.simCur||0,dongSimNow());
+  }
   dongSimTick();
   DG.hot=mainHot(now);
   if(S.dongMode==="off"||S.dongMode==="ticker"){DG.queue=[];DG.pending=[];DG.heldSince=0}

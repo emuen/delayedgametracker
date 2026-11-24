@@ -249,6 +249,15 @@ $("showScores").onclick=function(){LS.scores=!LS.scores;save("db_scores",LS.scor
 
 /* ---------- routing: #g-<game> opens the tracker, #w-<year>-<type>-<week> a week, nothing = this week ---------- */
 var listHash="";
+/* Simulator bar: speed and start quarter change in place (no reload); see simSetSpeed / simJump in core.js. */
+function simBar(){
+  var sb=$("simbar"); if(!SIM||!sb)return;
+  function lk(k,v,txt,on){return '<a href="#" role="button" data-'+k+'="'+v+'"'+(on?' class="on"':'')+'>'+txt+'</a>'}
+  sb.innerHTML='<b>Simulated live</b><span>Speed '+[1,2,4,16].map(function(v){return lk("sp",v,v+"×",v===SIM.speed)}).join(" ")+'</span><span>Start '+[1,2,3,4].map(function(v){return lk("q",v,"Q"+v,v===SIM.from)}).join(" ")+'</span>';
+  sb.hidden=false;
+  sb.onclick=function(e){var a=e.target.closest("a");if(!a)return;e.preventDefault();
+    if(a.dataset.sp)simSetSpeed(+a.dataset.sp);else if(a.dataset.q)simJump(+a.dataset.q)};
+}
 function route(){
   var h=location.hash.replace(/^#/,""), m;
   if((m=h.match(/^g-(\d+)$/))){
@@ -256,13 +265,7 @@ function route(){
     $("listView").hidden=true; $("gameView").hidden=false;
     $("back").setAttribute("href","#"+listHash);
         if(S.pick!==m[1]){S.pick=m[1];S.sum=null;S.keys={};tab("drives");dongReset()}
-    if(SIM){
-      var base=location.pathname+"?sim=1"+(/[?&]chart=2d\b/.test(location.search)?"&chart=2d":""), sb=$("simbar");
-      function lk(sp,fr,txt,on){return '<a href="'+base+"&speed="+sp+"&from="+fr+location.hash+'"'+(on?' class="on"':'')+'>'+txt+'</a>'}
-      sb.innerHTML='<b>Simulated live</b><span>Speed '+[1,2,4,16].map(function(v){return lk(v,SIM.from,v+"×",v===SIM.speed)}).join(" ")+'</span><span>Start '+[1,2,3,4].map(function(v){return lk(SIM.speed,v,"Q"+v,v===SIM.from)}).join(" ")+'</span>';
-      sb.hidden=false;
-      sb.onclick=function(e){var a=e.target.closest("a");if(a){e.preventDefault();location.href=a.getAttribute("href")}};
-    }
+    if(SIM)simBar();
     window.scrollTo(0,0); render(); poll(); dongPollLive();
     return;
   }
