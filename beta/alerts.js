@@ -546,7 +546,9 @@ function dongClose(){DG.cur=null;DG.msgFor=null;if(DG.view){try{DG.view.stop()}c
 $("dvClose").onclick=function(){if(DG.fromList)dongGame();else dongClose()};
 $("dongView").addEventListener("click",function(e){if(e.target===this)dongClose()});
 /* While the game's scores are open, the page behind can't scroll. */
-new MutationObserver(function(){document.documentElement.classList.toggle("lock",!$("dongView").hidden)}).observe($("dongView"),{attributes:true,attributeFilter:["hidden"]});
+/* The page behind can't scroll while a replay, the settings, teams or week sheet is open (every sheet opens the scrim). */
+(function(){var mo=new MutationObserver(function(){document.documentElement.classList.toggle("lock",!$("dongView").hidden||!$("scrim").hidden)});
+  ["dongView","scrim"].forEach(function(id){mo.observe($(id),{attributes:true,attributeFilter:["hidden"]})})})();
 setInterval(dongTick,1000);
 setInterval(dongPollLive,15000);
 

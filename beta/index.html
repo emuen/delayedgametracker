@@ -48,8 +48,8 @@ button,select,input{font:inherit;color:inherit}
 .sit small{display:block;font:700 14px/1.2 var(--display);letter-spacing:.05em;color:var(--muted);margin-top:2px}
 .sit:empty{display:none}
 .dial{display:grid;gap:6px}
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-radius:16px 16px 0 0;max-height:88vh;overflow-y:auto;
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;touch-action:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;overscroll-behavior:contain;background:var(--surface);border-radius:16px 16px 0 0;max-height:88vh;overflow-y:auto;
   padding:12px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-shadow:0 -8px 30px rgba(0,0,0,.25)}
 .sheet .in{max-width:640px;margin:0 auto;display:grid;gap:14px}
 .sheethead{display:flex;justify-content:space-between;align-items:center}
@@ -427,7 +427,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 <script src="stats.js?v=1"></script>
 <script src="games.js?v=12"></script>
 <script src="live.js?v=3"></script>
-<script src="alerts.js?v=16"></script>
+<script src="alerts.js?v=17"></script>
 <script src="main.js?v=7"></script>
 </body>
 </html>
