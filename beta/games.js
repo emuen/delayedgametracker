@@ -120,6 +120,13 @@ function lsView(e){
   if(!pick&&v.st==="in"&&E)return {st:"in",a:E.a,h:E.h};
   return {st:v.st,a:v.a,h:v.h,c:v.c,sync:!pick&&v.st==="in"};
 }
+/* Team logo on the game list (ESPN's own logo images); the letter badge stays as a fallback if the image can't load. */
+function logoUrl(tm,ab){return tm.logo||(ab&&ab!=="TBD"?"https://a.espncdn.com/i/teamlogos/nfl/500/"+ab.toLowerCase()+".png":"")}
+function teamMark(tm,ab,sty){
+  var u=logoUrl(tm,ab), badge='<span class="badge"'+sty+(u?' hidden':'')+'>'+esc(ab)+'</span>';
+  if(!u)return badge;
+  return '<span class="logo"><img src="'+esc(u)+'" alt="'+esc(ab)+'" width="36" height="36" onerror="var p=this.parentNode;p.nextSibling.hidden=false;p.remove()"></span>'+badge;
+}
 function gameRow(e){
   var dl=lsView(e), st=dl.st, c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
   function isFav(t){return !!(S.fav&&t&&t.team&&t.team.abbreviation===S.fav)}
@@ -128,7 +135,7 @@ function gameRow(e){
   var aw=show&&dl.a>dl.h, hw=show&&dl.h>dl.a;
   function tr(t,sty,win,opp,pts){
     var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.name||tm.shortDisplayName||tm.displayName||"To be decided", rec=recordOf(t,opp,evState(e),!show||st!=="post");
-    return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(isFav(t)?'<span class="star" aria-label="Favourite">★</span>':'')+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(pts):LS.scores&&dl.sync&&!nos&&t?'<span class="pend" aria-label="Score shows once it matches your delay">–</span>':"")+'</span></div>';
+    return '<div class="tr'+(win?" win":"")+'">'+teamMark(tm,ab,sty)+'<span class="nm">'+esc(nm)+(isFav(t)?'<span class="star" aria-label="Favourite">★</span>':'')+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(pts):LS.scores&&dl.sync&&!nos&&t?'<span class="pend" aria-label="Score shows once it matches your delay">–</span>':"")+'</span></div>';
   }
   var meta;
   var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
