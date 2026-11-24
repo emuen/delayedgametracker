@@ -121,11 +121,15 @@ function lsView(e){
   return {st:v.st,a:v.a,h:v.h,c:v.c,sync:!pick&&v.st==="in"};
 }
 /* Team logo on the game list (ESPN's own logo images); the letter badge stays as a fallback if the image can't load. */
-function logoUrl(tm,ab){return tm.logo||(ab&&ab!=="TBD"?"https://a.espncdn.com/i/teamlogos/nfl/500/"+ab.toLowerCase()+".png":"")}
+/* ESPN keeps a dark-background version of every logo (500-dark); 8 teams (LAR, NYG, DAL, DEN, GB, LV, MIN, NYJ) differ, the rest are the same file. */
+function logoUrl(tm,ab,dark){
+  if(!ab||ab==="TBD")return tm.logo||"";
+  return "https://a.espncdn.com/i/teamlogos/nfl/"+(dark?"500-dark":"500")+"/"+ab.toLowerCase()+".png";
+}
 function teamMark(tm,ab,sty){
-  var u=logoUrl(tm,ab), badge='<span class="badge"'+sty+(u?' hidden':'')+'>'+esc(ab)+'</span>';
+  var u=logoUrl(tm,ab,false), badge='<span class="badge"'+sty+(u?' hidden':'')+'>'+esc(ab)+'</span>';
   if(!u)return badge;
-  return '<span class="logo"><img src="'+esc(u)+'" alt="'+esc(ab)+'" width="36" height="36" onerror="var p=this.parentNode;p.nextSibling.hidden=false;p.remove()"></span>'+badge;
+  return '<span class="logo"><picture><source media="(prefers-color-scheme: dark)" srcset="'+esc(logoUrl(tm,ab,true))+'"><img src="'+esc(u)+'" alt="'+esc(ab)+'" width="36" height="36" onerror="var p=this.closest(\'.logo\');p.nextSibling.hidden=false;p.remove()"></picture></span>'+badge;
 }
 function gameRow(e,withDay){
   var dl=lsView(e), st=dl.st, c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
