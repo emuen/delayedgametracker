@@ -218,7 +218,8 @@
       H2.crew.position.set(0, (t > 500 && (zIn < 1 || out > 0)) ? Math.abs(Math.sin(t / 70)) * 0.06 : 0, zC);
       if (lift > 0) { H2.man.position.set(0, my, out > 0 ? zC : mz); }
       var spin = (zC - nearZ) / 0.38; H2.wheels.forEach(function (w) { w.rotation.x = spin; });
-      var fade = 1 - K.ramp(t, K.HURT.len - 300, 300); H2.root.scale.setScalar(HS * Math.max(0.0001, fade < 1 ? fade : 1));
+      /* No fade: by the end the crew is off the near side; the group is simply hidden after HURT.len. */
+      H2.root.visible = out < 1;
     }
     /* Only the line to gain is drawn: the line of scrimmage is where the previous arrow ended. */
     function setLines(los, ltg) {

@@ -65,7 +65,7 @@ setInterval(render,1000);
 if(window.Chart2D)window.Chart2D.onReady=function(){S.keys.drives=null;render()};
 if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
-  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=35",function(){
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=36",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
 
 }
