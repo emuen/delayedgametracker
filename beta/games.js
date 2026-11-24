@@ -151,11 +151,8 @@ function gameRow(e){
   return playable?'<a class="game'+(st==="post"?" done":"")+(fav?" fav":"")+'" href="#g-'+esc(e.id)+'">'+inner+'</a>':'<div class="game">'+inner+'</div>';
 }
 function renderList(){
-  var w=LS.sel||LS.cur, sel=$("wkSel");
-  if(LS.cal&&!sel.options.length){
-    sel.innerHTML=LS.cal.map(function(g){return '<optgroup label="'+esc(g.label)+'">'+g.entries.map(function(e){return '<option value="'+wkKey(e)+'">'+esc(e.label)+(LS.cur&&wkKey(e)===wkKey(LS.cur)?" (this week)":"")+'</option>'}).join("")+'</optgroup>'}).join("");
-  }
-  if(w)sel.value=wkKey(w);
+  var w=LS.sel||LS.cur, ce0=calEntry(w);
+  $("wkSel").innerHTML=ce0?esc(weekName(ce0))+(LS.cur&&wkKey(ce0)===wkKey(LS.cur)?'<small>This week</small>':''):"Week";
   var i=LS.flat.map(wkKey).indexOf(wkKey(w));
   $("wkPrev").disabled=i<=0; $("wkNext").disabled=i<0||i>=LS.flat.length-1;
   $("showScores").setAttribute("aria-checked",LS.scores?"true":"false");
@@ -191,7 +188,31 @@ function renderList(){
 }
 /* Delayed scores mature over time: refresh the list quietly while it shows scores. */
 setInterval(function(){if(S.view==="list"&&LS.scores&&LS.data)renderList()},5000);
-$("wkSel").onchange=function(){var e=LS.flat.filter(function(x){return wkKey(x)===$("wkSel").value})[0];if(e)goWeek(e)};
+/* Week picker: a sheet of number plates, grouped by part of the season. */
+function weekName(e){var l=e.label||"";return e.type===1?(/hall of fame/i.test(l)?"Hall of Fame":l):l}
+function weekTile(e){
+  var l=e.label||"", big, wide=false;
+  if(e.type===2)big=String(e.week);
+  else if(e.type===1)big=/hall of fame/i.test(l)?"HOF":String(l.match(/\d+/)||e.week);
+  else{big=l.replace(/ Round$/,"").replace(/Conference Championship/,"Conf. Champ.");wide=true}
+  var d=e.start?new Date(e.start):null, ds=d&&!isNaN(d)?d.toLocaleDateString(undefined,{day:"numeric",month:"short"}):"";
+  var k=wkKey(e), on=k===wkKey(LS.sel||LS.cur), now=LS.cur&&k===wkKey(LS.cur);
+  return '<button class="wtile'+(wide?" wide":"")+(on?" on":"")+(now?" now":"")+'" data-wk="'+esc(k)+'" aria-label="'+esc(l)+(now?", this week":"")+'"'+(on?' aria-current="true"':'')+'><b>'+esc(big)+'</b><small>'+(now?"This week":esc(ds))+'</small></button>';
+}
+function weeksOpen(open){
+  $("weekSheet").hidden=!open; $("scrim").hidden=!open;
+  if(!open){$("wkSel").focus();return}
+  $("weekList").innerHTML=(LS.cal||[]).map(function(g){
+    var post=g.entries[0]&&g.entries[0].type===3;
+    return '<div class="wgrp"><h3>'+esc(g.label)+'</h3><div class="wgrid'+(post?" post":"")+'">'+g.entries.map(weekTile).join("")+'</div></div>';
+  }).join("")||'<p class="help">The schedule is still loading.</p>';
+  var on=$("weekList").querySelector(".wtile.on")||$("weekList").querySelector(".wtile.now");
+  if(on)on.scrollIntoView({block:"center"});
+  $("weekDone").focus();
+}
+$("wkSel").onclick=function(){weeksOpen(true)};
+$("weekDone").onclick=function(){weeksOpen(false)};
+$("weekList").onclick=function(ev){var b=ev.target.closest("[data-wk]");if(!b)return;var e=LS.flat.filter(function(x){return wkKey(x)===b.dataset.wk})[0];weeksOpen(false);if(e)goWeek(e)};
 $("wkPrev").onclick=function(){var i=LS.flat.map(wkKey).indexOf(wkKey(LS.sel||LS.cur));if(i>0)goWeek(LS.flat[i-1])};
 $("wkNext").onclick=function(){var i=LS.flat.map(wkKey).indexOf(wkKey(LS.sel||LS.cur));if(i>=0&&i<LS.flat.length-1)goWeek(LS.flat[i+1])};
 function goWeek(e){location.hash=LS.cur&&wkKey(e)===wkKey(LS.cur)?"":"w-"+wkKey(e)}
@@ -236,8 +257,8 @@ function sheet(open){$("sheet").hidden=!open;$("scrim").hidden=!open;if(!open)$(
 $("openSettings").onclick=function(){sheet(true)};
 $("openSettings2").onclick=function(){sheet(true)};
 $("sheetDone").onclick=function(){sheet(false)};
-$("scrim").onclick=function(){if(!$("teamSheet").hidden)teamsOpen(false);else sheet(false)};
-document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;if(!$("teamSheet").hidden)teamsOpen(false);else if(!$("sheet").hidden)sheet(false)});
+$("scrim").onclick=function(){if(!$("weekSheet").hidden)weeksOpen(false);else if(!$("teamSheet").hidden)teamsOpen(false);else sheet(false)};
+document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;if(!$("weekSheet").hidden)weeksOpen(false);else if(!$("teamSheet").hidden)teamsOpen(false);else if(!$("sheet").hidden)sheet(false)});
 /* Teams: tap a team to go Follow → Not interested → No spoilers → Follow. Stored on this phone. */
 var TPLABEL={f:"Follow",n:"Not interested",x:"No spoilers"};
 function teamSum(){

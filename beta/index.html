@@ -183,10 +183,24 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .lhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:calc(14px + env(safe-area-inset-top,0px))}
 .lhead h1{margin:0;font:900 26px/1 var(--display);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
 .weeknav{display:grid;grid-template-columns:44px 1fr 44px;gap:6px;margin:12px 0 6px}
-.weeknav button,.weeknav select{min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:10px;font-weight:600}
-.weeknav button{font-size:20px;cursor:pointer}
+.weeknav button{min-height:48px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);font:800 22px var(--display);cursor:pointer;color:var(--fg)}
 .weeknav button:disabled{opacity:.35;cursor:default}
-.weeknav select{padding:0 10px;text-align:center;min-width:0}
+.weeknav .wkbtn{display:flex;align-items:center;justify-content:center;gap:10px;font:800 22px/1 var(--display);letter-spacing:.05em;text-transform:uppercase;min-width:0;padding:0 10px}
+.wkbtn small{font:700 11px/1 var(--body);letter-spacing:.08em;color:var(--muted);border:1px solid var(--line);border-radius:var(--rs);padding:4px 6px}
+.wkbtn::after{content:"\25BE";font-size:16px;color:var(--muted)}
+/* Week picker sheet */
+.wgrp{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.wgrp h3{margin:0;font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.wgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.wgrid.post{grid-template-columns:repeat(2,1fr)}
+.wtile{min-height:56px;border:1px solid var(--line);border-radius:var(--rs);background:var(--bg);color:var(--fg);display:grid;align-content:center;justify-items:center;gap:2px;padding:4px 2px;cursor:pointer;font:inherit;min-width:0}
+.wtile b{font:900 24px/1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:.02em;text-transform:uppercase}
+.wtile.wide b{font-size:19px}
+.wtile small{font:500 11px/1.1 var(--body);color:var(--muted);white-space:nowrap}
+.wtile.now{border:2px solid var(--fg)}
+.wtile.now small{color:var(--fg);font-weight:700}
+.wtile.on{background:var(--plate);border-color:var(--plate);color:var(--plate-ink)}
+.wtile.on small{color:var(--plate-ink);opacity:.75}
 .lopts{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px}
 .lhead .chip{white-space:nowrap;color:var(--fg)}
 .lopts label{display:flex;align-items:center;gap:8px;cursor:pointer}
@@ -296,7 +310,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
   <div class="lhead"><h1>Delay Booth</h1><button class="chip" id="openSettings2">Delay 45s · Settings</button></div>
   <div class="weeknav">
     <button id="wkPrev" aria-label="Previous week">‹</button>
-    <select id="wkSel" aria-label="Week"></select>
+    <button class="wkbtn" id="wkSel" aria-haspopup="dialog" aria-label="Choose week">Week</button>
     <button id="wkNext" aria-label="Next week">›</button>
   </div>
   <div class="lopts"><span id="lstatus">Loading games…</span><label><span>Show scores</span><button class="switch" id="showScores" role="switch" aria-checked="false" aria-label="Show scores"></button></label></div>
@@ -352,6 +366,10 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
   <div id="dvStory" class="dvstory" hidden></div>
 </div></div>
 <div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="weekSheet" hidden role="dialog" aria-modal="true" aria-labelledby="weekTitle"><div class="in">
+  <div class="sheethead"><h2 id="weekTitle">Week</h2><button id="weekDone">Done</button></div>
+  <div id="weekList"></div>
+</div></div>
 <div class="sheet top2" id="teamSheet" hidden role="dialog" aria-modal="true" aria-labelledby="teamTitle"><div class="in">
   <div class="sheethead"><h2 id="teamTitle">Teams</h2><button id="teamDone">Done</button></div>
   <p class="tlegend"><span>Tap a team to change it.</span><span><b>Follow</b>: an alert when its game has a score.</span><span><b>Not interested</b>: in the ticker, but no alerts.</span><span><b>No spoilers</b>: hidden from the ticker and alerts, for games you'll watch later.</span></p>
@@ -402,7 +420,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 <script src="render.js?v=3"></script>
 <script src="chartspec.js?v=2"></script>
 <script src="stats.js?v=1"></script>
-<script src="games.js?v=7"></script>
+<script src="games.js?v=8"></script>
 <script src="live.js?v=1"></script>
 <script src="alerts.js?v=13"></script>
 <script src="main.js?v=3"></script>
