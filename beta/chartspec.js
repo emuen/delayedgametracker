@@ -343,6 +343,6 @@ function fieldChart3D(L,specOnly){
   var tc=TC[L.off];
   return '<div class="chart"><div class="cap"><b>'+(L.done?"Drive":"Current drive")+'</b><span><span class="badge"'+(tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'')+'>'+esc(L.offAb)+'</span> '+(L.done&&L.label?esc(L.label)+" · ":"")+esc(stats)+'</span></div>'+
     '<div id="c3d"><img src="'+url+'" alt="'+esc(L.offAb)+' drive chart" style="display:block;width:100%;height:auto;border-radius:6px"></div>'+
-    '<div class="legend gc rp"><button class="replaybtn" id="replayBtn">▶ Replay drive</button><span>Tap any drive below to chart it</span></div></div>';
+    '<div class="legend gc rp"><button class="replaybtn" id="replayBtn">▶ Replay drive</button>'+(load("db_tapped",false)?'':'<span>Tap any drive below to chart it</span>')+'</div></div>';
 }
 

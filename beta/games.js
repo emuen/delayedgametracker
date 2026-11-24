@@ -32,6 +32,15 @@ function loadWeek(){
     LS.timer=setTimeout(loadWeek,LS.err?15000:live?30000:120000);
   });
 }
+/* Game clock in short words: "Q3 8:42", "Half", "End Q1", "OT 4:10". */
+function evClock(e){
+  var s=evComp(e).status||e.status||{}, t=s.type||{}, p=+s.period||0, clk=s.displayClock||"";
+  if(/half/i.test((t.name||"")+" "+(t.description||"")))return "Half";
+  if(!p)return "";
+  var q=p>4?(p>5?"OT"+(p-4):"OT"):"Q"+p;
+  if(/end/i.test(t.name||"")||clk==="0:00")return "End "+q;
+  return clk?q+" "+clk:q;
+}
 function evComp(e){return (e.competitions||[])[0]||{}}
 function evState(e){return (((evComp(e).status||e.status||{}).type)||{}).state||"pre"}
 function evTeam(e,ha){return (evComp(e).competitors||[]).filter(function(c){return c.homeAway===ha})[0]||null}
@@ -70,16 +79,16 @@ var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",
 (function(){var l=$("lead");l.value=String(S.lead);if(!l.value){l.value="5"}l.onchange=function(){S.lead=+l.value||5;save("db_lead",S.lead)}})();
 (function(){var d=$("dongMode");d.value=S.dongMode;if(!d.value)d.value="sound";d.onchange=function(){S.dongMode=d.value;save("db_dong",S.dongMode);if(S.dongMode==="off"||S.dongMode==="ticker"){DG.queue=[];DG.pending=[];DG.flash={}}dockRender(true)}})();
 (function(){var b=$("sounds");b.setAttribute("aria-checked",S.sounds?"true":"false");b.onclick=function(){S.sounds=!S.sounds;save("db_sounds",S.sounds);b.setAttribute("aria-checked",S.sounds?"true":"false")}})();
-function favChip(){$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
+function favChip(){if(!$("favChip"))return;$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
 favChip();
-$("favChip").onclick=function(){sheet(true);setTimeout(function(){$("fav").focus()},50)};
+if($("favChip"))$("favChip").onclick=function(){sheet(true);setTimeout(function(){$("fav").focus()},50)};
 /* With "Show scores" on, live scores are shown at your delay: each scoreboard load is kept with the
    time it arrived, and the list shows the newest one that is at least your delay old. Until one is
    that old, live scores stay hidden. Games with a "No spoilers" team never show a score here. */
 function lsKeep(sb){
   var key=wkKey(LS.sel)||"cur", now=Date.now(), m={};
   if(LS.histKey!==key){LS.hist=[];LS.histKey=key}
-  (sb.events||[]).forEach(function(e){m[e.id]={st:evState(e),a:+((evTeam(e,"away")||{}).score)||0,h:+((evTeam(e,"home")||{}).score)||0}});
+  (sb.events||[]).forEach(function(e){m[e.id]={st:evState(e),a:+((evTeam(e,"away")||{}).score)||0,h:+((evTeam(e,"home")||{}).score)||0,c:evClock(e)}});
   LS.hist.push({t:now,m:m});
   var cut=now-S.delay*1000, i=0; while(i<LS.hist.length-1&&LS.hist[i+1].t<=cut-120000)i++;
   if(i>0)LS.hist=LS.hist.slice(i);
@@ -109,7 +118,7 @@ function lsView(e){
   var v=(pick||H[0]).m[e.id];
   if(!v){live.sync=live.st!=="pre";return live}
   if(!pick&&v.st==="in"&&E)return {st:"in",a:E.a,h:E.h};
-  return {st:v.st,a:v.a,h:v.h,sync:!pick&&v.st==="in"};
+  return {st:v.st,a:v.a,h:v.h,c:v.c,sync:!pick&&v.st==="in"};
 }
 function gameRow(e){
   var dl=lsView(e), st=dl.st, c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
@@ -118,17 +127,17 @@ function gameRow(e){
   var hs=teamStyle(h), as=teamStyle(a,hs.rgb), show=LS.scores&&st!=="pre"&&!dl.sync&&!nos;
   var aw=show&&dl.a>dl.h, hw=show&&dl.h>dl.a;
   function tr(t,sty,win,opp,pts){
-    var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.shortDisplayName||tm.displayName||tm.name||"To be decided", rec=recordOf(t,opp,evState(e),!show||st!=="post");
+    var tm=(t&&t.team)||{}, ab=tm.abbreviation||"TBD", nm=tm.name||tm.shortDisplayName||tm.displayName||"To be decided", rec=recordOf(t,opp,evState(e),!show||st!=="post");
     return '<div class="tr'+(win?" win":"")+'"><span class="badge"'+sty+'>'+esc(ab)+'</span><span class="nm">'+esc(nm)+(isFav(t)?'<span class="star" aria-label="Favourite">★</span>':'')+(rec?'<small>'+esc(rec)+'</small>':'')+'</span><span class="sc">'+(show&&t?esc(pts):LS.scores&&dl.sync&&!nos&&t?'<span class="pend" aria-label="Score shows once it matches your delay">–</span>':"")+'</span></div>';
   }
-  var nets=evNets(e).slice(0,2).join(", "), meta;
+  var meta;
   var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
-  if(st==="in")meta='<span class="livechip">LIVE</span><small>'+esc(nets)+'</small>';
-  else if(st==="post")meta='<b>Final</b><small>'+esc(nets)+'</small>';
+  if(st==="in")meta='<span class="livechip">'+esc(!dl.sync&&dl.c?dl.c:"LIVE")+'</span>';
+  else if(st==="post")meta='<b>Final</b>';
   else{
     var d=new Date(e.date), det=((((c.status||{}).type)||{}).shortDetail)||"";
     var special=/postponed|canceled|cancelled|delayed|suspended/i.test(det);
-    meta='<b>'+(special?esc(det):tbd?"TBD":esc(d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})))+'</b><small>'+esc(nets||"")+'</small>';
+    meta='<b>'+(special?esc(det):tbd?"TBD":esc(d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hourCycle:"h23"})))+'</b>';
   }
   var playable=a&&h&&a.team&&h.team&&a.team.abbreviation&&h.team.abbreviation&&!/tbd/i.test(a.team.abbreviation+h.team.abbreviation);
   var inner='<div class="teams">'+tr(a,as.css,aw,h,dl.a)+tr(h,hs.css,hw,a,dl.h)+'</div><div class="gmeta">'+meta+'</div>';
@@ -153,9 +162,10 @@ function renderList(){
     box.innerHTML='<div class="empty">'+(ce&&ce.type===3?"Matchups and kickoff times for "+esc(ce.label)+" aren't set yet."+(ce.detail?"<br>"+esc(ce.detail):""):"No games this week.")+'</div>';
     return;
   }
-  var live=[], done=[], days=[], byDay={};
+  var live=[], done=[], days=[], byDay={}, mine=[];
   ev.forEach(function(e){
     var st=lsView(e).st;
+    if(S.fav&&["away","home"].some(function(ha){var t=evTeam(e,ha);return t&&t.team&&t.team.abbreviation===S.fav}))return mine.push(e);
     if(st==="in")return live.push(e);
     if(st==="post")return done.push(e);
     var tbd=evComp(e).timeValid===false, k=tbd?"zz":new Date(e.date).toDateString();
@@ -163,6 +173,7 @@ function renderList(){
     byDay[k].push(e);
   });
   var html=[];
+  if(mine.length)html.push('<h2 class="day live">Your game</h2>'+mine.map(gameRow).join(""));
   if(live.length)html.push('<h2 class="day live">Live now</h2>'+live.map(gameRow).join(""));
   days.forEach(function(k){
     var label=k==="zz"?"Date to be decided":new Date(byDay[k][0].date).toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"});
@@ -187,8 +198,7 @@ function route(){
     S.view="game"; clearTimeout(LS.timer);
     $("listView").hidden=true; $("gameView").hidden=false;
     $("back").setAttribute("href","#"+listHash);
-    var ce=calEntry(LS.sel||LS.cur); $("navWeek").textContent=ce?ce.label:"";
-    if(S.pick!==m[1]){S.pick=m[1];S.sum=null;S.keys={};tab("drives");dongReset()}
+        if(S.pick!==m[1]){S.pick=m[1];S.sum=null;S.keys={};tab("drives");dongReset()}
     if(SIM){
       var base=location.pathname+"?sim=1"+(/[?&]chart=2d\b/.test(location.search)?"&chart=2d":""), sb=$("simbar");
       function lk(sp,fr,txt,on){return '<a href="'+base+"&speed="+sp+"&from="+fr+location.hash+'"'+(on?' class="on"':'')+'>'+txt+'</a>'}

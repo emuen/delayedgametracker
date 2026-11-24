@@ -7,7 +7,7 @@ function render(){
   $("delayVal").textContent=fmtDelay(S.delay);
   chips();
   var st=$("status"), retry=$("retry");
-  retry.hidden=!S.err;
+  retry.hidden=!S.err; $("statusrow").classList.toggle("err",!!S.err);
   if(S.err){
     var secs=Math.max(0,Math.ceil((S.nextPollAt-now)/1000));
     st.textContent=(S.err==="Offline"?"Offline":S.err)+" · retrying in "+secs+"s"+(S.sum?" · showing last update":"");
@@ -30,19 +30,19 @@ function render(){
   var mid=$("mid"), sit="", posId=null;
   if(S.state==="pre"&&!V.plays.length){
     var d=new Date(hdrComp(j).date||now);
-    mid.innerHTML="Kickoff<small>"+esc(d.toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit"}))+"</small>";
+    mid.innerHTML="Kickoff<small>"+esc(d.toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}))+"</small>";
   }else if(S.state==="post"&&allShown){
     mid.innerHTML="Final<small>&nbsp;</small>";
   }else if(lastP){
     var c=clockText(lastP);
-    mid.innerHTML=esc(c.q+" "+c.clk)+"<small>"+esc(L?L.summary:"")+"</small>";
+    mid.innerHTML=esc(c.q+" "+c.clk);
     var rp=null; for(var k=V.last;k>=0;k--){if(!isNonPlay(V.plays[k])){rp=V.plays[k];break}}
     var e=rp&&rp.end;
     if(e&&e.down>0&&e.downDistanceText&&!rp.scoringPlay){sit=e.downDistanceText;posId=teamIdOf(e)||teamIdOf(rp.start)}
   }else{
     mid.innerHTML="Waiting<small>for the first play</small>";
   }
-  $("sit").textContent=sit;
+  var sp=aliasCodes(sit).split(/\s+at\s+/i); $("sit").innerHTML=sit?esc(sp[0])+(sp[1]?"<small>at "+esc(sp[1])+"</small>":""):"";
   S.bug={a:T.away?T.away.ab:"",h:T.home?T.home.ab:"",ap:$("awayPts").textContent,hp:$("homePts").textContent,
     clk:S.state==="post"&&allShown?"Final":lastP?(clockText(lastP).q+" "+clockText(lastP).clk).trim():"",sit:sit,
     pos:posId&&T.away&&T.away.id===posId?"a":posId&&T.home&&T.home.id===posId?"h":null};
@@ -89,7 +89,7 @@ function renderDrives(j,T,V,L){
       var c=clockText(p), dd=((p.start||{}).down>0&&!isNonPlay(p))?((p.start||{}).shortDownDistanceText||""):"", yd="";
       var ty=((p.type||{}).text||"");
       var btn=p.id===syncId?'<button class="tvsync" data-sync="'+esc(p.id)+'">Just happened on TV</button>':'';
-      return '<li class="'+(p.scoringPlay?"spt":"")+(isNonPlay(p)?" np":"")+'"><div class="pc"><b>'+esc(c.q+" "+c.clk)+'</b>'+esc(dd)+'</div><div class="tx">'+esc(cleanText(p.text)||ty)+'</div>'+yd+btn+'</li>';
+      return '<li class="'+(p.scoringPlay?"spt":"")+(isNonPlay(p)?" np":"")+'"><div class="pc"><b>'+esc(c.q+" "+c.clk)+'</b>'+esc(dd)+'</div><div class="tx">'+esc(aliasCodes(cleanText(dropNoise(p.text)))||ty)+'</div>'+yd+btn+'</li>';
     }).join("");
     html.push({q:q,h:'<details class="drive'+(sc?" sc":"")+'" data-k="'+esc(d.id)+'"'+style+(open?" open":"")+'><summary><span class="dt">'+esc(tm)+'</span><span class="dd">'+esc(desc)+(startTx?"<br>"+esc(startTx):"")+'</span><span class="dr'+(done?(sc?" sc":""):" live")+'">'+esc(res)+'</span></summary><ol class="plays">'+items+'</ol></details>'});
   });

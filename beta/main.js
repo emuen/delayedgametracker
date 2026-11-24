@@ -23,7 +23,7 @@ $("drives").addEventListener("click",function(e){
   }
   var s=e.target.closest("summary"); if(!s)return;
   var d=s.parentNode; if(d&&d.dataset&&d.dataset.k!=null)S.openState[d.dataset.k]=!d.open;
-  if(d&&d.dataset&&d.dataset.k!=null){S.chartDrive=d.dataset.k;S.keys.drives=null;setTimeout(function(){render();var c=document.querySelector(".chart");if(c)c.scrollIntoView({behavior:"smooth",block:"start"})},0)}
+  if(d&&d.dataset&&d.dataset.k!=null){S.chartDrive=d.dataset.k;save("db_tapped",true);S.keys.drives=null;setTimeout(function(){render();var c=document.querySelector(".chart");if(c)c.scrollIntoView({behavior:"smooth",block:"start"})},0)}
 });
 function tab(t){S.tab=t;$("drives").hidden=t!=="drives";$("stats").hidden=t!=="stats";
   $("tabDrives").setAttribute("aria-selected",t==="drives");$("tabStats").setAttribute("aria-selected",t==="stats");if(t==="stats")markScrolls()}
