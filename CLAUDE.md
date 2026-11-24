@@ -8,6 +8,7 @@ A personal phone web page that follows NFL games drive by drive, **held back by 
 - **Simulation:** add `?sim=1&speed=1|2|4|16&from=1..4#g-<eventId>` to either. It replays a finished game as if live; other games in the same window score alongside. 401873057 = JAX at TEN, week 10 (good default, from Q3).
 
 ## Workflow (keep it cheap)
+0. **Always build on the latest `beta/`** (another session may have pushed since): pull first, then run `./scripts/from-beta.sh` before changing anything, or `beta.sh` will overwrite newer beta work.
 0. **Start of a session:** a fresh clone has production in the root and pending work only in `beta/`. If they differ, run `./scripts/from-beta.sh` first to bring the beta's work into the root files.
 1. Change the root files.
 2. Serve and test: `python3 -m http.server 8765` (from the repo), then `node tests/run.js`. It runs 3 real examples of each of ~118 play types in about 5 s, and diffs info box, chips, banners, labels, caption and hold against `tests/golden.json`. Use `--shots [typeRegex] [--3d]` for a contact sheet in `tests/out/` (about 3 min for all in 3D) only when drawing changed. Look at 1–2 images at most.
@@ -25,7 +26,7 @@ Rules:
 - Feel: the old hand-hung ballpark scoreboard (big number plates, heavy condensed type, chunky tiles) in clean station colours. No browns. The teams bring the colour; the frame stays neutral.
 - Light tokens: bg #f3f2ee, surface #fff, line #d9d7d1, ink #161616, muted #615f59, plate #1b1b1b / plate ink #f6f4ee, signal yellow #f2c230 (accent: ball tab, line to gain only). Corners `--r` 10px, `--rs` 6px. Red only for change of possession.
 - Type: Big Shoulders Display (`--display`, numbers and labels) + Work Sans (`--body`).
-- Score header: team badge in team colour above a dark score plate; "BALL" tab under the team with the ball; down & distance in an outlined strip. Game list scores are small plates.
+- Score header: team badge above a compact score plate (64 px), "BALL" tab on the plate edge of the team with the ball, clock in the middle; no down & distance (the info box covers it). Delay chip top right; status line only when something is wrong; game info at the bottom of Stats; underline tabs; outlined Replay. Game list: team logos, "Your game" pinned on top, delayed clock on live games, nicknames, no network, 24 h times; week picker is a sheet of number plates with each week's span of games.
 - Dark mode "Blue-hour slate" (Round 5, N3): bg #1e232a, surface #2a3039, line #343b46, ink #eef1f4, muted #a4acb6, signal #e9bc34, red #ee6352; score plates outlined only (`--plate-border`), corners 14/8 px; dark sky and turf in the charts, dark info box (drivecore `DKM`). Dark team colours fall back to the team's own colour with a light edge on the header badges.
 - Mood boards and mockups: https://claude.ai/artifact/CdXPvVJpsvVkVCwrWTX7ob (Round 4 light, Round 5 dark).
 
