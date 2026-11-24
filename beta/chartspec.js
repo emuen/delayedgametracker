@@ -30,6 +30,8 @@ function fieldChart3D(L,specOnly){
       spike:/spike/i.test(t),safety:safety,gdd:L.offAb==="IND"&&r.kind==="play"&&/\(Shotgun\)/i.test((r.p||{}).text||"")&&/\bsacked\b/i.test(t)&&!isNullified(t),punt:k==="kick"&&/punt/i.test(ty+" "+t),defTD:defTD,retColor:k==="to"?defCol:undefined,retInk:k==="to"?defInk:undefined,
       scoreColor:defTD?defCol:col,scoreInk:defTD?defInk:ink,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
     var row=rows[rows.length-1], ct=cleanText(t).replace(/\s*\[[^\]]*\]/g,""), m;
+    /* Injury: "NYG-C.Hood was injured during the play." (live only: the player-down scene with the robots). */
+    if((m=/\b([A-Z]{2,4})-([A-Z][A-Za-z.'\- ]*?) was injured during the play/.exec(t))){var hab=ab2(m[1]), hoff=hab===L.offAb;row.hurt={name:m[2],ab:hab,bg:hoff?offCol:defCol,ink:hoff?offInk:defInk}}
     if(r.ring)row.ring=true;
     if(r.lats)row.lats=r.lats.map(function(x){return +F(x).toFixed(2)});
     /* Interception: where the ball was caught (ESPN may credit pressure in brackets or parentheses), so the

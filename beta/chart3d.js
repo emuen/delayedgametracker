@@ -158,6 +158,68 @@
       var st = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.46), lmat); st.position.set(lx, 0.88, 0); spin.add(st);
     });
     ball.position.set(0, 0.95, FIELD_W / 2 - 3); ball.visible = false; scene.add(ball);
+    /* Injury scene (live only): the player goes down where the play ended, two little medic robots
+       roll on from the near sideline with a stretcher, lift him on and roll him off. Built once,
+       hidden until a row has .hurt; drawn larger than life (like the ball) so it reads on a phone. */
+    var hurt = null, HS = 2.3;
+    function std(c, rough) { return new THREE.MeshStandardMaterial({ color: lin(c), roughness: rough == null ? 0.55 : rough }); }
+    function cyl(r1, r2, h, m, seg) { var me = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg || 14), m); me.castShadow = true; return me; }
+    function box(w, h, d, m) { var me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.castShadow = true; return me; }
+    function makeHurt() {
+      var root = new THREE.Group(), jers = std("#888888"), helm = std("#888888", 0.35), pants = std("#ecebe6"), skin = std("#3a2a20");
+      /* The player: built standing on his feet at the origin, lying along +x when rotation.z = 0. */
+      var man = new THREE.Group(), body = new THREE.Group(); man.add(body);
+      var torso = cyl(0.62, 0.5, 1.5, jers); torso.rotation.z = Math.PI / 2; torso.position.set(2.05, 0.55, 0); body.add(torso);
+      var pads = box(0.5, 0.6, 1.7, jers); pads.position.set(2.65, 0.6, 0); body.add(pads);
+      [-0.32, 0.32].forEach(function (z) {
+        var leg = cyl(0.26, 0.22, 1.4, pants); leg.rotation.z = Math.PI / 2; leg.position.set(0.75, 0.3, z); body.add(leg);
+        var shoe = box(0.35, 0.3, 0.32, skin); shoe.position.set(0.02, 0.32, z); body.add(shoe);
+        var arm = cyl(0.17, 0.15, 1.1, jers); arm.rotation.z = Math.PI / 2; arm.position.set(2.2, 0.35, z * 3); body.add(arm);
+      });
+      var head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 18, 14), helm); head.castShadow = true; head.position.set(3.35, 0.55, 0); body.add(head);
+      var mask = box(0.12, 0.42, 0.55, std("#cfcfcf")); mask.position.set(3.35, 1.0, 0); body.add(mask);
+      body.position.x = -1.75; root.add(man);
+      /* Crew: stretcher between two robots; it travels along z (toward / away from the camera). */
+      var crew = new THREE.Group(), shell = std("#f4f3ef", 0.3), dark = std("#2b2b2b", 0.7), yel = new THREE.MeshBasicMaterial({ color: lin("#f2c230") }), wheels = [];
+      var bed = box(4.4, 0.1, 1.5, std("#ffffff", 0.8)); bed.position.y = 1.15; crew.add(bed);
+      [-0.78, 0.78].forEach(function (z) { var pole = cyl(0.07, 0.07, 6.2, std("#9a9a9a", 0.3), 8); pole.rotation.z = Math.PI / 2; pole.position.set(0, 1.15, z); crew.add(pole); });
+      [-3.25, 3.25].forEach(function (x) {
+        var bot = new THREE.Group();
+        var b = box(1.1, 1.0, 1.25, shell); b.position.y = 1.05; bot.add(b);
+        var dome = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), shell); dome.position.y = 1.55; dome.castShadow = true; bot.add(dome);
+        var visor = box(0.75, 0.24, 0.06, dark); visor.position.set(0, 1.3, 0.64); bot.add(visor);
+        var eye = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), yel); eye.position.set(0, 1.3, 0.68); bot.add(eye);
+        var ant = cyl(0.03, 0.03, 0.55, dark, 6); ant.position.y = 2.25; bot.add(ant);
+        var tip = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), yel); tip.position.y = 2.55; bot.add(tip);
+        [-0.62, 0.62].forEach(function (wx2) { var w = cyl(0.38, 0.38, 0.2, dark, 16); w.rotation.z = Math.PI / 2; w.position.set(wx2, 0.38, 0); bot.add(w); wheels.push(w); });
+        bot.position.x = x; crew.add(bot);
+      });
+      root.add(crew); root.scale.setScalar(HS); root.visible = false; scene.add(root);
+      return { root: root, man: man, crew: crew, wheels: wheels, jers: jers, helm: helm };
+    }
+    /* t = ms since the scene started; at = where the play ended (world); col = the player's team colour. */
+    function hurtFrame(t, at, col) {
+      if (t == null || t < 0 || t > K.HURT.len || !at) { if (hurt) hurt.root.visible = false; return; }
+      if (!hurt) hurt = makeHurt();
+      var H2 = hurt, E = K.EASE, nearZ = (FIELD_W / 2 + 34 - at.z) / HS, side = 2.6;
+      H2.root.visible = true; H2.root.position.set(at.x, 0.02, at.z);
+      H2.jers.color.copy(lin(col || "#888888")); H2.helm.color.copy(lin(col || "#888888"));
+      /* He goes down (0-450 ms), with a small bounce. */
+      var fall = E.inOut ? E.inOut(K.ramp(t, 0, 450)) : K.ramp(t, 0, 450);
+      H2.man.rotation.z = (1 - fall) * Math.PI / 2; H2.man.position.set(0, 0, 0);
+      if (t > 450 && t < 700) H2.man.position.y = Math.sin(Math.PI * K.ramp(t, 450, 250)) * 0.25;
+      /* Robots roll in (500-2900), stop beside him, lift him onto the stretcher (3400-4300), roll off (4400-7300). */
+      var zIn = K.ramp(t, 500, 2400), zC, mz = 0, my = 0;
+      zC = nearZ + (side - nearZ) * (E.inOut ? E.inOut(zIn) : zIn);
+      var lift = K.ramp(t, 3400, 900), out = K.ramp(t, 4400, 2900), outE = out * out;
+      if (lift > 0) { var le = E.inOut ? E.inOut(lift) : lift; mz = side * le; my = 1.25 * le + Math.sin(Math.PI * le) * 0.9; }
+      if (out > 0) zC = side + (nearZ - side) * outE;
+      H2.crew.visible = t > 500;
+      H2.crew.position.set(0, (t > 500 && (zIn < 1 || out > 0)) ? Math.abs(Math.sin(t / 70)) * 0.06 : 0, zC);
+      if (lift > 0) { H2.man.position.set(0, my, out > 0 ? zC : mz); }
+      var spin = (zC - nearZ) / 0.38; H2.wheels.forEach(function (w) { w.rotation.x = spin; });
+      var fade = 1 - K.ramp(t, K.HURT.len - 300, 300); H2.root.scale.setScalar(HS * Math.max(0.0001, fade < 1 ? fade : 1));
+    }
     /* Only the line to gain is drawn: the line of scrimmage is where the previous arrow ended. */
     function setLines(los, ltg) {
       losM.visible = false; ball.visible = false; ltgM.visible = ltg != null;
@@ -433,6 +495,7 @@
 
     return {
       cap: cap, setSummary: setSummary, shake: shake,
+      hurtFrame: hurtFrame,
       scene: scene, cam: cam, rows: rows, reveal: reveal, tipAt: tipAt, ball: ball, ltgM: ltgM, wx: wx, setLines: setLines, startAt: startAt, startLabel: spec.start && spec.start.label,
       laneGap: STEP,
       /* Put play k on its lane (depth 0 = nearest); returns how visible it is (fades past the far lane). */
@@ -674,6 +737,9 @@
         ball.scale.setScalar(Math.max(0.0001, base * sc));
         if (sc < 0.01 || (g.type === "none" && !row.ghost)) ball.visible = false;
       }
+      /* Injury scene (live only): during the hold after the play, at the spot where it ended. */
+      var hr = g && !outro && g.hurt && s.hurt ? B.rows[cur] : null;
+      B.hurtFrame(hr ? t - g.hurtAt : null, hr ? B.world(cur, (hr.end || hr.A).clone().setY(0)) : null, hr && s.hurt.bg);
       /* End-zone tint on a touchdown / good field goal: ~25 %, ~300 ms. */
       tints.forEach(function (pl) { pl.visible = false; });
       if (g && !outro && (g.kind === "td" || (g.kind === "fg" && !g.miss)) && t >= g.end) {

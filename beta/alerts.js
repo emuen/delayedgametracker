@@ -371,10 +371,26 @@ function gddSound(){
     var s=A.createBufferSource(), g=A.createGain(); s.buffer=DG.gddBuf; g.gain.value=1; s.connect(g); g.connect(A.destination); s.start();
   }catch(e){}
 }
+/* Injury scene (live only): the ice cream vendor shouting in the stands. Our own remake (icecream.mp3). */
+DG.iceBuf=null;
+function iceLoad(){
+  if(DG.iceBuf||DG.iceLoading||!DG.audio)return; DG.iceLoading=true;
+  fetch("../icecream.mp3").then(function(r){return r.arrayBuffer()}).then(function(b){
+    return new Promise(function(res,rej){DG.audio.decodeAudioData(b,res,rej)});
+  }).then(function(buf){DG.iceBuf=buf}).catch(function(){DG.iceLoading=false});
+}
+function hurtSound(){
+  if(!S.sounds)return;
+  try{
+    var A=DG.audio; if(!A||!DG.iceBuf)return;
+    if(A.state==="suspended"&&A.resume){var pr=A.resume();if(pr&&pr.catch)pr.catch(function(){})}
+    var s=A.createBufferSource(); s.buffer=DG.iceBuf; s.connect(A.destination); s.start();
+  }catch(e){}
+}
 /* Phones only allow sound after a tap: the first tap anywhere unlocks the chime. */
 document.addEventListener("pointerdown",function(){
   if(DG.audio)return;
-  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume();gddLoad()}}catch(e){}
+  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume();gddLoad();iceLoad()}}catch(e){}
 },true);
 var KINDWORD={TD:"touchdown",FG:"field goal",SAFETY:"safety","DEF TD":"defensive touchdown"};
 /* A short detail line: "Z.Gonzalez, 53 yds", "D.Jones to L.Treadwell, 7 yds". */
