@@ -21,6 +21,13 @@ Rules:
 - ESPN can't be reached from the sandbox. To fetch live data, push a temporary workflow to the `scrape-debug` branch (see git history), read the result, then reset: `git push -f origin main:scrape-debug`.
 - `tests/fixtures.json` is built by `tests/build_fixtures.py` from a season dump (outside the repo). Add synthetic cases there for new edge cases.
 
+## Visual style: "Ballpark × Station" (chosen Nov 2026, on beta)
+- Feel: the old hand-hung ballpark scoreboard (big number plates, heavy condensed type, chunky tiles) in clean station colours. No browns. The teams bring the colour; the frame stays neutral.
+- Light tokens: bg #f3f2ee, surface #fff, line #d9d7d1, ink #161616, muted #615f59, plate #1b1b1b / plate ink #f6f4ee, signal yellow #f2c230 (accent: ball tab, line to gain only). Corners `--r` 10px, `--rs` 6px. Red only for change of possession.
+- Type: Big Shoulders Display (`--display`, numbers and labels) + Work Sans (`--body`).
+- Score header: team badge in team colour above a dark score plate; "BALL" tab under the team with the ball; down & distance in an outlined strip. Game list scores are small plates.
+- Dark mode still uses the old palette; a matching dark version comes after the UX review. Mood boards and mockups: https://claude.ai/artifact/CdXPvVJpsvVkVCwrWTX7ob (Round 4 page).
+
 ## Code map
 `index.html` holds the markup and CSS. Classic scripts load in this order and share globals:
 

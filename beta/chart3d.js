@@ -32,7 +32,7 @@
 
   function fieldTexture(spec, aniso) {
     var PX = 22, W = 120 * PX, H = Math.round(FIELD_W * PX), c = cvs(W, H), x = c.getContext("2d");
-    for (var i = 0; i < 10; i++) { x.fillStyle = i % 2 ? "#5ba84f" : "#50a047"; x.fillRect((10 + i * 10) * PX, 0, 10 * PX, H); }
+    for (var i = 0; i < 10; i++) { x.fillStyle = i % 2 ? "#7daa66" : "#76a260"; x.fillRect((10 + i * 10) * PX, 0, 10 * PX, H); }
     function ez(t, x0, flip) {
       x.fillStyle = t.bg; x.fillRect(x0 * PX, 0, 10 * PX, H);
       x.save(); x.translate((x0 + 5) * PX, H / 2); x.rotate(flip ? Math.PI / 2 : -Math.PI / 2);
@@ -66,7 +66,7 @@
   }
   function skyTexture() {
     var c = cvs(512, 512), x = c.getContext("2d"), g = x.createLinearGradient(0, 0, 0, 512);
-    g.addColorStop(0, "#2f7fd0"); g.addColorStop(0.55, "#7fbcec"); g.addColorStop(1, "#e3f2fc");
+    g.addColorStop(0, "#d9d7d1"); g.addColorStop(0.55, "#e9e7e2"); g.addColorStop(1, "#f3f2ee");
     x.fillStyle = g; x.fillRect(0, 0, 512, 512);
     x.fillStyle = "rgba(255,255,255,0.45)";
     [[90, 120, 70, 14], [330, 80, 95, 12], [250, 190, 60, 10], [440, 210, 50, 9]].forEach(function (e) {
@@ -97,7 +97,7 @@
     sun.position.set(-25, 60, 35); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     var sc = sun.shadow.camera; sc.left = -70; sc.right = 70; sc.top = 40; sc.bottom = -40; sc.near = 1; sc.far = 200;
     scene.add(sun);
-    var ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 200), new THREE.MeshLambertMaterial({ color: lin(0x2f6a2c) }));
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 200), new THREE.MeshLambertMaterial({ color: lin(0x557f47) }));
     ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.02, -FIELD_W / 2 + 100); scene.add(ground);
     var field = new THREE.Mesh(new THREE.PlaneGeometry(120, FIELD_W), new THREE.MeshLambertMaterial({ map: fieldTexture(spec, aniso) }));
     field.rotation.x = -Math.PI / 2; field.receiveShadow = true; scene.add(field);

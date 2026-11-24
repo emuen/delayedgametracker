@@ -22,6 +22,7 @@ function render(){
   var allShown=V.plays.length>0&&V.last===V.plays.length-1;
   var L=latestDrive(j,T,V);
   $("awayAb").textContent=T.away?T.away.ab:"AWAY"; $("homeAb").textContent=T.home?T.home.ab:"HOME";
+  var TCh=teamColors(j,T); ["away","home"].forEach(function(k){var el=$(k+"Ab"),c=T[k]&&TCh[T[k].id];if(c){el.style.setProperty("--tc",c.bg);el.style.setProperty("--tci",c.ink)}else{el.style.removeProperty("--tc");el.style.removeProperty("--tci")}});
   var started=V.plays.length||S.state!=="pre";
   $("awayPts").textContent=lastP?(lastP.awayScore||0):(started?0:"–");
   $("homePts").textContent=lastP?(lastP.homeScore||0):(started?0:"–");
