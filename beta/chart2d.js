@@ -253,17 +253,17 @@
   /* ---------- Drawing ---------- */
   function background(spec, B) {
     var W = B.W, H = B.H, c = cvs(W, H), x = c.getContext("2d"), P = B.P, u = B.u;
-    var g = x.createLinearGradient(0, 0, 0, B.yT); g.addColorStop(0, "#d9d7d1"); g.addColorStop(0.75, "#e9e7e2"); g.addColorStop(1, "#f3f2ee");
+    var g = x.createLinearGradient(0, 0, 0, B.yT); var dk = (window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches); g.addColorStop(0, dk ? "#1e232a" : "#d9d7d1"); g.addColorStop(0.75, dk ? "#232930" : "#e9e7e2"); g.addColorStop(1, dk ? "#262c34" : "#f3f2ee");
     x.fillStyle = g; x.fillRect(0, 0, W, B.yT + 1);
     x.fillStyle = "rgba(255,255,255,0.35)";
     [[0.18, 0.34, 0.11, 0.012], [0.72, 0.3, 0.14, 0.01], [0.55, 0.37, 0.08, 0.009]].forEach(function (e) { x.beginPath(); x.ellipse(e[0] * W, e[1] * H, e[2] * W, e[3] * W, 0, 0, Math.PI * 2); x.fill(); });
-    x.fillStyle = "#557f47"; x.fillRect(0, B.yT, W, H - B.yT);   /* turf around the field */
+    x.fillStyle = (window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches) ? "#2c4627" : "#557f47"; x.fillRect(0, B.yT, W, H - B.yT);   /* turf around the field */
     if (spec.laneMode === "off") {   /* a hint of ground behind the far sideline for plays slid past it */
       var gg = x.createLinearGradient(0, B.yCap, 0, B.yT); gg.addColorStop(0, "rgba(43,93,41,0)"); gg.addColorStop(1, "rgba(43,93,41,0.55)");
       x.fillStyle = gg; x.fillRect(0, B.yCap, W, B.yT - B.yCap);
     }
     function quad(f1, f2, fill) { var a = P(f1, 0), b = P(f2, 0), cc = P(f2, 1), d = P(f1, 1); x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.lineTo(cc.x, cc.y); x.lineTo(d.x, d.y); x.closePath(); x.fillStyle = fill; x.fill(); }
-    for (var f = 0; f < 100; f += 10) quad(f, f + 10, (f / 10) % 2 ? "#7daa66" : "#76a260");
+    for (var f = 0; f < 100; f += 10) quad(f, f + 10, (window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches) ? ((f / 10) % 2 ? "#3f6338" : "#3a5c33") : ((f / 10) % 2 ? "#7daa66" : "#76a260"));
     function ez(t, f1, f2, flip) {
       quad(f1, f2, t.bg);
       var fc = (f1 + f2) / 2, a = P(fc, 0.96), b = P(fc, 0.06), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;

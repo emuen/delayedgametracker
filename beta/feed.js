@@ -18,7 +18,7 @@ function hexRgb(h){h=String(h||"").replace("#","");if(!/^[0-9a-f]{6}$/i.test(h))
 function lum(c){var a=c.map(function(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)});return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]}
 function contrast(a,b){var x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)}
 function teamColors(j,T){
-  var dark=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches, surf=dark?[24,32,28]:[255,255,255];
+  var dark=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches, surf=dark?[42,48,57]:[255,255,255];
   var raw={};
   (hdrComp(j).competitors||[]).forEach(function(c){var t=c.team||{},ab=t.abbreviation,fb=COLORS[ab]||[];raw[String(t.id)]=[hexRgb(t.color)||hexRgb(fb[0]),hexRgb(t.alternateColor)||hexRgb(fb[1])]});
   function pick(id,avoid){
@@ -101,13 +101,6 @@ function cleanText(t){
     .replace(/^\s*\((?:No Huddle,?\s*)?(?:Shotgun|No Huddle)\)\s*/i,"")
     .replace(/\s*\((?:[A-Z][a-zA-Z]{0,2}\.\s?[A-Za-z'\-]+(?:\s*[;,]\s*)?)+\)(\.?)\s*$/,"$1")
     .trim();
-}
-/* Drive list text: drop feed bookkeeping (eligible-receiver reports, injury updates). */
-function dropNoise(t){
-  return String(t||"")
-    .replace(/\s*\*\*\s*Injury Update:[^*]*?(?=\s*\*\*|$)/gi,"")
-    .replace(/(?:^|\s)(?:(?:[A-Z][\w'-]*\.\s?)+[A-Z][\w'-]*(?:\s(?:Jr|Sr|II|III|IV)\.?)?(?:\s*(?:,|and)\s*)?)+\s+(?:reported|reports|report) in as (?:an )?eligible(?: receiver)?\.\s*/g," ")
-    .replace(/\s*\*\*\s*$/,"").trim();
 }
 var NOYARD=/timeout|end of|two-minute|kickoff|punt|extra point|field goal|coin toss|end period|official/i;
 /* Timeouts, quarter breaks and warnings: listed, but not plays. */

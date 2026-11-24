@@ -26,7 +26,8 @@ Rules:
 - Light tokens: bg #f3f2ee, surface #fff, line #d9d7d1, ink #161616, muted #615f59, plate #1b1b1b / plate ink #f6f4ee, signal yellow #f2c230 (accent: ball tab, line to gain only). Corners `--r` 10px, `--rs` 6px. Red only for change of possession.
 - Type: Big Shoulders Display (`--display`, numbers and labels) + Work Sans (`--body`).
 - Score header: team badge in team colour above a dark score plate; "BALL" tab under the team with the ball; down & distance in an outlined strip. Game list scores are small plates.
-- Dark mode still uses the old palette; a matching dark version comes after the UX review. Mood boards and mockups: https://claude.ai/artifact/CdXPvVJpsvVkVCwrWTX7ob (Round 4 page).
+- Dark mode "Blue-hour slate" (Round 5, N3): bg #1e232a, surface #2a3039, line #343b46, ink #eef1f4, muted #a4acb6, signal #e9bc34, red #ee6352; score plates outlined only (`--plate-border`), corners 14/8 px; dark sky and turf in the charts, dark info box (drivecore `DKM`). Dark team colours fall back to the team's own colour with a light edge on the header badges.
+- Mood boards and mockups: https://claude.ai/artifact/CdXPvVJpsvVkVCwrWTX7ob (Round 4 light, Round 5 dark).
 
 ## Code map
 `index.html` holds the markup and CSS. Classic scripts load in this order and share globals:

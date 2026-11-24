@@ -25,8 +25,7 @@
     carom: bez(0.15, 0.45, 0.55, 1), /* ball off an upright: quick rebound, drops away */
     stub: bez(0.2, 0.6, 0.3, 1),
     lin: function (x) { return clamp(x, 0, 1); },
-    out: bez(0.2, 0.7, 0.3, 1),
-    inOut: bez(0.42, 0, 0.58, 1)
+    out: bez(0.2, 0.7, 0.3, 1)
   };
   function backOut(t) { t = Math.max(0, Math.min(1, t)); var c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -35,8 +34,6 @@
   /* Goal posts (yards): crossbar height, half the width between the uprights, top of the uprights
      (kept lower than the real 35 ft so they don't crowd the chart), and how far behind the end
      line the base stands (the gooseneck brings the uprights over the end line). */
-  /* Injury scene timing (ms): starts this long after the result, lasts this long; the shout comes in at .shout. */
-  var HURT = { lead: 1700, len: 7800, shout: 2300 };
   var GOAL = { cb: 3.33, hw: 3.1, top: 3.33 + 7, back: 2 };
   /* Which upright / side of the posts, from the kicker's view: -1 left, 1 right, 0 neither. */
   function fgSide(s) {
@@ -106,14 +103,12 @@
      lands more than 400 ms past the contact. With opts.clock (frame capture) only if
      opts.doinkOnSeek is set (the live animation drives the clock and sets it). */
   function doinkWatch(segs, opts) {
-    var last = null, ok = opts && (!opts.clock || opts.doinkOnSeek), on = ok && opts.onDoink, onG = ok && opts.onGdd, onH = ok && opts.onHurt;
+    var last = null, ok = opts && (!opts.clock || opts.doinkOnSeek), on = ok && opts.onDoink, onG = ok && opts.onGdd;
     return function (t) {
-      if ((on || onG || onH) && last != null && t > last) segs.forEach(function (g) {
+      if ((on || onG) && last != null && t > last) segs.forEach(function (g) {
         if (on && g.contact != null && last < g.contact && t >= g.contact && t - g.contact < 400) { try { opts.onDoink(g); } catch (e) {} }
         /* Easter egg (live broadcast only): the sack shout, as the sack lands. */
         if (onG && g.gdd && last < g.end && t >= g.end && t - g.end < 400) { try { opts.onGdd(g); } catch (e) {} }
-        /* Injury scene: the vendor's shout from the stands, as the robots arrive. */
-        if (onH && g.hurt) { var hs = g.hurtAt + HURT.shout; if (last < hs && t >= hs && t - hs < 400) { try { opts.onHurt(g); } catch (e) {} } }
       });
       last = t;
     };
@@ -132,7 +127,7 @@
         s.kind === "pen" ? "pen" : s.type === "inc" ? "inc" : s.spike ? "spike" : s.kneel ? "kneel" : s.type === "dot" ? "nogain" :
         s.sack ? "sack" : s.type === "air" ? "pass" : "run";
       /* poss: the other team ends up with the ball (one look and one hold for every kind of turnover). */
-      var g = { k: k, kind: kind, type: s.type, yds: gain, big: big, cont: cont, t0: t, miss: !!s.fgMiss, poss: !!s.poss, gdd: !!(spec.easter && s.gdd), hurt: !!(spec.easter && s.hurt && !nextCont) };
+      var g = { k: k, kind: kind, type: s.type, yds: gain, big: big, cont: cont, t0: t, miss: !!s.fgMiss, poss: !!s.poss, gdd: !!(spec.easter && s.gdd) };
       var pre = cont ? 140 : k === 0 ? 700 : Math.max(320, 480 * pace);
       if (s.tmo && !cont) pre += 650;
       if (s.td && !cont) pre = Math.max(pre, 650);
@@ -195,8 +190,6 @@
       /* Reading time counts only text the snap line did not already show. */
       g.newChars = newChars(s.callout || {});
       g.read = 400 + 30 * g.newChars;
-      /* Injury (live only): the result is read first, then the player-down scene plays in the hold. */
-      if (g.hurt) emph = HURT.lead + HURT.len + 200;
       g.emph = emph;
       g.nextCont = nextCont;
       if (!cont) si++;
@@ -213,7 +206,6 @@
       var nx = segs[k + 1], nextPre = nx && !nx.cont ? nx.pre : 0;
       g.hold = g.nextCont ? 160 : Math.max(linger, g.read - nextPre) + g.emph;
       g.holdEnd = g.end + g.hold; t = g.holdEnd;
-      if (g.hurt) { g.hurtAt = g.end + HURT.lead; g.hurtEnd = g.hurtAt + HURT.len; }
     });
     var idx = 0;
     segs.forEach(function (g) { if (!g.cont) idx++; g.num = idx; });
@@ -349,11 +341,11 @@
     if (fx) drawFx(o, W, H, B, fx, u, scr);
     if (!callout) return;
     /* The info box always sits in the same place, across the top. */
-    var c = callout, pad = 8 * u, lh = 14 * u, TEXT = fx && c.muted ? "#8b958e" : "#3c463f";
+    var DKM = (window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches), c = callout, pad = 8 * u, lh = 14 * u, TEXT = fx && c.muted ? (DKM ? "#8d96a1" : "#8b958e") : (DKM ? "#d7dce2" : "#3c463f");
     /* Highlighted words are bold in the normal text colour (same as the still picture). */
     var HLC = {};
-    var FB = Math.round(11 * u) + "px Inter, system-ui, sans-serif", FH = "700 " + Math.round(11 * u) + "px Inter, system-ui, sans-serif";
-    o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif";
+    var FB = Math.round(11 * u) + "px 'Work Sans', system-ui, sans-serif", FH = "700 " + Math.round(11 * u) + "px 'Work Sans', system-ui, sans-serif";
+    o.font = "700 " + Math.round(11.5 * u) + "px 'Work Sans', system-ui, sans-serif";
     var w1 = o.measureText(c.head).width;
     function pieces(line) {
       var out = [], rest = line || "";
@@ -371,14 +363,14 @@
     var w2 = Math.max(widthOf(c.l1), widthOf(c.l2));
     var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u;
     o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 8 * u; o.shadowOffsetY = 2 * u;
-    o.fillStyle = "#fff"; o.beginPath();
+    o.fillStyle = DKM ? "#2a3039" : "#fff"; o.beginPath();
     if (o.roundRect) o.roundRect(bx, by, bw, bh, 5 * u); else o.rect(bx, by, bw, bh);
     o.fill(); o.restore();
-    o.textAlign = "left"; o.fillStyle = "#17201b";
-    o.font = "700 " + Math.round(11.5 * u) + "px Inter, system-ui, sans-serif"; o.fillText(c.head, bx + pad, by + pad + lh / 2 - 2 * u);
+    o.textAlign = "left"; o.fillStyle = DKM ? "#eef1f4" : "#17201b";
+    o.font = "700 " + Math.round(11.5 * u) + "px 'Work Sans', system-ui, sans-serif"; o.fillText(c.head, bx + pad, by + pad + lh / 2 - 2 * u);
     if (c.note) {
       var hw = o.measureText(c.head).width;
-      o.font = "600 " + Math.round(10.5 * u) + "px Inter, system-ui, sans-serif"; o.fillStyle = "#8b958e";
+      o.font = "600 " + Math.round(10.5 * u) + "px 'Work Sans', system-ui, sans-serif"; o.fillStyle = DKM ? "#a4acb6" : "#8b958e";
       o.fillText("  ·  " + c.note, bx + pad + hw, by + pad + lh / 2 - 2 * u);
     }
     function drawLine(line, y) {
@@ -456,11 +448,7 @@
         var fin = backOut(ramp(t, g.ghostEnd, 200)), fout = 1 - ramp(t, g.end - 120, 120);
         fx.chips.push({ p: chipAt(cur, g), text: "FLAG", bg: FLAG, fg: "#17201b", flag: true, s: fin, a: fout });
       }
-      if (g.hurt && t >= g.hurtAt + 250 && t < g.hurtAt + 2900) {
-        var hin = backOut(ramp(t, g.hurtAt + 250, 300)), hout = 1 - ramp(t, g.hurtAt + 2650, 250);
-        fx.banner = { text: "PLAYER DOWN", sub: s.hurt.name + " · " + s.hurt.ab, bg: s.hurt.bg, fg: s.hurt.ink || "#fff", s: hin, a: hout, size: 20 };
-      }
-      else if (g.gdd && t >= g.end) {
+      if (g.gdd && t >= g.end) {
         var gin = backOut(ramp(t, g.end + 80, 300)), gout = 1 - ramp(t, Math.min(g.holdEnd - 220, g.end + 1700), 250);
         fx.banner = { text: "GOD DAMMIT DONALD", bg: s.color, fg: "#fff", s: gin, a: gout, size: 17 };
       }
@@ -491,11 +479,11 @@
   function timelineOf(segs) {
     return segs.map(function (g) {
       return { row: g.k, kind: g.kind, type: g.type, yds: g.yds, cont: g.cont, num: g.num, t0: g.t0, snap: g.snap, catchAt: g.catchAt || null, contact: g.contact || null, ghostEnd: g.ghostEnd || null, walkAt: g.walkAt || null,
-        end: g.end, holdEnd: g.holdEnd, hurtAt: g.hurtAt || null, hurtEnd: g.hurtEnd || null, read: g.read, newChars: g.newChars, emph: g.emph,
+        end: g.end, holdEnd: g.holdEnd, read: g.read, newChars: g.newChars, emph: g.emph,
         phases: g.phases.map(function (p) { return { tgt: p.tgt, a: p.a, d: p.d, f0: p.f0, f1: p.f1 }; }) };
     });
   }
-  window.DriveCore = { HURT: HURT, drawBurst: drawBurst, GOAL: GOAL, fgPath: fgPath, fgSide: fgSide, doinkWatch: doinkWatch, DISPLAY: DISPLAY, bez: bez, EASE: EASE, backOut: backOut, clamp: clamp, ramp: ramp, plan: plan, newChars: newChars,
+  window.DriveCore = { drawBurst: drawBurst, GOAL: GOAL, fgPath: fgPath, fgSide: fgSide, doinkWatch: doinkWatch, DISPLAY: DISPLAY, bez: bez, EASE: EASE, backOut: backOut, clamp: clamp, ramp: ramp, plan: plan, newChars: newChars,
     chipFor: chipFor, ydStr: ydStr, flagMark: flagMark, fracOf: fracOf, activeAt: activeAt, LANES: LANES, laneDepth: laneDepth, laneAlpha: laneAlpha, slideE: slideE, laneState: laneState, summaryState: summaryState, dimOf: dimOf, overlayState: overlayState, timelineOf: timelineOf,
     pill: pill, drawOverlay: drawOverlay };
 })();
