@@ -30,7 +30,13 @@ html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);
   padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
   padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
-button,select,input{font:inherit;color:inherit}
+/* Base layer: no control keeps the phone's default look. New controls inherit this, then add their own class. */
+html{-webkit-text-size-adjust:100%}
+button,select,input,textarea{font:inherit;color:inherit;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;margin:0}
+a,summary,[role="switch"]{-webkit-tap-highlight-color:transparent}
+input,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-height:44px;min-width:0}
+summary{list-style:none}summary::-webkit-details-marker{display:none}
+img,svg,canvas{max-width:100%}
 .bar{background:var(--bg);padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:8px;border-bottom:1px solid var(--line);margin:0 calc(-1 * max(14px,env(safe-area-inset-left,0px)));padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
 .wrap{max-width:640px;margin:0 auto}
 .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:10px}
@@ -86,7 +92,7 @@ select{-webkit-appearance:none;appearance:none;padding-right:36px!important;
 .statusrow:not(.err){display:none}
 .status{font-size:12px;color:var(--muted);text-align:center}
 .status.err{color:var(--warn);font-weight:600}
-.chip{min-height:32px;border:1px solid var(--line);background:var(--surface);border-radius:var(--rs);padding:4px 12px;font-size:12px;cursor:pointer;color:var(--muted)}
+.chip{min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:var(--rs);padding:4px 12px;font-size:12px;cursor:pointer;color:var(--muted)}
 .chip.on{border-color:var(--fg);color:var(--fg)}
 .chip.warn{border-color:var(--warn);color:var(--warn);font-weight:600}
 .tabs{display:flex;gap:4px;margin:6px 0 10px;border-bottom:1px solid var(--line)}
@@ -210,7 +216,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .wtile.on small{color:var(--plate-ink);opacity:.75}
 .lopts{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px}
 .lhead .chip{white-space:nowrap;color:var(--fg)}
-.lopts label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.lopts label{display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px}
 .lopts .switch{width:44px;height:26px}
 .lopts .switch::after{width:18px;height:18px}
 .lopts .switch[aria-checked="true"]::after{left:21px}
@@ -237,7 +243,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .gmeta small{font-size:12px;color:var(--muted);max-width:7.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .livechip{font:700 12px var(--body);letter-spacing:.06em;color:var(--accent-ink);background:var(--accent);border-radius:var(--rs);padding:2px 8px}
 .nav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
-.nav a{color:var(--fg);font-weight:600;text-decoration:none;min-height:36px;display:inline-flex;align-items:center;padding-right:8px}
+.nav a{color:var(--fg);font-weight:600;text-decoration:none;min-height:44px;display:inline-flex;align-items:center;padding-right:8px}
 .nav .chip{color:var(--fg)}
 .simbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--accent);border-radius:10px;padding:6px 10px;margin-bottom:8px}
 .simbar b{color:var(--fg)}

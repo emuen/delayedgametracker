@@ -12,6 +12,7 @@ A personal phone web page that follows NFL games drive by drive, **held back by 
 0. **Start of a session:** a fresh clone has production in the root and pending work only in `beta/`. If they differ, run `./scripts/from-beta.sh` first to bring the beta's work into the root files.
 1. Change the root files.
 2. Serve and test: `python3 -m http.server 8765` (from the repo), then `node tests/run.js`. It runs 3 real examples of each of ~118 play types in about 5 s, and diffs info box, chips, banners, labels, caption and hold against `tests/golden.json`. Use `--shots [typeRegex] [--3d]` for a contact sheet in `tests/out/` (about 3 min for all in 3D) only when drawing changed. Look at 1–2 images at most.
+2b. **UI check** (any change to layout, CSS or markup): `node tests/ui.js` (about 25 s). It shows the key screens at phone size in light and dark from sample data, writes one contact sheet `tests/out/ui.png`, and prints flags. Fix every flag, then look at the sheet once against the UI checklist below.
 3. Publish to beta: `./scripts/beta.sh`, then `git add beta && git commit && git push`. **Commit only `beta/` here**; production keeps the last approved root files.
 4. The owner tries it on his phone and replies in batches.
 5. **Go live only when the owner says so:** commit the root files, run `node tests/run.js --accept` and commit `tests/golden.json`, then push.
@@ -29,6 +30,14 @@ Rules:
 - Score header: team badge above a compact score plate (64 px), "BALL" tab on the plate edge of the team with the ball, clock in the middle; no down & distance (the info box covers it). Delay chip top right; status line only when something is wrong; game info at the bottom of Stats; underline tabs; outlined Replay. Game list: team logos, "Your game" pinned on top, delayed clock on live games, nicknames, no network, 24 h times; week picker is a sheet of number plates with each week's span of games.
 - Dark mode "Blue-hour slate" (Round 5, N3): bg #1e232a, surface #2a3039, line #343b46, ink #eef1f4, muted #a4acb6, signal #e9bc34, red #ee6352; score plates outlined only (`--plate-border`), corners 14/8 px; dark sky and turf in the charts, dark info box (drivecore `DKM`). Dark team colours fall back to the team's own colour with a light edge on the header badges.
 - Mood boards and mockups: https://claude.ai/artifact/CdXPvVJpsvVkVCwrWTX7ob (Round 4 light, Round 5 dark).
+
+## UI checklist (every UI change)
+- New controls get their look from the base layer at the top of the CSS (no native arrows, boxes or tap flashes); never leave a browser default.
+- Nothing wider than the screen; at least 8 px between any control and the screen edge (charts, dock and overlays run edge to edge on purpose).
+- Tap targets 44 px or more (a label around a switch counts).
+- Text never cut off without an ellipsis; long team names use the nickname.
+- Check both light and dark, and every sheet that opens over the page (the page behind must not scroll).
+- Reuse the tokens (`--r`, `--rs`, colours, `--display`/`--body`); no one-off colours or corners.
 
 ## Code map
 `index.html` holds the markup and CSS. Classic scripts load in this order and share globals:
