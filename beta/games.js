@@ -23,7 +23,7 @@ function loadWeek(){
     if(wkKey(LS.sel)!==asked)return;
     if(!LS.cal)buildCal(sb);
     if(!w)LS.cur={year:+sb.season.year,type:+sb.season.type,week:+sb.week.number};
-    LS.data=sb; LS.err=""; lsKeep(sb); lsEarly(sb);
+    LS.data=sb; LS.err=""; if(LS.cal)spanKeep(wkKey(w||LS.cur),sb.events); lsKeep(sb); lsEarly(sb);
   }).catch(function(e){LS.err=/fetch|network|load/i.test(e.message||"")?"Offline · retrying":"Couldn't load games ("+e.message+")"})
   .then(function(){
     if(S.view!=="list")return;
@@ -188,6 +188,32 @@ function renderList(){
 }
 /* Delayed scores mature over time: refresh the list quietly while it shows scores. */
 setInterval(function(){if(S.view==="list"&&LS.scores&&LS.data)renderList()},5000);
+/* Each week's span of games (first kickoff to last, your local dates), read from that week's
+   scoreboard and kept on the phone: finished weeks for good, other weeks refreshed after a day. */
+var WS=(function(){try{return JSON.parse(localStorage.getItem("db_wkspan")||"{}")}catch(e){return {}}})();
+function spanKeep(k,ev){
+  var t=(ev||[]).map(function(x){return Date.parse(x.date)}).filter(function(x){return !isNaN(x)});
+  if(!t.length)return;
+  var done=(ev||[]).every(function(x){return evState(x)==="post"});
+  WS[k]={a:Math.min.apply(null,t),b:Math.max.apply(null,t),done:done,at:Date.now()};
+  try{localStorage.setItem("db_wkspan",JSON.stringify(WS))}catch(e){}
+}
+function spanText(e){
+  var v=WS[wkKey(e)]; if(!v)return "";
+  var a=new Date(v.a), b=new Date(v.b), m=function(d){return d.toLocaleDateString(undefined,{month:"short"})};
+  if(a.toDateString()===b.toDateString())return m(a)+" "+a.getDate();
+  return m(a)+" "+a.getDate()+"–"+(m(a)===m(b)?"":m(b)+" ")+b.getDate();
+}
+function spansLoad(){
+  var need=LS.flat.filter(function(e){var v=WS[wkKey(e)];return !v||(!v.done&&Date.now()-v.at>864e5)});
+  need.forEach(function(e){
+    getJSON(API+"/scoreboard?dates="+e.year+"&seasontype="+e.type+"&week="+e.week).then(function(sb){
+      spanKeep(wkKey(e),sb.events);
+      var b=document.querySelector('.wtile[data-wk="'+wkKey(e)+'"] small');
+      if(b)b.textContent=spanText(e);
+    }).catch(function(){});
+  });
+}
 /* Week picker: a sheet of number plates, grouped by part of the season. */
 function weekName(e){var l=e.label||"";return e.type===1?(/hall of fame/i.test(l)?"Hall of Fame":l):l}
 function weekTile(e){
@@ -195,9 +221,9 @@ function weekTile(e){
   if(e.type===2)big=String(e.week);
   else if(e.type===1)big=/hall of fame/i.test(l)?"HOF":String(l.match(/\d+/)||e.week);
   else{big=l.replace(/ Round$/,"").replace(/Conference Championship/,"Conf. Champ.");wide=true}
-  var d=e.start?new Date(e.start):null, ds=d&&!isNaN(d)?d.toLocaleDateString(undefined,{day:"numeric",month:"short"}):"";
+  var ds=spanText(e);
   var k=wkKey(e), on=k===wkKey(LS.sel||LS.cur), now=LS.cur&&k===wkKey(LS.cur);
-  return '<button class="wtile'+(wide?" wide":"")+(on?" on":"")+(now?" now":"")+'" data-wk="'+esc(k)+'" aria-label="'+esc(l)+(now?", this week":"")+'"'+(on?' aria-current="true"':'')+'><b>'+esc(big)+'</b><small>'+(now?"This week":esc(ds))+'</small></button>';
+  return '<button class="wtile'+(wide?" wide":"")+(on?" on":"")+(now?" now":"")+'" data-wk="'+esc(k)+'" aria-label="'+esc(l)+(now?", this week":"")+'"'+(on?' aria-current="true"':'')+'><b>'+esc(big)+'</b><small>'+esc(ds)+'</small></button>';
 }
 function weeksOpen(open){
   $("weekSheet").hidden=!open; $("scrim").hidden=!open;
@@ -206,6 +232,7 @@ function weeksOpen(open){
     var post=g.entries[0]&&g.entries[0].type===3;
     return '<div class="wgrp"><h3>'+esc(g.label)+'</h3><div class="wgrid'+(post?" post":"")+'">'+g.entries.map(weekTile).join("")+'</div></div>';
   }).join("")||'<p class="help">The schedule is still loading.</p>';
+  spansLoad();
   var on=$("weekList").querySelector(".wtile.on")||$("weekList").querySelector(".wtile.now");
   if(on)on.scrollIntoView({block:"center"});
   $("weekDone").focus();
