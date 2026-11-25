@@ -23,13 +23,13 @@ $("drives").addEventListener("click",function(e){
   }
   var s=e.target.closest("summary"); if(!s)return;
   var d=s.parentNode; if(d&&d.dataset&&d.dataset.k!=null)S.openState[d.dataset.k]=!d.open;
-  if(d&&d.dataset&&d.dataset.k!=null){S.chartDrive=d.dataset.k;S.keys.drives=null;setTimeout(function(){render();var c=document.querySelector(".chart");if(c)c.scrollIntoView({behavior:"smooth",block:"start"})},0)}
+  if(d&&d.dataset&&d.dataset.k!=null){S.chartDrive=d.dataset.k;save("db_tapped",true);S.keys.drives=null;setTimeout(function(){render();var c=document.querySelector(".chart");if(c)c.scrollIntoView({behavior:"smooth",block:"start"})},0)}
 });
 function tab(t){S.tab=t;$("drives").hidden=t!=="drives";$("stats").hidden=t!=="stats";
   $("tabDrives").setAttribute("aria-selected",t==="drives");$("tabStats").setAttribute("aria-selected",t==="stats");if(t==="stats")markScrolls()}
 $("tabDrives").onclick=function(){tab("drives")};
 $("tabStats").onclick=function(){tab("stats")};
-function stab(t){S.statTab=t;save("db_statTab",t);S.keys.stats=null;render()}
+function stab(t){S.statTab=t;S.keys.stats=null;render()}
 $("segMine").onclick=function(){stab("mine")};
 $("segOpp").onclick=function(){stab("opp")};
 $("segTeam").onclick=function(){stab("team")};
@@ -65,7 +65,7 @@ setInterval(render,1000);
 if(window.Chart2D)window.Chart2D.onReady=function(){S.keys.drives=null;render()};
 if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
-  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=32",function(){
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=37",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
 
 }

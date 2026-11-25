@@ -77,6 +77,9 @@ function dongSimSetup(j){
     DG.sim.ready=true;
   }).catch(function(){});
 }
+/* Simulator jumped to another quarter: other games keep their loaded data; alerts start over, and
+   scores already in the past at the new spot are marked seen (as at setup) once the main game is back. */
+function dongSimJump(){var keep=DG.sim;dongReset();DG.sim=keep;if(DG.sim)DG.sim.resync=true;dongClose&&dongClose();dockRender()}
 function dongSimNow(){if(!S.sum)return 0;var V=visibleIds(S.sum),p=V.plays[V.last];return p?gameSecs(p):0}
 function simGame(e,ent,cur){
   var G=sbGame(e), ps=ent.plays, k=-1;
@@ -190,7 +193,10 @@ function dongRelease(){var items=DG.pending;DG.pending=[];DG.heldSince=0;if(item
 function dongTick(){
   if(S.view!=="game"){return}
   var now=Date.now();
-  if(SIM&&DG.sim&&DG.sim.ready&&S.sum)DG.simCur=Math.max(DG.simCur||0,dongSimNow());
+  if(SIM&&DG.sim&&DG.sim.ready&&S.sum){
+    if(DG.sim.resync&&S.loaded){var c0=dongSimNow();Object.keys(DG.sim.by).forEach(function(id){DG.sim.by[id].plays.forEach(function(p){if(isScore(p)&&p._gs<=c0)DG.seen[p.id]=1})});DG.simCur=c0;DG.sim.resync=false}
+    if(!DG.sim.resync)DG.simCur=Math.max(DG.simCur||0,dongSimNow());
+  }
   dongSimTick();
   DG.hot=mainHot(now);
   if(S.dongMode==="off"||S.dongMode==="ticker"){DG.queue=[];DG.pending=[];DG.heldSince=0}
@@ -371,10 +377,26 @@ function gddSound(){
     var s=A.createBufferSource(), g=A.createGain(); s.buffer=DG.gddBuf; g.gain.value=1; s.connect(g); g.connect(A.destination); s.start();
   }catch(e){}
 }
+/* Injury scene (live only): the ice cream vendor shouting in the stands. Our own remake (icecream.mp3). */
+DG.iceBuf=null;
+function iceLoad(){
+  if(DG.iceBuf||DG.iceLoading||!DG.audio)return; DG.iceLoading=true;
+  fetch("icecream.mp3").then(function(r){return r.arrayBuffer()}).then(function(b){
+    return new Promise(function(res,rej){DG.audio.decodeAudioData(b,res,rej)});
+  }).then(function(buf){DG.iceBuf=buf}).catch(function(){DG.iceLoading=false});
+}
+function hurtSound(){
+  if(!S.sounds)return;
+  try{
+    var A=DG.audio; if(!A||!DG.iceBuf)return;
+    if(A.state==="suspended"&&A.resume){var pr=A.resume();if(pr&&pr.catch)pr.catch(function(){})}
+    var s=A.createBufferSource(); s.buffer=DG.iceBuf; s.connect(A.destination); s.start();
+  }catch(e){}
+}
 /* Phones only allow sound after a tap: the first tap anywhere unlocks the chime. */
 document.addEventListener("pointerdown",function(){
   if(DG.audio)return;
-  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume();gddLoad()}}catch(e){}
+  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){DG.audio=new AC();if(DG.audio.resume)DG.audio.resume();gddLoad();iceLoad()}}catch(e){}
 },true);
 var KINDWORD={TD:"touchdown",FG:"field goal",SAFETY:"safety","DEF TD":"defensive touchdown"};
 /* A short detail line: "Z.Gonzalez, 53 yds", "D.Jones to L.Treadwell, 7 yds". */
@@ -524,7 +546,9 @@ function dongClose(){DG.cur=null;DG.msgFor=null;if(DG.view){try{DG.view.stop()}c
 $("dvClose").onclick=function(){if(DG.fromList)dongGame();else dongClose()};
 $("dongView").addEventListener("click",function(e){if(e.target===this)dongClose()});
 /* While the game's scores are open, the page behind can't scroll. */
-new MutationObserver(function(){document.documentElement.classList.toggle("lock",!$("dongView").hidden)}).observe($("dongView"),{attributes:true,attributeFilter:["hidden"]});
+/* The page behind can't scroll while a replay, the settings, teams or week sheet is open (every sheet opens the scrim). */
+(function(){var mo=new MutationObserver(function(){document.documentElement.classList.toggle("lock",!$("dongView").hidden||!$("scrim").hidden)});
+  ["dongView","scrim"].forEach(function(id){mo.observe($(id),{attributes:true,attributeFilter:["hidden"]})})})();
 setInterval(dongTick,1000);
 setInterval(dongPollLive,15000);
 

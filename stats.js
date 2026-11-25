@@ -41,8 +41,8 @@ function renderStats(j,T,allShown){
   }
   var key=snap.t+"|"+S.statTab;
   if(S.keys.stats===key)return; S.keys.stats=key;
-  var box=snap.box, out=[], TC=teamColors(j,T);
-  function sty(t){var c=t&&TC[t.id];return c?' style="--tc:'+c.bg+';--tci:'+c.ink+'"':''}
+  var box=snap.box, out=[], TC=teamColors(j,T,true);
+  function sty(t){var c=t&&TC[t.id];return c?' style="--tc:'+c.bg+';--tci:'+c.ink+(c.edge?';box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)':'')+'"':''}
   if(S.statTab==="team"){
     var teams=box.teams||[], A=null, H=null;
     teams.forEach(function(t){var id=String((t.team||{}).id);if(T.away&&id===T.away.id)A=t;else if(T.home&&id===T.home.id)H=t});
