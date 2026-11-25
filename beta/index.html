@@ -223,6 +223,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .day{margin:18px 2px 8px;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
 .day::after{content:"";flex:1;height:1px;background:var(--line)}
 .day.live{color:var(--fg)}
+.day .dd{color:var(--muted);margin-left:-2px}
+.day .dd::before{content:"· "}
 .game{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;color:inherit;text-decoration:none;min-height:64px}
 .game:active{background:var(--bg)}
 .game.fav{border:2px solid var(--fg);padding:9px 11px;opacity:1}
@@ -439,7 +441,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 <script src="render.js?v=5"></script>
 <script src="chartspec.js?v=4"></script>
 <script src="stats.js?v=2"></script>
-<script src="games.js?v=15"></script>
+<script src="games.js?v=16"></script>
 <script src="live.js?v=3"></script>
 <script src="alerts.js?v=18"></script>
 <script src="main.js?v=8"></script>
