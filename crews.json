@@ -1,177 +1,8 @@
 {
  "source": "506sports.com",
  "season": 2026,
- "week": 11,
+ "week": 12,
  "games": [
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "IND",
-   "home": "HOU",
-   "network": "Prime Video",
-   "slot": "Thu 8:00 ET",
-   "crew": [
-    "Al Michaels",
-    "Kirk Herbstreit"
-   ],
-   "note": "also WXIN/FOX Indianapolis, KRIV/FOX Houston"
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "MIN",
-   "home": "SF",
-   "network": "NBC",
-   "slot": "Sun 8:00 ET",
-   "crew": [
-    "Mike Tirico",
-    "Cris Collinsworth"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "CIN",
-   "home": "WSH",
-   "network": "ESPN",
-   "slot": "Mon 8:00 ET",
-   "crew": [
-    "Joe Buck",
-    "Troy Aikman"
-   ],
-   "note": "also WLWT/NBC Cincinnati, WTTG/FOX DC"
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "ARI",
-   "home": "KC",
-   "network": "CBS",
-   "slot": "Early",
-   "crew": [
-    "Ian Eagle",
-    "Ross Tucker"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "PIT",
-   "home": "PHI",
-   "network": "CBS",
-   "slot": "Early",
-   "crew": [
-    "Kevin Harlan",
-    "Trent Green"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "MIA",
-   "home": "BUF",
-   "network": "CBS",
-   "slot": "Early",
-   "crew": [
-    "Spero Dedes",
-    "Adam Archuleta"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "JAX",
-   "home": "NYG",
-   "network": "CBS",
-   "slot": "Late",
-   "crew": [
-    "Jim Nantz",
-    "J.J. Watt"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "LV",
-   "home": "DEN",
-   "network": "CBS",
-   "slot": "Late",
-   "crew": [
-    "Andrew Catalon",
-    "Logan Ryan"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "TEN",
-   "home": "DAL",
-   "network": "FOX",
-   "slot": "Single",
-   "crew": [
-    "Joe Davis",
-    "Greg Olsen"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "NO",
-   "home": "CHI",
-   "network": "FOX",
-   "slot": "Single",
-   "crew": [
-    "Kevin Burkhardt",
-    "Tom Brady"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "BAL",
-   "home": "CAR",
-   "network": "FOX",
-   "slot": "Single",
-   "crew": [
-    "Kenny Albert",
-    "Jonathan Vilma"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "TB",
-   "home": "DET",
-   "network": "FOX",
-   "slot": "Single",
-   "crew": [
-    "Kevin Kugler",
-    "Daryl Johnston"
-   ],
-   "note": ""
-  },
-  {
-   "season": 2026,
-   "week": 11,
-   "away": "NYJ",
-   "home": "LAC",
-   "network": "FOX",
-   "slot": "Late",
-   "crew": [
-    "Adam Amin",
-    "Drew Brees"
-   ],
-   "note": ""
-  },
   {
    "season": 2026,
    "week": 12,
@@ -379,7 +210,117 @@
     "Daryl Johnston"
    ],
    "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "LAC",
+   "home": "TB",
+   "network": "CBS",
+   "slot": "Early",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "WSH",
+   "home": "TEN",
+   "network": "CBS",
+   "slot": "Early",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "DET",
+   "home": "ATL",
+   "network": "CBS",
+   "slot": "Early",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "CIN",
+   "home": "CLE",
+   "network": "CBS",
+   "slot": "Early",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "BUF",
+   "home": "NE",
+   "network": "CBS",
+   "slot": "Late",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "CAR",
+   "home": "MIN",
+   "network": "CBS",
+   "slot": "Late",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "SF",
+   "home": "NYG",
+   "network": "FOX",
+   "slot": "Single",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "JAX",
+   "home": "CHI",
+   "network": "FOX",
+   "slot": "Single",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "GB",
+   "home": "NO",
+   "network": "FOX",
+   "slot": "Single",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "PHI",
+   "home": "ARI",
+   "network": "FOX",
+   "slot": "Late",
+   "crew": [],
+   "note": ""
+  },
+  {
+   "season": 2026,
+   "week": 13,
+   "away": "MIA",
+   "home": "DEN",
+   "network": "FOX",
+   "slot": "Late",
+   "crew": [],
+   "note": ""
   }
  ],
- "updated": "2026-11-24T23:55:04Z"
+ "updated": "2026-11-25T08:40:45Z"
 }
