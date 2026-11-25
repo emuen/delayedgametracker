@@ -54,7 +54,7 @@ function teamStyle(t,avoid){
   if(!t||!t.team)return {css:"",rgb:null};
   var dark=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches, surf=dark?[24,32,28]:[255,255,255];
   var fb=COLORS[t.team.abbreviation]||[], opts=[hexRgb(t.team.color)||hexRgb(fb[0]),hexRgb(t.team.alternateColor)||hexRgb(fb[1])].filter(Boolean), c=null;
-  opts.forEach(function(o){if(c||contrast(o,surf)<1.8)return;if(avoid&&Math.abs(o[0]-avoid[0])+Math.abs(o[1]-avoid[1])+Math.abs(o[2]-avoid[2])<120)return;c=o});
+  opts.forEach(function(o){if(c||contrast(o,surf)<1.8)return;if(avoid&&near(o,avoid))return;c=o});
   c=c||opts.filter(function(o){return contrast(o,surf)>=1.8})[0];
   return c?{css:' style="--tc:rgb('+c.join(",")+');--tci:'+(lum(c)>0.35?"#111":"#fff")+'"',rgb:c}:{css:"",rgb:null};
 }

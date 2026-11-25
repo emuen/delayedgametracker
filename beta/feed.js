@@ -17,18 +17,32 @@ var COLORS={ARI:["97233F","FFB612"],ATL:["A71930","000000"],BAL:["241773","9E7C0
 function hexRgb(h){h=String(h||"").replace("#","");if(!/^[0-9a-f]{6}$/i.test(h))return null;return [0,2,4].map(function(i){return parseInt(h.substr(i,2),16)})}
 function lum(c){var a=c.map(function(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)});return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]}
 function contrast(a,b){var x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)}
-function teamColors(j,T){
+/* Two colours look alike if they are close as the eye sees them (CIELAB distance under 30). */
+function labOf(c){
+  var f=function(v){v/=255;return v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92}, r=f(c[0]),g=f(c[1]),b=f(c[2]);
+  var x=(r*.4124+g*.3576+b*.1805)/.95047, y=r*.2126+g*.7152+b*.0722, z=(r*.0193+g*.1192+b*.9505)/1.08883;
+  var h=function(t){return t>0.008856?Math.cbrt(t):7.787*t+16/116};
+  return [116*h(y)-16,500*(h(x)-h(y)),200*(h(y)-h(z))];
+}
+function near(c,d){var a=labOf(c),b=labOf(d);return Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])<30}
+function teamColors(j,T,badge){
   var dark=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches, surf=dark?[42,48,57]:[255,255,255];
   var raw={};
   (hdrComp(j).competitors||[]).forEach(function(c){var t=c.team||{},ab=t.abbreviation,fb=COLORS[ab]||[];raw[String(t.id)]=[hexRgb(t.color)||hexRgb(fb[0]),hexRgb(t.alternateColor)||hexRgb(fb[1])]});
   function pick(id,avoid){
     var opts=(raw[id]||[]).filter(Boolean), best=null;
-    opts.forEach(function(c){if(best)return;if(contrast(c,surf)<1.8)return;if(avoid&&Math.abs(c[0]-avoid[0])+Math.abs(c[1]-avoid[1])+Math.abs(c[2]-avoid[2])<120)return;best=c});
-    return best||opts.filter(function(c){return contrast(c,surf)>=1.8})[0]||null;
+    opts.forEach(function(c){if(best)return;if(contrast(c,surf)<1.8)return;if(avoid&&near(c,avoid))return;best=c});
+    if(best)return best;
+    var ok=opts.filter(function(c){return contrast(c,surf)>=1.8})[0]||null;
+    /* Score badges: if the readable colour would look like the other team's, keep the team's own
+       colour instead (dark mode gives it a light edge), as long as that one is clearly different. */
+    if(badge&&ok&&avoid&&near(ok,avoid)&&opts[0]&&!near(opts[0],avoid)){edge[id]=contrast(opts[0],surf)<1.8;return opts[0]}
+    return ok;
   }
+  var edge={};
   var out={}, h=T.home&&T.home.id, a=T.away&&T.away.id;
   if(h)out[h]=pick(h); if(a)out[a]=pick(a,out[h]);
-  Object.keys(out).forEach(function(k){var c=out[k];if(!c){delete out[k];return}out[k]={bg:"rgb("+c.join(",")+")",ink:lum(c)>0.35?"#111":"#fff"}});
+  Object.keys(out).forEach(function(k){var c=out[k];if(!c){delete out[k];return}out[k]={bg:"rgb("+c.join(",")+")",ink:lum(c)>0.35?"#111":"#fff",edge:!!edge[k]}});
   return out;
 }
 function qLabel(n){return n>5?(n-4)+"nd overtime":n===5?"Overtime":["","1st","2nd","3rd","4th"][n]+" quarter"}

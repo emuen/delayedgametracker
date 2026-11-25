@@ -22,7 +22,7 @@ function render(){
   var allShown=V.plays.length>0&&V.last===V.plays.length-1;
   var L=latestDrive(j,T,V);
   $("awayAb").textContent=T.away?T.away.ab:"AWAY"; $("homeAb").textContent=T.home?T.home.ab:"HOME";
-  var TCh=teamColors(j,T); ["away","home"].forEach(function(k){var el=$(k+"Ab"),c=T[k]&&TCh[T[k].id],edge=false;if(!c&&T[k]){var cc=(hdrComp(j).competitors||[]).filter(function(x){return x.homeAway===k})[0],col=cc&&cc.team&&cc.team.color;if(col){c={bg:"#"+String(col).replace("#",""),ink:"#fff"};edge=true}}el.style.boxShadow=edge?"inset 0 0 0 1px rgba(255,255,255,.4)":"";if(c){el.style.setProperty("--tc",c.bg);el.style.setProperty("--tci",c.ink)}else{el.style.removeProperty("--tc");el.style.removeProperty("--tci")}});
+  var TCh=teamColors(j,T,true); ["away","home"].forEach(function(k){var el=$(k+"Ab"),c=T[k]&&TCh[T[k].id],edge=!!(c&&c.edge);if(!c&&T[k]){var cc=(hdrComp(j).competitors||[]).filter(function(x){return x.homeAway===k})[0],col=cc&&cc.team&&cc.team.color;if(col){c={bg:"#"+String(col).replace("#",""),ink:"#fff"};edge=true}}el.style.boxShadow=edge?"inset 0 0 0 1px rgba(255,255,255,.4)":"";if(c){el.style.setProperty("--tc",c.bg);el.style.setProperty("--tci",c.ink)}else{el.style.removeProperty("--tc");el.style.removeProperty("--tci")}});
   var started=V.plays.length||S.state!=="pre";
   $("awayPts").textContent=lastP?(lastP.awayScore||0):(started?0:"–");
   $("homePts").textContent=lastP?(lastP.homeScore||0):(started?0:"–");
@@ -65,7 +65,7 @@ function render(){
 }
 
 function renderDrives(j,T,V,L){
-  var drives=drivesOf(j), cur=(j.drives||{}).current, html=[], now=Date.now(), TC=teamColors(j,T);
+  var drives=drivesOf(j), cur=(j.drives||{}).current, html=[], now=Date.now(), TC=teamColors(j,T,true);
   var newest=null, syncId=null;
   for(var k=V.last;k>=0;k--){if(!isNonPlay(V.plays[k])){newest=V.plays[k];break}}
   if(newest&&S.shownAt[newest.id]&&now-S.shownAt[newest.id]<120000&&!S.synced[newest.id]&&S.state!=="post")syncId=newest.id;
@@ -83,7 +83,7 @@ function renderDrives(j,T,V,L){
     var start=d.start||{}, sc=done&&dst.scored, sClock=clockText(start);
     var startTx=(start.text?"From "+start.text:"")+(sClock.q?" · "+sClock.q+" "+sClock.clk:"");
     var userOpen=S.openState[d.id], open=userOpen===undefined?d.id===latestId:userOpen;
-    var tc=TC[String((d.team||{}).id)], style=tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'';
+    var tc=TC[String((d.team||{}).id)], style=tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+(tc.edge?';box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)':'')+'"':'';
     var q=((d.start||{}).period||{}).number||((vis[0]||{}).period||{}).number||0;
     var items=vis.slice().reverse().map(function(p){
       var c=clockText(p), dd=((p.start||{}).down>0&&!isNonPlay(p))?((p.start||{}).shortDownDistanceText||""):"", yd="";
