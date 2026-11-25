@@ -131,7 +131,7 @@ function teamMark(tm,ab,sty){
   if(!u)return badge;
   return '<span class="logo"><picture><source media="(prefers-color-scheme: dark)" srcset="'+esc(logoUrl(tm,ab,true))+'"><img src="'+esc(u)+'" alt="'+esc(ab)+'" width="36" height="36" onerror="var p=this.closest(\'.logo\');p.nextSibling.hidden=false;p.remove()"></picture></span>'+badge;
 }
-function gameRow(e){
+function gameRow(e,withDay){
   var dl=lsView(e), st=dl.st, c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
   function isFav(t){return !!(S.fav&&t&&t.team&&t.team.abbreviation===S.fav)}
   var fav=isFav(a)||isFav(h), nos=a&&h&&a.team&&h.team&&gamePref(a.team.abbreviation,h.team.abbreviation)==="x";
@@ -149,6 +149,8 @@ function gameRow(e){
     var d=new Date(e.date), det=((((c.status||{}).type)||{}).shortDetail)||"";
     var special=/postponed|canceled|cancelled|delayed|suspended/i.test(det);
     meta='<b>'+(special?esc(det):tbd?"TBD":esc(d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hourCycle:"h23"})))+'</b>';
+    /* "Your game" sits outside the day headings, so it carries its own day (your local date). */
+    if(withDay&&!special&&!isNaN(d))meta+='<small>'+esc(d.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}))+'</small>';
   }
   var playable=a&&h&&a.team&&h.team&&a.team.abbreviation&&h.team.abbreviation&&!/tbd/i.test(a.team.abbreviation+h.team.abbreviation);
   var inner='<div class="teams">'+tr(a,as.css,aw,h,dl.a)+tr(h,hs.css,hw,a,dl.h)+'</div><div class="gmeta">'+meta+'</div>';
@@ -181,17 +183,13 @@ function renderList(){
     byDay[k].push(e);
   });
   var html=[];
-  if(mine.length){
-    /* "Your game" sits outside the day headings, so the heading carries the day (your local date). */
-    var md=new Date(mine[0].date), mday=evComp(mine[0]).timeValid===false||isNaN(md)?"":'<span class="dd">'+esc(md.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"}))+'</span>';
-    html.push('<h2 class="day live">Your game'+mday+'</h2>'+mine.map(function(e){return gameRow(e)}).join(""));
-  }
-  if(live.length)html.push('<h2 class="day live">Live now</h2>'+live.map(function(e){return gameRow(e)}).join(""));
+  if(mine.length)html.push('<h2 class="day live">Your game</h2>'+mine.map(function(e){return gameRow(e,true)}).join(""));
+  if(live.length)html.push('<h2 class="day live">Live now</h2>'+live.map(gameRow).join(""));
   days.forEach(function(k){
     var label=k==="zz"?"Date to be decided":new Date(byDay[k][0].date).toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"});
-    html.push('<h2 class="day">'+esc(label)+'</h2>'+byDay[k].map(function(e){return gameRow(e)}).join(""));
+    html.push('<h2 class="day">'+esc(label)+'</h2>'+byDay[k].map(gameRow).join(""));
   });
-  if(done.length)html.push('<h2 class="day">Finished</h2>'+done.map(function(e){return gameRow(e)}).join(""));
+  if(done.length)html.push('<h2 class="day">Finished</h2>'+done.map(gameRow).join(""));
   var out=html.join(""); if(out!==LS.html||!box.firstChild){LS.html=out;box.innerHTML=out}
 }
 /* Delayed scores mature over time: refresh the list quietly while it shows scores. */

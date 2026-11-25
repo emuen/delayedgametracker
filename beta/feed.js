@@ -65,7 +65,7 @@ function delayedState(j){
   var cut=Date.now()-S.delay*1000-lagEst()*1000, best=null;
   allPlays(j).forEach(function(p){var w=Date.parse(p.wallclock);if(!isNaN(w)&&w<=cut&&p.homeScore!=null)best=p});
   if(!best)return null;
-  return {a:+best.awayScore||0,h:+best.homeScore||0,period:+((best.period||{}).number)||0,clock:((best.clock||{}).displayValue)||"",pos:teamIdOf(best.end||best.start)};
+  return {a:+best.awayScore||0,h:+best.homeScore||0,period:+((best.period||{}).number)||0,clock:((best.clock||{}).displayValue)||"",pos:ballAfter(best)};
 }
 /* Usable for 3 min after it was read; asked again after 1 min. */
 function earlyOf(id){var E=EARLY[id];return E&&!E.loading&&Date.now()-E.t<180000?E:null}
@@ -125,6 +125,14 @@ function dropNoise(t){
 }
 var NOYARD=/timeout|end of|two-minute|kickoff|punt|extra point|field goal|coin toss|end period|official/i;
 /* Timeouts, quarter breaks and warnings: listed, but not plays. */
+/* Team with the ball after a play, for the ticker's yellow dot. None after a score (through the try and
+   until the kickoff is caught) or at the end of a quarter, half or game, so it never points at the wrong team. */
+function ballAfter(p){
+  if(!p)return null;
+  var ty=((p.type||{}).text||"");
+  if(p.scoringPlay||/touchdown|field goal good|safety|extra point|two-point|2pt|conversion|end of|end period|end quarter|end game|halftime/i.test(ty))return null;
+  return teamIdOf(p.end)||teamIdOf(p.start);
+}
 function isNonPlay(p){var ty=((p.type||{}).text||""),t=p.text||"";return /timeout|end of|end period|end quarter|end game|two-minute|coin toss/i.test(ty)||/^\s*(official\s+)?timeout\b|^\s*end (of )?(quarter|half|game)|^\s*two-minute warning/i.test(t)}
 function isOfficialTO(p){return /official timeout|tv timeout/i.test(((p.type||{}).text||"")+" "+(p.text||""))}
 /* What ends a drive: score, punt, turnover, missed FG, safety. */
