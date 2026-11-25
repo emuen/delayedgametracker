@@ -268,7 +268,7 @@ function route(){
     S.view="game"; clearTimeout(LS.timer);
     $("listView").hidden=true; $("gameView").hidden=false;
     $("back").setAttribute("href","#"+listHash);
-        if(S.pick!==m[1]){S.pick=m[1];S.sum=null;S.keys={};tab("drives");dongReset()}
+        if(S.pick!==m[1]){S.pick=m[1];S.statTab="team";S.sum=null;S.keys={};tab("drives");dongReset()}
     if(SIM)simBar();
     window.scrollTo(0,0); render(); poll(); dongPollLive();
     return;

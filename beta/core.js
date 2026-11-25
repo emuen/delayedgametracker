@@ -55,7 +55,7 @@ function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.pars
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var S={
   delay:load("db_delay",45), dongMode:load("db_dong","sound"), sounds:load("db_sounds",true), teams:load("db_teams",{}), linger:load("db_linger",1), lead:load("db_lead",5), liveDone:{}, live:null, view:"list", fav:load("db_fav",load("db_team","LAR")||""),
-  lagSamples:load("db_lag",[]), statTab:load("db_statTab","mine"), wantWake:load("db_wake",false),
+  lagSamples:load("db_lag",[]), statTab:"team", wantWake:load("db_wake",false),
   pick:"", eventId:null, sum:null, sumVer:0, state:"pre",
   seen:{}, estimated:{}, shownAt:{}, synced:{}, loaded:false, lastOk:0, nextPollAt:0, snaps:[], err:"", schedule:[],
   tab:"drives", openState:{}, keys:{}, crews:null

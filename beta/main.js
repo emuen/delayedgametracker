@@ -29,7 +29,7 @@ function tab(t){S.tab=t;$("drives").hidden=t!=="drives";$("stats").hidden=t!=="s
   $("tabDrives").setAttribute("aria-selected",t==="drives");$("tabStats").setAttribute("aria-selected",t==="stats");if(t==="stats")markScrolls()}
 $("tabDrives").onclick=function(){tab("drives")};
 $("tabStats").onclick=function(){tab("stats")};
-function stab(t){S.statTab=t;save("db_statTab",t);S.keys.stats=null;render()}
+function stab(t){S.statTab=t;S.keys.stats=null;render()}
 $("segMine").onclick=function(){stab("mine")};
 $("segOpp").onclick=function(){stab("opp")};
 $("segTeam").onclick=function(){stab("team")};
