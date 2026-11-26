@@ -5,6 +5,7 @@ A personal phone web page that follows NFL games drive by drive, **held back by 
 ## Environments
 - **Production:** https://emuen.github.io/delayedgametracker/ (repo root files).
 - **Beta:** https://emuen.github.io/delayedgametracker/beta/ (the `beta/` folder; tab title starts "BETA").
+- **Lab:** https://emuen.github.io/delayedgametracker/lab/ (the `lab/` folder; tab title starts "LAB"). A throwaway copy of beta for wilder experiments (started 26 Nov 2026 with the drive card). Work in `lab/` directly; `./scripts/lab.sh` resets it to the current beta. Keep beta to fixes and small things while an experiment runs, copy beta fixes into the lab when they matter there, and keep experiments short. If the owner keeps an experiment, it becomes the next beta (with beta's fixes copied in); if not, delete `lab/`.
 - **Simulation:** add `?sim=1&speed=1|2|4|16&from=1..4#g-<eventId>` to either. It replays a finished game as if live; other games in the same window score alongside. 401873057 = JAX at TEN, week 10 (good default, from Q3).
 
 ## Workflow (keep it cheap)
@@ -54,9 +55,13 @@ Rules:
 | games.js | Game list, routing (`#g-<id>`, `#w-...`), settings, teams sheet |
 | live.js | Live animation of each new play (heads-up `S.lead`, snap, reveal at `playTime + delay`) |
 | alerts.js | Other games: dock (ticker) at the user's delay, holding alerts while a play is under way (`mainHot`), score lines (a scoring chip shows "TD · J.Gibbs, 12 yds" for 10 s and scrolls into view; tap a chip for the scoring-drive replay with outcome and top contributors via `scoreStory` underneath), sounds (dong chime, doink, Colts sack-shout easter egg, live only) |
-| main.js | Drive replay, tabs, keep-screen-on, startup |
+| drivecard.js | The drive card: summary line, still picture, Replay/Stop, stepping (buttons, swipe, lane tap) |
+| main.js | Drive list taps, tabs, keep-screen-on, startup |
 
 Bump the `?v=` number in index.html for every JS file you change.
+
+## The drive card (drivecard.js)
+The drive chart with its summary line, info box and controls is one component, used by the game view (`renderDrives`) and the ticker sheet (`dongOpen`). **It behaves the same everywhere: a place may change how it opens and what sits around it, never what you can do with it.** Both open on the still picture. Controls: Replay drive / Stop; step through plays with ◀ ▶ (counter "Play 3 of 8", kickoffs and punts named), a sideways swipe on the chart, or a tap on a lane; "Whole drive" goes back. Place options are limited to `onBusy` (the game view pauses its updates and the live animation while the card is busy); a new option needs the owner's OK. New chart features go into the card, never into a place. The ticker's title, score line and top contributors belong to the ticker sheet, outside the card. `tests/ui.js` flags it if the two places' cards offer different controls.
 
 ## The owner's standing rules
 - The main game is the most important thing on screen. Never spoil anything ahead of the delay, other games included.

@@ -30,6 +30,7 @@ function fieldChart3D(L,specOnly){
       spike:/spike/i.test(t),safety:safety,gdd:L.offAb==="IND"&&r.kind==="play"&&/\(Shotgun\)/i.test((r.p||{}).text||"")&&/\bsacked\b/i.test(t)&&!isNullified(t),punt:k==="kick"&&/punt/i.test(ty+" "+t),defTD:defTD,retColor:k==="to"?defCol:undefined,retInk:k==="to"?defInk:undefined,
       scoreColor:defTD?defCol:col,scoreInk:defTD?defInk:ink,cont:i>0&&!!r.p&&L.rows[i-1].p===r.p});
     var row=rows[rows.length-1], ct=cleanText(t).replace(/\s*\[[^\]]*\]/g,""), m;
+    if(r.p&&isKick(r.p))row.uncounted=true;   /* kickoffs and punts: not in the drive's play count */
     /* Injury: "NYG-C.Hood was injured during the play." (live only: the player-down scene with the robots). */
     if((m=/\b([A-Z]{2,4})-([A-Z][A-Za-z.'\- ]*?) was injured during the play/.exec(t))){var hab=ab2(m[1]), hoff=hab===L.offAb;row.hurt={name:m[2],ab:hab,bg:hoff?offCol:defCol,ink:hoff?offInk:defInk}}
     if(r.ring)row.ring=true;
@@ -340,12 +341,6 @@ function fieldChart3D(L,specOnly){
   if(use3d){try{url=window.Chart3D.render(spec);S.engine="3d"}catch(e){console.log("3D render failed, using the flat chart",e);S.no3d=true;use3d=false}}
   if(!use3d){try{url=window.Chart2D.render(spec);S.engine="2d"}catch(e){console.log("2D render failed",e);S.engine=null;return ""}}
   S.spec3d=spec;
-  var nOwn=L.real.filter(function(p){return !isKick(p)}).length, own=L.rows.filter(function(r){return r.kind==="play"});
-  var yds2=own.length?Math.round(own[own.length-1].e-own[0].s):0, top_=driveTime(L);
-  var stats=[nOwn+" play"+(nOwn===1?"":"s"),yds2+" yds"].concat(top_?[top_]:[]).join(" · ");
-  var tc=TC[L.off];
-  return '<div class="chart"><div class="cap"><b>'+(L.done?"Drive":"Current drive")+'</b><span><span class="badge"'+(tc?' style="--tc:'+tc.bg+';--tci:'+tc.ink+'"':'')+'>'+esc(L.offAb)+'</span> '+(L.done&&L.label?esc(L.label)+" · ":"")+esc(stats)+'</span></div>'+
-    '<div id="c3d"><img src="'+url+'" alt="'+esc(L.offAb)+' drive chart" style="display:block;width:100%;height:auto;border-radius:6px"></div>'+
-    '<div class="legend gc rp"><button class="replaybtn" id="replayBtn">▶ Replay drive</button>'+(load("db_tapped",false)?'':'<span>Tap any drive below to chart it</span>')+'</div></div>';
+  return DriveCard.html(L,url,"c3d");
 }
 

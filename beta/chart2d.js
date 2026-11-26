@@ -386,8 +386,8 @@
     /* Drive in progress: earlier plays stay dimmed exactly as the animation leaves them. */
     B.rows.forEach(function (r, k) {
       if (!(r.alpha > 0)) return;
-      var dim = spec.focus != null && spec.focus >= 0 ? (k === spec.focus ? 0 : 0.85) : spec.dimFrom > 0 && k < spec.dimFrom ? 0.85 : 0;
-      var foc = spec.focus != null && spec.focus >= 0 && k !== spec.focus;
+      var dim = spec.focus != null && spec.focus >= 0 ? (K.inFocus(spec, k) ? 0 : 0.85) : spec.dimFrom > 0 && k < spec.dimFrom ? 0.85 : 0;
+      var foc = spec.focus != null && spec.focus >= 0 && !K.inFocus(spec, k);
       if (r.ghost && spec.rows[k].ghostOnly) { B.reveal(r.ghost, 1); drawParts(x, r, r.ghost.parts, foc ? 1 : dim, 0.4 * (foc ? r.alpha * 0.55 : r.alpha)); }
       B.reveal(r, 1); drawParts(x, r, r.parts, foc ? 1 : dim, foc ? r.alpha * 0.55 : r.alpha);
       if (r.missX) drawX(x, r, dim, 1, r.alpha);

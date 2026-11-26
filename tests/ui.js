@@ -1,13 +1,13 @@
 /* UI check: the key screens at phone size, light and dark, from sample data (no network).
    node tests/ui.js            writes tests/out/ui.png (one contact sheet to look at) and prints flags
-   node tests/ui.js beta       checks the beta/ folder instead of the root files
+   node tests/ui.js beta|lab   checks the beta/ or lab/ folder instead of the root files
    Needs the repo served on :8765 (python3 -m http.server 8765).
    Flags: anything wider than the screen, tap targets under 44 px, controls closer than 8 px to the
    screen edge, controls still in the phone's native look, text cut off without an ellipsis. */
 let pw; try { pw = require('playwright'); } catch (e) { pw = require('/opt/npm-tools/node_modules/playwright'); }
 const fs = require('fs'), path = require('path');
 const DIR = __dirname, OUT = path.join(DIR, 'out'); fs.mkdirSync(OUT, { recursive: true });
-const BASE = 'http://localhost:8765/' + (process.argv[2] === 'beta' ? 'beta/' : '') + 'index.html';
+const BASE = 'http://localhost:8765/' + (/^(beta|lab)$/.test(process.argv[2] || '') ? process.argv[2] + '/' : '') + 'index.html';
 const THREE = '/home/claude/test3d/node_modules/three/build/three.min.js';
 
 /* Sample week from the test fixtures: two live games, three upcoming, the rest final. */
@@ -91,6 +91,14 @@ const FLAGS = () => {
     await pg.goto(BASE + '#g-' + M.main); await pg.waitForTimeout(5000);
     await snap('game view');
     await snap('drive list', () => pg.evaluate(() => { const d = document.querySelector('details.drive'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } }));
+    await snap('stepping', () => pg.evaluate(() => { scrollTo(0, 0); const n = document.querySelector('#drives .dc-prev'); if (n) n.click(); }));
+    await pg.evaluate(() => { const r = document.querySelector('#drives .dc-rp'); if (r && r.textContent === 'Whole drive') r.click(); });
+    await snap('ticker card', () => pg.evaluate(() => { const vis = allPlays(S.sum).filter(p => S.V.ids[p.id] && !isNonPlay(p)), ps = vis.filter(p => p.scoringPlay), p = ps.length ? ps[ps.length - 1] : vis[vis.length - 1]; if (p) dongOpen({ j: S.sum, p: p }); const n = document.querySelector('#dvChart .dc-next'); if (n) n.click(); }));
+    /* The drive card must offer the same controls wherever it appears. */
+    const cardDiff = await pg.evaluate(() => { const k = el => el ? ['.cap', '.dc-rp', '.dc-prev', '.dc-next', '.dc-n', '.dc-c img'].filter(s => el.querySelector(s)).join(' ') : 'none';
+      const a = k(document.querySelector('#drives .dcard')), b = k(document.querySelector('#dvChart .dcard')); return a === b ? null : 'drive card differs: game [' + a + '] vs ticker [' + b + ']'; });
+    if (cardDiff) flags[scheme + ' · ticker card'].push(cardDiff);
+    await pg.evaluate(() => dongClose());
     await snap('stats', () => pg.evaluate(() => { scrollTo(0, 0); document.getElementById('tabStats').click(); }));
     await pg.close();
   }

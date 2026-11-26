@@ -1,18 +1,8 @@
 /* Delay Booth · Drive replay, tabs, keep-screen-on, startup. */
 "use strict";
-/* Drive replay (3D or flat chart). */
-function stopReplay(){if(S.replay){S.replay.stop();S.replay=null}var img=document.querySelector("#c3d img");if(img)img.hidden=false;var b=$("replayBtn");if(b){b.textContent="▶ Replay drive";b.classList.remove("on")}S.keys.drives=null}
-function startReplay(){
-  var E=S.engine?chartEngine():null;
-  if(!E||!S.spec3d)return;
-  if(S.live){endLive();S.keys.drives="hold"}
-  var holder=$("c3d"), img=holder&&holder.querySelector("img"), b=$("replayBtn"); if(!holder)return;
-  if(img)img.hidden=true; b.textContent="■ Stop"; b.classList.add("on");
-  try{S.replay=E.replay(holder,S.spec3d,{linger:S.linger,onDoink:window.dbDoink,onDone:function(){setTimeout(function(){stopReplay();render()},Math.max(600,S.linger*1000))}})}
-  catch(err){console.log("Replay failed",err);S.replay=null;stopReplay()}
-}
+/* The drive card (drivecard.js) owns replay and stepping; S.replay is the card while it is busy. */
+function stopReplay(){var c=S.replay;S.replay=null;if(c)c.stop()}
 $("drives").addEventListener("click",function(e){
-  if(e.target.closest("#replayBtn")){if(S.replay){stopReplay();render()}else startReplay();return}
   if(S.replay&&e.target.closest("summary")){stopReplay()}
   if(S.live&&e.target.closest("summary")){endLive()}
   var b=e.target.closest("[data-sync]");
@@ -65,7 +55,7 @@ setInterval(render,1000);
 if(window.Chart2D)window.Chart2D.onReady=function(){S.keys.drives=null;render()};
 if(TEST3D){
   var ld=function(src,cb){var sc=document.createElement("script");sc.src=src;sc.onload=cb;sc.onerror=function(){console.log("3D load failed: "+src)};document.head.appendChild(sc)};
-  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=37",function(){
+  ld("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",function(){ld("chart3d.js?v=38",function(){
     window.Chart3D.onReady=function(){S.keys.drives=null;render()};S.keys.drives=null;render()})});
 
 }

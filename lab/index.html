@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LAB · Delay Booth</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: landing page lists the week's games (live, by day, finished last) with a week picker; tapping a game opens the tracker: compact score bar (score, down & distance, status + settings chip), game info, then Drives (field chart + drive log, newest first) and Stats. Delay, keep-screen-on and game choice live in a bottom settings sheet. Phone-first, one column. */
+:root{
+  --bg:#f3f2ee; --surface:#ffffff; --line:#d9d7d1; --fg:#161616; --muted:#615f59;
+  --accent:#f2c230; --accent-ink:#161616; --score:#1d6b3f; --warn:#a4421d;
+  --plate:#1b1b1b; --plate-ink:#f6f4ee; --r:10px; --rs:6px;
+  --field:#dcebd9; --ez:#c7dcc3; --yard:#8fb08a; --kick:#6f7a72; --ret:#7a4fb5;
+  --los:#1f63d1; --ltg:#d9a400;
+  --display:"Big Shoulders Display","Arial Narrow",system-ui,sans-serif;
+  --body:"Work Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1e232a; --surface:#2a3039; --line:#343b46; --fg:#eef1f4; --muted:#a4acb6;
+  --accent:#e9bc34; --accent-ink:#161616; --score:#6fc59a; --warn:#ee6352;
+  --field:#26332c; --ez:#2e3d34; --yard:#4f6658; --kick:#9aa3ad; --ret:#b79be8;
+  --los:#6ea8ff; --ltg:#ffd23f; --plate:transparent; --plate-ink:#eef1f4; --plate-border:2px solid #eef1f4;
+  --r:14px; --rs:8px; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
+  padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
+/* Base layer: no control keeps the phone's default look. New controls inherit this, then add their own class. */
+html{-webkit-text-size-adjust:100%}
+button,select,input,textarea{font:inherit;color:inherit;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;margin:0}
+a,summary,[role="switch"]{-webkit-tap-highlight-color:transparent}
+input,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-height:44px;min-width:0}
+summary{list-style:none}summary::-webkit-details-marker{display:none}
+img,svg,canvas{max-width:100%}
+.bar{background:var(--bg);padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:8px;border-bottom:1px solid var(--line);margin:0 calc(-1 * max(14px,env(safe-area-inset-left,0px)));padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+.wrap{max-width:640px;margin:0 auto}
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:10px}
+.tm{display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;padding-bottom:12px}
+.tm .ab{font:800 17px/1 var(--display);letter-spacing:.06em;min-width:88px;text-align:center;box-sizing:border-box;padding:5px 8px;border-radius:var(--rs);background:var(--tc,var(--line));color:var(--tci,var(--fg))}
+.tm .pts{font:900 56px/1 var(--display);font-variant-numeric:tabular-nums;width:88px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);background:var(--plate);color:var(--plate-ink);border:var(--plate-border,none)}
+.tm::after{content:"BALL";display:none;position:absolute;bottom:0;left:50%;transform:translateX(-50%);font:800 12px/1 var(--display);letter-spacing:.14em;padding:4px 9px;box-shadow:0 0 0 2px var(--bg);border-radius:var(--rs);background:var(--accent);color:var(--accent-ink)}
+.tm .tol{display:flex;gap:4px;height:5px;visibility:hidden}.tm .tol.on{visibility:visible}.tm .tol i{width:16px;height:5px;border-radius:3px;background:var(--fg)}.tm .tol i.used{background:var(--line)}
+.score.known .tm::after{display:block;visibility:hidden}
+.score.known .tm.pos::after{visibility:visible}
+.mid{text-align:center;min-width:0;padding-top:26px}
+#mid{font:800 24px/1.1 var(--display);letter-spacing:.03em}
+#mid small{display:block;font:500 12px var(--body);color:var(--muted);letter-spacing:0;margin-top:2px}
+.sit{margin-top:8px;text-align:center;font:800 19px/1.1 var(--display);letter-spacing:.04em;text-transform:uppercase}
+.sit{display:none}
+.sit small{display:block;font:700 14px/1.2 var(--display);letter-spacing:.05em;color:var(--muted);margin-top:2px}
+.sit:empty{display:none}
+.dial{display:grid;gap:6px}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;touch-action:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;overscroll-behavior:contain;background:var(--surface);border-radius:16px 16px 0 0;max-height:88vh;overflow-y:auto;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+.sheet .in{max-width:640px;margin:0 auto;display:grid;gap:14px}
+.sheethead{display:flex;justify-content:space-between;align-items:center}
+.sheethead h2{margin:0;font:700 20px var(--display);letter-spacing:.04em}
+.sheethead button{min-height:40px;padding:0 18px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer}
+.sect{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.sect h3{margin:0;font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.switch{flex:none;width:52px;height:32px;border-radius:999px;border:1px solid var(--line);background:var(--bg);position:relative;cursor:pointer}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--muted);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--fg);border-color:var(--fg)}
+.switch[aria-checked="true"]::after{left:23px;background:#fff}
+.field{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.field select,.field input{min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;max-width:100%}
+.field input{width:5.5em;text-transform:uppercase}
+.help{font-size:13px;color:var(--muted);margin:0}
+.opt select{min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:12em}
+/* Dropdowns: our own chevron with room to the right edge (the phone's arrow sat flush against it). */
+select{-webkit-appearance:none;appearance:none;padding-right:36px!important;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%)!important;
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%!important;background-size:5px 5px,5px 5px!important;background-repeat:no-repeat!important;
+  text-overflow:ellipsis;cursor:pointer}
+.dialrow{display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;gap:6px;align-items:center}
+.dialrow button{height:44px;border:1px solid var(--line);background:var(--bg);border-radius:10px;font:600 17px var(--display);cursor:pointer}
+.dialrow button:active{background:var(--accent);color:var(--accent-ink)}
+.dialrow .minus{color:var(--warn)}
+.dialrow .plus{color:var(--score)}
+.dv{text-align:center;min-width:4.6ch;padding:0 4px}
+.dv .val{font:700 26px/1 var(--display);font-variant-numeric:tabular-nums}
+.dv .lbl{font-size:11px;color:var(--muted)}
+.dialhelp{font-size:12px;color:var(--muted);text-align:center}
+.statusrow{display:flex;justify-content:space-between;align-items:center;gap:6px 8px;flex-wrap:wrap;margin-top:8px}
+.statusrow:not(.err){display:none}
+.status{font-size:12px;color:var(--muted);text-align:center}
+.status.err{color:var(--warn);font-weight:600}
+.chip{min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:var(--rs);padding:4px 12px;font-size:12px;cursor:pointer;color:var(--muted)}
+.chip.on{border-color:var(--fg);color:var(--fg)}
+.chip.warn{border-color:var(--warn);color:var(--warn);font-weight:600}
+.tabs{display:flex;gap:4px;margin:6px 0 10px;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;min-height:44px;border:none;border-bottom:3px solid transparent;margin-bottom:-1px;background:none;font:800 17px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
+.seg{display:flex;gap:2px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.seg button{flex:1;min-height:44px;border:0;border-bottom:2px solid transparent;background:none;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;margin-bottom:-1px}
+.seg button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+/* Phones: the chart runs edge to edge; caption and buttons keep the page margins. */
+@media (max-width:700px){
+  .chart{margin-left:calc(-1 * max(14px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(14px,env(safe-area-inset-right,0px)));border-radius:0;border-left:0;border-right:0;padding:10px 0}
+  .chart .cap,.chart .legend{padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+  .chart .dc-hint{margin-left:max(14px,env(safe-area-inset-left,0px));margin-right:max(14px,env(safe-area-inset-right,0px))}
+  .chart .legend.dk,.chart .legend.gc{margin-left:max(14px,env(safe-area-inset-left,0px));margin-right:max(14px,env(safe-area-inset-right,0px));padding-left:0;padding-right:0}
+  #c3d img,#c3d>div,.chart>svg{border-radius:0!important}
+}
+.chart .cap{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;margin-bottom:6px}
+.chart .cap b{font:700 15px var(--display);letter-spacing:.05em;white-space:nowrap}
+.chart .cap span{color:var(--muted);text-align:right;min-width:0}
+.chart svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:5px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.legend.gc{color:var(--muted);align-items:center}
+.legend.rp{justify-content:space-between}
+.replaybtn{min-height:44px;padding:0 14px;border-radius:var(--rs);border:1.5px solid var(--fg);background:none;color:var(--fg);font:800 15px var(--display);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.replaybtn.on{background:var(--fg);color:var(--bg)}
+.legend.gc svg{display:inline-block;width:18px;height:8px;vertical-align:middle;margin-right:4px;color:var(--fg)}
+.dc-c{touch-action:pan-y;cursor:pointer}
+.dc-steps{display:flex;align-items:center;gap:6px}
+.dc-step{min-width:44px;min-height:44px;border-radius:var(--rs);border:1.5px solid var(--line);background:none;color:var(--fg);font:800 16px/1 var(--display);cursor:pointer}
+.dc-step:disabled{opacity:.35;cursor:default}
+.dc-n{font:700 14px/1 var(--display);letter-spacing:.04em;color:var(--fg);font-variant-numeric:tabular-nums;min-width:8.5ch;text-align:center;white-space:nowrap}
+.dc-n:empty{min-width:0}
+.dc-hint{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.dongview .dcard{margin:0;border:0;border-radius:0;padding:0;background:none}
+.dongview .dcard .cap,.dongview .dcard .legend,.dongview .dcard .dc-hint{margin-left:max(14px,env(safe-area-inset-left,0px));margin-right:max(14px,env(safe-area-inset-right,0px))}
+.chart .cap .badge{font-size:13px;padding:2px 6px;margin-right:2px;color:var(--tci,var(--bg))}
+details.drive{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+.qhead{margin:16px 2px 8px;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
+.qhead::after{content:"";flex:1;height:1px;background:var(--line)}
+.qhead:first-of-type{margin-top:4px}
+details.drive>summary{list-style:none;cursor:pointer;padding:12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;min-height:52px}
+details.drive>summary::-webkit-details-marker{display:none}
+.dt{font:700 15px var(--display);letter-spacing:.05em;background:var(--tc,var(--fg));color:var(--tci,var(--bg));border-radius:6px;padding:3px 7px;min-width:3.2em;text-align:center}
+.dd{font-size:13px;color:var(--muted);min-width:0}
+.dr{font:600 15px var(--display);letter-spacing:.04em;text-align:right}
+.dr.live{color:var(--fg)}
+.dr.sc{font-weight:700;color:var(--fg)}
+.dr::after{content:" ▸";color:var(--muted)}
+details[open] .dr::after{content:" ▾"}
+ol.plays{list-style:none;margin:0;padding:0 12px 10px;border-top:1px solid var(--line)}
+ol.plays li{padding:9px 0;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:5.2em 1fr;gap:8px;font-size:14px;align-items:start}
+ol.plays li:last-child{border-bottom:0}
+.pc{font:500 13px var(--display);color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.25}
+.pc b{display:block;color:var(--fg);font-weight:600}
+.yd{font:700 15px var(--display);font-variant-numeric:tabular-nums;text-align:right;min-width:2.6em}
+.yd.g{color:var(--score)} .yd.l{color:var(--warn)} .yd.z{color:var(--muted)}
+li.spt .tx{font-weight:700}
+li.np .tx{color:var(--muted);font-style:italic}
+.tx{min-width:0;overflow-wrap:anywhere}
+.tvsync{grid-column:2/3;justify-self:start;margin-top:2px;min-height:36px;border:1px dashed var(--accent);background:none;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
+.empty{padding:28px 12px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 12px;margin-bottom:10px}
+.card h3{font:700 15px var(--display);letter-spacing:.08em;text-transform:uppercase;margin:10px 0 4px;color:var(--muted)}
+.ts td{padding:7px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.ts tr:last-child td{border-bottom:0}
+.ts td:first-child,.ts td:last-child{width:28%;font-weight:600}
+.ts td:last-child{text-align:right}
+.ts td:nth-child(2){text-align:center;color:var(--muted);font-size:13px}
+.ts tr.hd td{font:700 15px var(--display);letter-spacing:.06em;color:var(--fg)}
+.scroll{overflow-x:auto;position:relative}
+.cmp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.cmphead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.badge{font:700 15px var(--display);letter-spacing:.05em;border-radius:6px;padding:3px 8px;background:var(--tc,var(--fg));color:var(--tci,var(--bg))}
+.cmphead .lbl{font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.crow{padding:9px 0;border-top:1px solid var(--line)}
+.crow:first-of-type{border-top:0}
+.cvals{display:grid;grid-template-columns:1fr auto 1fr;align-items:baseline;gap:8px}
+.cvals b,.cvals i{font:600 19px var(--display);font-style:normal;font-variant-numeric:tabular-nums;color:var(--muted)}
+.cvals b{text-align:left} .cvals i{text-align:right}
+.cvals .win{color:var(--fg);font-weight:700}
+.cvals span{font-size:13px;color:var(--muted);text-align:center}
+.cbar{display:flex;gap:2px;height:6px;margin-top:5px;border-radius:3px;overflow:hidden;background:var(--line)}
+.cbar em{display:block;height:100%}
+.more{margin-top:4px}
+.more>summary{list-style:none;cursor:pointer;min-height:40px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--muted);border-top:1px solid var(--line)}
+.more>summary::-webkit-details-marker{display:none}
+.more>summary::after{content:"Show all team stats ▾"}
+.more[open]>summary::after{content:"Show fewer ▴"}
+.card.pt{border-top:3px solid var(--tc,var(--line))}
+.pl td.k{font-weight:700}
+.scroll.more{-webkit-mask-image:linear-gradient(to right,#000 80%,transparent);mask-image:linear-gradient(to right,#000 80%,transparent)}
+.pl th,.pl td{padding:6px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
+.pl th{font:600 12px var(--body);color:var(--muted)}
+.pl th:first-child,.pl td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
+.pl tr:last-child td{border-bottom:0}
+.info{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-top:12px;margin-bottom:10px}
+.info>summary{list-style:none;cursor:pointer;padding:10px 12px;min-height:44px;font-size:13px;color:var(--fg);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.info>summary span{min-width:0}
+.info>summary::-webkit-details-marker{display:none}
+.info>summary::after{content:"Show";font-weight:600;color:var(--fg)}
+.info[open]>summary::after{content:"Hide"}
+.info dl{margin:0;padding:0 12px 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.info dt{color:var(--muted)}
+.info dd{margin:0;min-width:0;overflow-wrap:anywhere}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* game list */
+.lhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.lhead h1{margin:0;font:900 26px/1 var(--display);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+.weeknav{display:grid;grid-template-columns:44px 1fr 44px;gap:6px;margin:12px 0 6px}
+.weeknav button{min-height:48px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);font:800 22px var(--display);cursor:pointer;color:var(--fg)}
+.weeknav button:disabled{opacity:.35;cursor:default}
+.weeknav .wkbtn{display:flex;align-items:center;justify-content:center;gap:10px;font:800 22px/1 var(--display);letter-spacing:.05em;text-transform:uppercase;min-width:0;padding:0 10px}
+.wkbtn small{font:700 11px/1 var(--body);letter-spacing:.08em;color:var(--muted);border:1px solid var(--line);border-radius:var(--rs);padding:4px 6px}
+.wkbtn::after{content:"\25BE";font-size:16px;color:var(--muted)}
+/* Week picker sheet */
+.wgrp{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.wgrp h3{margin:0;font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.wgrid.post{grid-template-columns:repeat(2,1fr)}
+.wtile{min-height:56px;border:1px solid var(--line);border-radius:var(--rs);background:var(--bg);color:var(--fg);display:grid;align-content:center;justify-items:center;gap:2px;padding:4px 2px;cursor:pointer;font:inherit;min-width:0}
+.wtile b{font:900 24px/1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:.02em;text-transform:uppercase}
+.wtile.wide b{font-size:19px}
+.wtile small{font:500 11px/1.1 var(--body);color:var(--muted);white-space:nowrap}
+.wtile.now{border:2px solid var(--fg)}
+.wtile.now small{color:var(--fg);font-weight:700}
+.wtile.on{background:var(--plate);border-color:var(--plate);color:var(--plate-ink)}
+.wtile.on small{color:var(--plate-ink);opacity:.75}
+.lopts{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px}
+.lhead .chip{white-space:nowrap;color:var(--fg)}
+.lopts label{display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px}
+.lopts .switch{width:44px;height:26px}
+.lopts .switch::after{width:18px;height:18px}
+.lopts .switch[aria-checked="true"]::after{left:21px}
+.day{margin:18px 2px 8px;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
+.day::after{content:"";flex:1;height:1px;background:var(--line)}
+.day.live{color:var(--fg)}
+.day .dd{color:var(--muted);margin-left:-2px}
+.day .dd::before{content:"· "}
+.game{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;color:inherit;text-decoration:none;min-height:64px}
+.game:active{background:var(--bg)}
+.game.fav{border:2px solid var(--fg);padding:9px 11px;opacity:1}
+.tr .star{color:var(--fg);margin-left:4px}
+.teams{display:grid;gap:5px;min-width:0}
+.tr{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;min-width:0}
+.tr .badge{font-size:16px;padding:4px 6px;min-width:3.1em;text-align:center}
+.tr .logo{width:3.1em;height:36px;display:flex;align-items:center;justify-content:center}
+.tr .logo picture{display:contents}
+.tr .logo img{width:36px;height:36px;object-fit:contain;display:block}
+.tr .nm{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .nm small{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px;font-variant-numeric:tabular-nums}
+.tr .sc{font:900 24px/1 var(--display);font-variant-numeric:tabular-nums;min-width:42px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--rs);background:var(--plate);color:var(--plate-ink);border:var(--plate-border,none);opacity:.55}
+.tr .sc:empty{display:none}
+.tr.win .nm{color:var(--fg);font-weight:700}
+.tr.win .sc{opacity:1}
+.gmeta{text-align:right;display:grid;gap:2px;justify-items:end}
+.gmeta b{font:700 17px var(--display);font-variant-numeric:tabular-nums}
+.gmeta small{font-size:12px;color:var(--muted);max-width:7.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.livechip{font:700 12px var(--body);letter-spacing:.06em;color:var(--accent-ink);background:var(--accent);border-radius:var(--rs);padding:2px 8px}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
+.nav a{color:var(--fg);font-weight:600;text-decoration:none;min-height:44px;display:inline-flex;align-items:center;padding-right:8px}
+.nav .chip{color:var(--fg)}
+.simbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--accent);border-radius:10px;padding:6px 10px;margin-bottom:8px}
+.simbar b{color:var(--fg)}
+.simbar a{color:var(--fg);text-decoration:none;padding:2px 6px;border-radius:6px;border:1px solid var(--line)}
+.simbar a.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+/* Other games: the dock (ticker) at the bottom, and score alerts that grow up out of it */
+body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 18px rgba(0,0,0,.10);
+  padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px))}
+.tkrow{display:flex;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:0 max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));transition:opacity .3s}
+.tkrow::-webkit-scrollbar{display:none}
+.tk{flex:none;min-height:48px;padding:5px 9px 4px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);text-align:left;display:grid;align-content:center;gap:1px;cursor:pointer;font:inherit}
+.tk .ln{display:flex;align-items:center;gap:4px;font:700 16px/1.1 var(--display);letter-spacing:.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tk .ln i{display:inline-block;width:4px;height:13px;border-radius:2px;background:var(--tc,var(--line));margin-right:1px}
+.tk .ln em{font-style:normal;font-weight:600;color:var(--muted)}
+/* Ball dot: a fixed slot after every team's letters, filled yellow for the team with the ball, so nothing shifts. */
+.tk .ln em{display:inline-flex;align-items:center;gap:3px}
+.tk .ln em .bl{display:inline-block;width:8px;height:8px;border-radius:50%;box-sizing:border-box;text-decoration:none}
+.tk .ln em.po .bl{background:var(--accent);border:1px solid var(--accent-ink)}
+.tk .ln b{font-weight:700;color:var(--muted);margin-right:5px}
+.tk .ln b.up{color:var(--fg)}
+.tk small{font:500 11.5px/1.25 var(--body);color:var(--muted);white-space:nowrap}
+.tk small .rz{font:700 10px var(--body);letter-spacing:.05em;border:1px solid var(--muted);border-radius:4px;padding:0 3px;margin-left:4px}
+.tk.done{opacity:.75}
+.tk.flash{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.tk.flash .ln em,.tk.flash .ln b{color:var(--bg);opacity:.72;font-weight:500}
+.tk.flash .ln b.up,.tk.flash .ln b.sc{opacity:1;font-weight:700}
+.game .sc .pend{color:var(--muted);font-weight:500}
+.tk.flash small{color:var(--bg)}
+.tk.flash .ln b.sc{text-decoration:underline;text-underline-offset:3px}
+/* A score in the ticker: the chip shows a short line for 10 s. Under a scoring-drive replay: what the drive was and who did it. */
+.tk.flash small{max-width:62vw;overflow:hidden;text-overflow:ellipsis}
+.dvstory{padding:8px max(14px,env(safe-area-inset-left,0px)) 0;font-size:14px;line-height:1.45;display:grid;gap:4px}
+.dvstory p{margin:0;font-weight:600}.dvstory ul{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+/* Teams sheet: Follow / Not interested / No spoilers, grouped by division */
+.sheet.top2{z-index:22}
+.tlegend{display:grid;gap:2px;font-size:12px;color:var(--muted);margin:0}
+.tlegend b{color:var(--fg)}
+.tdiv h3{margin:0 0 6px}
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tchip{min-height:48px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:4px 6px;text-align:left;display:grid;align-content:center;gap:1px;cursor:pointer;font:inherit;color:var(--fg);min-width:0}
+.tchip .ln{display:flex;align-items:center;gap:4px;font:700 15px/1.1 var(--display);letter-spacing:.04em}
+.tchip .ln i{display:inline-block;width:4px;height:13px;border-radius:2px;background:var(--tc,var(--line))}
+.tchip small{font-size:11px;line-height:1.2;color:var(--muted)}
+.tchip.n{border-style:dashed}
+.tchip.n small,.tchip.x small{color:var(--fg);font-weight:600}
+.tchip.x{background:var(--surface);border-color:var(--fg)}
+.tchip.x .ln{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.optbtn{width:100%;border:0;background:none;padding:0;text-align:left;cursor:pointer;min-height:44px}
+.optbtn .go{font-size:13px;font-weight:600;color:var(--fg);white-space:nowrap}
+.linkbtn{min-height:44px;border:0;background:none;padding:0;color:var(--fg);font-weight:600;font-size:13px;cursor:pointer;justify-self:start}
+/* The game you're watching stays pinned at the top of any replay over it */
+.dvbug{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:0 max(14px,env(safe-area-inset-left,0px)) 8px;margin-bottom:8px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.dvbug b{font:700 18px var(--display);letter-spacing:.03em;color:var(--fg);font-variant-numeric:tabular-nums}
+.dvbug b em{font-style:normal;color:var(--muted)}
+.dvbug b em.up{color:var(--fg)}
+.dvbug .po::after{content:" \25CF";color:var(--accent);font-size:10px;vertical-align:2px}
+.dlist .msg{color:var(--muted);text-align:center;padding:18px 8px}
+.dlist{list-style:none;margin:0;padding:0 max(10px,env(safe-area-inset-left,0px));max-height:70vh;overflow:auto}
+.dlist li{margin:0 0 8px}
+.dlist button{width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;text-align:left;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-left:5px solid var(--tc,var(--accent));border-radius:12px;padding:10px 12px;cursor:pointer}
+.dlist .dk{font:700 13px var(--display);letter-spacing:.06em;background:var(--tc,var(--fg));color:var(--tci,var(--bg));border-radius:6px;padding:3px 7px}
+.dlist b{font-weight:600;font-variant-numeric:tabular-nums}.dlist small{display:block;color:var(--muted);font-size:12px}
+.dlist .new{font-size:11px;font-weight:700;color:var(--fg);letter-spacing:.05em}
+.dlist .go{font-size:18px;color:var(--muted)}
+html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
+.dongview .dvin{touch-action:pan-y}
+.dongview{overscroll-behavior:contain;touch-action:none;position:fixed;inset:0;z-index:31;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.dongview .dvin{width:min(640px,100%);background:var(--surface);border-radius:0 0 14px 14px;padding:10px 0 12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+@media (min-width:701px){.dongview .dvin{border-radius:14px;padding:10px 12px 12px}}
+.dongview .dvh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 max(14px,env(safe-area-inset-left,0px)) 8px}
+.dongview .dvh b{font:700 17px var(--display);letter-spacing:.03em}
+.dongview .dvhint{display:block;text-align:center;color:var(--muted);font-size:12px;padding-top:8px}
+.dongview #dvChart{cursor:pointer}
+.dongview .dvh small{display:block;color:var(--muted);font-size:12px}
+.dongview .dvh button{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="listView" hidden><div class="wrap">
+  <div class="lhead"><h1>Delay Booth</h1><button class="chip" id="openSettings2">Delay 45s · Settings</button></div>
+  <div class="weeknav">
+    <button id="wkPrev" aria-label="Previous week">‹</button>
+    <button class="wkbtn" id="wkSel" aria-haspopup="dialog" aria-label="Choose week">Week</button>
+    <button id="wkNext" aria-label="Next week">›</button>
+  </div>
+  <div class="lopts"><span id="lstatus">Loading games…</span><label><span>Show scores</span><button class="switch" id="showScores" role="switch" aria-checked="false" aria-label="Show scores"></button></label></div>
+  <div id="games"></div>
+</div></div>
+
+<div id="gameView" hidden>
+<div class="bar"><div class="wrap">
+  <div class="nav"><a href="#" id="back">‹ All games</a><button class="chip" id="openSettings">Delay 45s · Settings</button></div>
+  <div class="simbar" id="simbar" hidden></div>
+  <div class="score" id="scoreRow">
+    <div class="tm" id="awayBox"><span class="ab" id="awayAb">AWAY</span><span class="tol" id="awayTol" aria-label="Timeouts left"></span><span class="pts" id="awayPts">–</span></div>
+    <div class="mid"><div id="mid">Loading<small>&nbsp;</small></div><div class="sit" id="sit"></div></div>
+    <div class="tm" id="homeBox"><span class="ab" id="homeAb">HOME</span><span class="tol" id="homeTol" aria-label="Timeouts left"></span><span class="pts" id="homePts">–</span></div>
+  </div>
+  <div class="statusrow" id="statusrow">
+    <span class="status" id="status">Connecting to the live feed…</span>
+    <button class="chip warn" id="retry" hidden>Retry now</button>
+  </div>
+</div></div>
+
+<main class="wrap">
+  <div class="tabs" role="tablist">
+    <button id="tabDrives" role="tab" aria-selected="true">Drives</button>
+    <button id="tabStats" role="tab" aria-selected="false">Stats</button>
+  </div>
+  <section id="drives"></section>
+  <section id="stats" hidden>
+    <div class="seg" role="tablist">
+      <button id="segTeam" role="tab" aria-selected="true">Team stats</button>
+      <button id="segMine" role="tab" aria-selected="false">Your team</button>
+      <button id="segOpp" role="tab" aria-selected="false">Opponent</button>
+    </div>
+    <div id="statsBody"></div>
+    <details class="info" id="info">
+      <summary><span id="infoSum">Game info</span></summary>
+      <dl id="infoBody"></dl>
+    </details>
+  </section>
+
+</main>
+</div>
+
+<div class="dock" id="dock" hidden>
+  <div class="tkrow" id="tkrow" aria-label="Other games, at your delay"></div>
+</div>
+<div class="dongview" id="dongView" hidden role="dialog" aria-modal="true" aria-labelledby="dvTitle"><div class="dvin">
+  <div class="dvbug" id="dvBug" hidden></div>
+  <div class="dvh"><div><b id="dvTitle">Scoring drive</b><small id="dvSub"></small></div><button id="dvClose">Close</button></div>
+  <ul class="dlist" id="dvList" hidden></ul>
+  <div id="dvChart"></div>
+  <small id="dvHint" class="dvhint" hidden>Tap a play on the field to see it</small>
+  <div id="dvStory" class="dvstory" hidden></div>
+</div></div>
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="weekSheet" hidden role="dialog" aria-modal="true" aria-labelledby="weekTitle"><div class="in">
+  <div class="sheethead"><h2 id="weekTitle">Week</h2><button id="weekDone">Done</button></div>
+  <div id="weekList"></div>
+</div></div>
+<div class="sheet top2" id="teamSheet" hidden role="dialog" aria-modal="true" aria-labelledby="teamTitle"><div class="in">
+  <div class="sheethead"><h2 id="teamTitle">Teams</h2><button id="teamDone">Done</button></div>
+  <p class="tlegend"><span>Tap a team to change it.</span><span><b>Follow</b>: an alert when its game has a score.</span><span><b>Not interested</b>: in the ticker, but no alerts.</span><span><b>No spoilers</b>: hidden from the ticker and alerts, for games you'll watch later.</span></p>
+  <div id="teamList"></div>
+  <button class="linkbtn" id="teamReset" hidden>Follow all teams again</button>
+</div></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="in">
+  <div class="sheethead"><h2 id="sheetTitle">Settings</h2><button id="sheetDone">Done</button></div>
+  <div class="sect">
+    <div class="opt"><div><b>Favourite team</b><small>Its game is highlighted on the game list.</small></div><select id="fav" aria-label="Favourite team"></select></div>
+  </div>
+  <div class="sect">
+    <h3>Delay</h3>
+    <div class="dial">
+      <div class="dialrow">
+        <button id="m30" class="minus" aria-label="30 seconds less">−30</button>
+        <button id="m5" class="minus" aria-label="5 seconds less">−5</button>
+        <div class="dv"><div class="val" id="delayVal">45s</div><div class="lbl">delay</div></div>
+        <button id="p5" class="plus" aria-label="5 seconds more">+5</button>
+        <button id="p30" class="plus" aria-label="30 seconds more">+30</button>
+      </div>
+      <div class="dialhelp">Play shows here first? Tap +. Behind your TV? Tap −.</div>
+    </div>
+    <p class="help">Quickest way: when a new play shows up before you see it on DAZN, wait for it on TV and tap "Just happened on TV" under it.</p>
+  </div>
+  <div class="sect">
+    <div class="opt"><div><b>Replay pause</b><small>How long each play's info box stays up when you replay a drive.</small></div><select id="linger" aria-label="Replay pause"><option value="0.5">0.5 s</option><option value="1">1 s</option><option value="1.5">1.5 s</option><option value="2">2 s</option><option value="3">3 s</option><option value="5">5 s</option></select></div>
+  </div>
+  <div class="sect">
+    <div class="opt"><div><b>Scores in other games</b><small>The other games run along the bottom at your delay. When a followed team scores, an alert waits for a quiet moment in your game.</small></div><select id="dongMode" aria-label="Scores in other games"><option value="sound">Alert + chime</option><option value="quiet">Alert only</option><option value="ticker">Ticker only</option><option value="off">Off</option></select></div>
+    <button class="opt optbtn" id="openTeams"><div><b>Teams</b><small id="teamSum">All teams followed</small></div><span class="go">Edit ›</span></button>
+  </div>
+  <div class="sect">
+    <div class="opt"><div><b>Sounds</b><small>The doink on the posts and the sack shout.</small></div><button class="switch" id="sounds" role="switch" aria-checked="true" aria-label="Sounds"></button></div>
+  </div>
+  <div class="sect">
+    <div class="opt"><div><b>Next play heads-up</b><small>During a live game, how long before the next snap the info box switches to the next down and distance.</small></div><select id="lead" aria-label="Next play heads-up"><option value="3">3 s</option><option value="5">5 s</option><option value="8">8 s</option><option value="10">10 s</option></select></div>
+  </div>
+  <div class="sect">
+    <div class="opt"><div><b>Keep screen on</b><small id="wakeNote">Stops your phone from locking while this page is open.</small></div><button class="switch" id="wake" role="switch" aria-checked="false" aria-label="Keep screen on"></button></div>
+  </div>
+</div></div>
+
+<script src="drivecore.js?v=17"></script>
+<script src="chart2d.js?v=18"></script>
+<script src="core.js?v=4"></script>
+<script src="feed.js?v=8"></script>
+<script src="render.js?v=7"></script>
+<script src="chartspec.js?v=7"></script>
+<script src="drivecard.js?v=2"></script>
+<script src="stats.js?v=2"></script>
+<script src="games.js?v=16"></script>
+<script src="live.js?v=3"></script>
+<script src="alerts.js?v=19"></script>
+<script src="main.js?v=9"></script>
+</body>
+</html>

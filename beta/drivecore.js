@@ -421,8 +421,16 @@
   function slideE(segs, cur, t) { return cur > 0 && segs ? EASE.out(ramp(t, segs[cur].t0, SLIDE)) : 1; }
   function laneState(spec, k, cur, e, cap) {
     var depth = k >= cur ? 0 : cur - 1 - k + e;
+    /* A still picture stepped to an early play of a long drive: lanes slide back so that play is in
+       view; plays after it that would land in front of the nearest lane are left out. */
+    if (spec.focus != null && spec.focus >= 0 && e === 1) {
+      var fd = spec.focus >= cur ? 0 : cur - spec.focus, sh = Math.max(0, Math.ceil(fd - (cap - 1)));
+      if (sh) { depth -= sh; if (depth < 0) return { depth: 0, alpha: 0 }; }
+    }
     return { depth: depth, alpha: clamp(cap - depth, 0, 1) };
   }
+  /* Is row k part of the picked play (spec.focus .. spec.focusTo)? */
+  function inFocus(spec, k) { return k >= spec.focus && k <= (spec.focusTo != null ? spec.focusTo : spec.focus); }
   function summaryState() { return null; }
   function activeAt(segs, t) { for (var k = segs.length - 1; k >= 0; k--) if (t >= segs[k].t0) return k; return -1; }
   /* How dimmed a finished play is: it fades as the next snap (after a kick's return) is spotted. */
@@ -496,6 +504,6 @@
     });
   }
   window.DriveCore = { HURT: HURT, drawBurst: drawBurst, GOAL: GOAL, fgPath: fgPath, fgSide: fgSide, doinkWatch: doinkWatch, DISPLAY: DISPLAY, bez: bez, EASE: EASE, backOut: backOut, clamp: clamp, ramp: ramp, plan: plan, newChars: newChars,
-    chipFor: chipFor, ydStr: ydStr, flagMark: flagMark, fracOf: fracOf, activeAt: activeAt, LANES: LANES, laneDepth: laneDepth, laneAlpha: laneAlpha, slideE: slideE, laneState: laneState, summaryState: summaryState, dimOf: dimOf, overlayState: overlayState, timelineOf: timelineOf,
+    chipFor: chipFor, ydStr: ydStr, flagMark: flagMark, fracOf: fracOf, activeAt: activeAt, LANES: LANES, laneDepth: laneDepth, laneAlpha: laneAlpha, slideE: slideE, laneState: laneState, inFocus: inFocus, summaryState: summaryState, dimOf: dimOf, overlayState: overlayState, timelineOf: timelineOf,
     pill: pill, drawOverlay: drawOverlay };
 })();

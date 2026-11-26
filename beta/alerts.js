@@ -512,37 +512,14 @@ function dongOpen(item,fromList){
   var L=latestDrive(j,T,{ids:ids,plays:plays,last:k});S.chartDrive=keep;
   if(!L)return;
   var E=(S.engine==="3d"&&window.Chart3D&&window.THREE)?window.Chart3D:window.Chart2D;if(!E||!window.DriveCore)return;
-  var spec=fieldChart3D(L,true), b=itemInfo(item);
+  var spec=fieldChart3D(L,true), b=itemInfo(item), url;
+  try{url=E.render(spec)}catch(e){console.log("Scoring drive failed",e);return}
   /* "Bills touchdown" / "J.Allen, 12 yds" / "MIA 7–21 BUF · Q2 3:40" */
   $("dvTitle").textContent=b.who+" "+b.what;
   $("dvSub").innerHTML=esc(b.detail)+"<br>"+esc(b.line+" · "+b.when);
-  var holder=$("dvChart");holder.innerHTML="";DG.msgFor=null;$("dongView").hidden=false;$("dvHint").hidden=false;$("dvStory").innerHTML=storyHTML(item);$("dvStory").hidden=false;
-  DG.cur={E:E,spec:spec,hits:null,focus:null};
-  try{DG.view=E.replay(holder,spec,{linger:S.linger,fromLast:true,onDoink:window.dbDoink})}catch(e){console.log("Scoring drive failed",e);dongClose()}
-}
-/* Tap a lane in the scoring drive: that play is highlighted (the rest dimmed) with its own info box. */
-$("dvChart").addEventListener("click",function(ev){
-  var C=DG.cur; if(!C||!C.E.hits)return;
-  var r=this.getBoundingClientRect(); if(!r.width)return;
-  var W=C.spec.width, H=C.spec.height, x=(ev.clientX-r.left)/r.width*W, y=(ev.clientY-r.top)/r.height*H;
-  if(!C.hits){try{C.hits=C.E.hits(C.spec)}catch(e){console.log("lane hits failed",e);return}}
-  var best=-1, bd=1e9;
-  C.hits.forEach(function(h){
-    if(!h)return; var ax=h.a[0],ay=h.a[1],bx=h.b[0],by=h.b[1],dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;
-    var t=L2?Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/L2)):0, px=ax+t*dx, py=ay+t*dy, dd=Math.hypot(x-px,(y-py)*1.6);
-    if(dd<bd){bd=dd;best=h.k}
-  });
-  if(best<0||bd>H*0.14)return;
-  dongFocus(best);
-});
-function dongFocus(k){
-  var C=DG.cur; if(!C)return;
-  if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}
-  var row=C.spec.rows[k]||{}, sp=Object.assign({},C.spec,{focus:k,dimFrom:0,callout:row.callout||C.spec.callout,ltg:row.ltg!=null?row.ltg:C.spec.ltg});
-  var url; try{url=C.E.render(sp)}catch(e){console.log("focus render failed",e);return}
-  if(!url)return;
-  C.focus=k;
-  $("dvChart").innerHTML='<img alt="Play '+(k+1)+' of the drive" style="display:block;width:100%;border-radius:6px" src="'+url+'">';
+  /* The same drive card as the game view, opening on the still picture; the story belongs to this sheet. */
+  var holder=$("dvChart");holder.innerHTML=DriveCard.html(L,url);DG.msgFor=null;$("dongView").hidden=false;$("dvHint").hidden=true;$("dvStory").innerHTML=storyHTML(item);$("dvStory").hidden=false;
+  DG.view=DriveCard.bind(holder.querySelector(".dcard"),spec);
 }
 function dongClose(){DG.cur=null;DG.msgFor=null;if(DG.view){try{DG.view.stop()}catch(e){}DG.view=null}$("dvChart").innerHTML="";$("dvList").hidden=true;$("dvStory").hidden=true;$("dongView").hidden=true;DG.fromList=false;DG.game=null}
 $("dvClose").onclick=function(){if(DG.fromList)dongGame();else dongClose()};

@@ -107,6 +107,7 @@ select{-webkit-appearance:none;appearance:none;padding-right:36px!important;
 @media (max-width:700px){
   .chart{margin-left:calc(-1 * max(14px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(14px,env(safe-area-inset-right,0px)));border-radius:0;border-left:0;border-right:0;padding:10px 0}
   .chart .cap,.chart .legend{padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+  .chart .dc-hint{margin-left:max(14px,env(safe-area-inset-left,0px));margin-right:max(14px,env(safe-area-inset-right,0px))}
   .chart .legend.dk,.chart .legend.gc{margin-left:max(14px,env(safe-area-inset-left,0px));margin-right:max(14px,env(safe-area-inset-right,0px));padding-left:0;padding-right:0}
   #c3d img,#c3d>div,.chart>svg{border-radius:0!important}
 }
@@ -121,6 +122,15 @@ select{-webkit-appearance:none;appearance:none;padding-right:36px!important;
 .replaybtn{min-height:44px;padding:0 14px;border-radius:var(--rs);border:1.5px solid var(--fg);background:none;color:var(--fg);font:800 15px var(--display);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
 .replaybtn.on{background:var(--fg);color:var(--bg)}
 .legend.gc svg{display:inline-block;width:18px;height:8px;vertical-align:middle;margin-right:4px;color:var(--fg)}
+.dc-c{touch-action:pan-y;cursor:pointer}
+.dc-steps{display:flex;align-items:center;gap:6px}
+.dc-step{min-width:44px;min-height:44px;border-radius:var(--rs);border:1.5px solid var(--line);background:none;color:var(--fg);font:800 16px/1 var(--display);cursor:pointer}
+.dc-step:disabled{opacity:.35;cursor:default}
+.dc-n{font:700 14px/1 var(--display);letter-spacing:.04em;color:var(--fg);font-variant-numeric:tabular-nums;min-width:8.5ch;text-align:center;white-space:nowrap}
+.dc-n:empty{min-width:0}
+.dc-hint{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.dongview .dcard{margin:0;border:0;border-radius:0;padding:0;background:none}
+.dongview .dcard .cap,.dongview .dcard .legend,.dongview .dcard .dc-hint{margin-left:max(14px,env(safe-area-inset-left,0px));margin-right:max(14px,env(safe-area-inset-right,0px))}
 .chart .cap .badge{font-size:13px;padding:2px 6px;margin-right:2px;color:var(--tci,var(--bg))}
 details.drive{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
 .qhead{margin:16px 2px 8px;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
@@ -323,7 +333,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 .dongview .dvhint{display:block;text-align:center;color:var(--muted);font-size:12px;padding-top:8px}
 .dongview #dvChart{cursor:pointer}
 .dongview .dvh small{display:block;color:var(--muted);font-size:12px}
-.dongview .dvh button{min-height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer}
+.dongview .dvh button{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -435,16 +445,17 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
   </div>
 </div></div>
 
-<script src="drivecore.js?v=16"></script>
-<script src="chart2d.js?v=17"></script>
+<script src="drivecore.js?v=17"></script>
+<script src="chart2d.js?v=18"></script>
 <script src="core.js?v=4"></script>
 <script src="feed.js?v=8"></script>
-<script src="render.js?v=6"></script>
-<script src="chartspec.js?v=5"></script>
+<script src="render.js?v=7"></script>
+<script src="chartspec.js?v=7"></script>
+<script src="drivecard.js?v=2"></script>
 <script src="stats.js?v=2"></script>
 <script src="games.js?v=16"></script>
 <script src="live.js?v=3"></script>
-<script src="alerts.js?v=18"></script>
-<script src="main.js?v=8"></script>
+<script src="alerts.js?v=19"></script>
+<script src="main.js?v=9"></script>
 </body>
 </html>
