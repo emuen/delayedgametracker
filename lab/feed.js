@@ -434,7 +434,7 @@ function latestDrive(j,T,V){
   var nPlays=out.vis.filter(function(p){return !isKick(p)&&!isNonPlay(p)}).length;
   out.real=out.vis.filter(function(p){return !isNonPlay(p)});
   var yds=own.length?Math.round(own[own.length-1].e-own[0].s):0;
-  out.off=off; out.offAb=offAb; out.defAb=defAb; out.A=A; out.rows=rows; out.T=T; out.TC=teamColors(j,T);
+  out.j=j; out.off=off; out.offAb=offAb; out.defAb=defAb; out.A=A; out.rows=rows; out.T=T; out.TC=teamColors(j,T);
   out.summary=out.done?offAb+" "+String(out.label||"drive over").toLowerCase()
     :offAb+" drive · "+nPlays+" play"+(nPlays===1?"":"s")+", "+yds+" yds";
   return out;
