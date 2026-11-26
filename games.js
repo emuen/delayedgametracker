@@ -84,7 +84,7 @@ function favsDraw(){
   $("favList").innerHTML=DIVS.map(function(d){
     return '<div class="sect tdiv"><h3>'+esc(d[0])+'</h3><div class="tgrid">'+d[1].map(function(ab){
       var on=isFavAb(ab), c=teamStyle({team:{abbreviation:ab}}).rgb;
-      return '<button class="tchip'+(on?" fav":"")+'" data-t="'+ab+'" aria-pressed="'+on+'" aria-label="'+esc(NAMES[ab])+'"><span class="ln"><i style="--tc:'+(c?"rgb("+c.join(",")+")":"var(--line)")+'"></i>'+ab+'</span><small>'+(on?"★ Yours":"")+'</small></button>';
+      return '<button class="tchip flogo'+(on?" fav":"")+'" data-t="'+ab+'" aria-pressed="'+on+'" aria-label="'+esc(NAMES[ab])+'">'+teamMark({abbreviation:ab},ab,' style="--tc:'+(c?"rgb("+c.join(",")+")":"var(--line)")+'"')+'<small>'+(on?"★ Yours":"")+'</small></button>';
     }).join("")+'</div></div>';
   }).join("");
   favSum();

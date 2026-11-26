@@ -86,8 +86,8 @@ const FLAGS = () => {
     await snap('week picker', () => pg.click('#wkSel'));
     await pg.keyboard.press('Escape');
     await snap('settings', () => pg.click('#openSettings2'));
-    await snap('your teams', () => pg.click('#openFavs'));
-    await pg.evaluate(() => { document.querySelectorAll('#favList .tchip')[3].click(); });
+    await snap('your teams', async () => { await pg.click('#openFavs'); await pg.evaluate(() => { document.querySelectorAll('#favList .tchip')[0].click(); }); });
+    await pg.evaluate(() => { document.querySelectorAll('#favList .tchip')[0].click(); });
     await pg.click('#favDone');
     await snap('teams', () => pg.click('#openTeams'));
     await pg.keyboard.press('Escape'); await pg.keyboard.press('Escape');

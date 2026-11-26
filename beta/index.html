@@ -303,8 +303,14 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .tchip .ln i{display:inline-block;width:4px;height:13px;border-radius:2px;background:var(--tc,var(--line))}
 .tchip small{font-size:11px;line-height:1.2;color:var(--muted)}
 .tchip.n{border-style:dashed}
-.tchip.fav{background:var(--fg);border-color:var(--fg);color:var(--bg)}
-.tchip.fav small{color:var(--bg);font-weight:600}
+.tchip.flogo{justify-items:center;min-height:64px;padding:6px 4px}
+.tchip.flogo .logo{display:flex;align-items:center;justify-content:center;height:36px}
+.tchip.flogo .logo picture{display:contents}
+.tchip.flogo .logo img{width:36px;height:36px;object-fit:contain;display:block}
+.tchip.flogo .badge{font-size:14px;padding:3px 6px}
+.tchip.flogo small{min-height:13px}
+.tchip.fav{border:2px solid var(--fg);background:var(--surface)}
+.tchip.fav small{color:var(--fg);font-weight:700}
 .tchip.n small,.tchip.x small{color:var(--fg);font-weight:600}
 .tchip.x{background:var(--surface);border-color:var(--fg)}
 .tchip.x .ln{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
@@ -460,7 +466,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 <script src="chartspec.js?v=8"></script>
 <script src="drivecard.js?v=3"></script>
 <script src="stats.js?v=2"></script>
-<script src="games.js?v=19"></script>
+<script src="games.js?v=20"></script>
 <script src="live.js?v=3"></script>
 <script src="alerts.js?v=19"></script>
 <script src="main.js?v=9"></script>
