@@ -44,7 +44,8 @@ var DriveCard = (function () {
       rp.textContent = mode === "replay" ? "■ Stop" : mode === "step" ? "Whole drive" : "▶ Replay drive";
       rp.classList.toggle("on", mode === "replay");
       num.textContent = mode === "step" ? label(idx) : "";
-      prev.disabled = mode === "step" && idx <= 0; next.disabled = mode === "step" && idx >= P.length - 1;
+      /* While the drive replays, stepping is off: Stop first. */
+      prev.disabled = mode === "replay" || (mode === "step" && idx <= 0); next.disabled = mode === "replay" || (mode === "step" && idx >= P.length - 1);
     }
     /* "Play 3 of 8", counted like the summary line (kickoffs and punts are named instead). */
     var counted = P.filter(function (g) { return !spec.rows[g[0]].uncounted; }).length;
@@ -73,7 +74,7 @@ var DriveCard = (function () {
       stopCtrl(); mode = "step"; idx = i; shown = sp; hitCache = null; img.src = url; ui(); setBusy(true);
       if (!load("db_stepped", false)) { save("db_stepped", true); var h = root.querySelector(".dc-hint"); if (h) h.remove(); }
     }
-    function move(d) { step(mode === "step" ? idx + d : P.length - 1); }
+    function move(d) { if (mode === "replay") return; step(mode === "step" ? idx + d : P.length - 1); }
 
     rp.addEventListener("click", function () { if (mode === "rest") replay(); else toRest(); });
     prev.addEventListener("click", function () { move(-1); });
