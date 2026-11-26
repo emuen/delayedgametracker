@@ -27,6 +27,9 @@ function render(){
   $("awayPts").textContent=lastP?(lastP.awayScore||0):(started?0:"–");
   $("homePts").textContent=lastP?(lastP.homeScore||0):(started?0:"–");
 
+  var tol=timeoutsLeft(j,T,V), showTol=!!tol&&!(S.state==="post"&&allShown);
+  ["away","home"].forEach(function(k){var el=$(k+"Tol");if(!el)return;el.classList.toggle("on",showTol);if(!tol)return;
+    var h="";for(var i=0;i<tol.max;i++)h+='<i'+(i>=tol[k]?' class="used"':'')+'></i>';el.innerHTML=h;el.setAttribute("aria-label",tol[k]+" timeouts left")});
   var mid=$("mid"), sit="", posId=null;
   if(S.state==="pre"&&!V.plays.length){
     var d=new Date(hdrComp(j).date||now);
@@ -134,3 +137,23 @@ function driveTime(L){
 function fieldChart(L){return window.DriveCore&&window.Chart2D?fieldChart3D(L):""}
 function chartEngine(){return S.engine==="3d"&&window.Chart3D?window.Chart3D:window.Chart2D}
 /* Drive chart: turns the drive into a scene description for chart3d.js / chart2d.js. */
+
+/* Timeouts left, counted only from what's shown at the delay: 3 a half (2 in regular-season overtime).
+   A team's own "Timeout #n by XX" plays, plus a lost challenge ("… challenged …, (Timeout #n.)"). */
+function timeoutsLeft(j,T,V){
+  if(!T.away||!T.home||!V.plays.length)return null;
+  var cur=((V.plays[V.last]||{}).period||{}).number||1, half=function(q){return q<=2?1:q<=4?2:3}, h=half(cur);
+  var post=+(((j.header||{}).season||{}).type)===3, max=h===3&&!post?2:3, used={away:0,home:0};
+  function side(ab){ab=ab2(ab);return ab===T.away.ab?"away":ab===T.home.ab?"home":null}
+  function byName(n){n=n.toLowerCase();var hit=["away","home"].filter(function(k){var t=T[k];return [t.dn,t.loc+" "+t.nm,t.nm].some(function(x){return x&&x.toLowerCase()===n})});
+    if(hit.length===1)return hit[0];hit=["away","home"].filter(function(k){return (T[k].loc||"").toLowerCase()===n});return hit.length===1?hit[0]:null}
+  for(var i=0;i<=V.last;i++){
+    var p=V.plays[i]; if(half(((p.period||{}).number)||1)!==h)continue;
+    var t=String(p.text||""), m, k=null;
+    if(/official|tv timeout/i.test(t+" "+((p.type||{}).text||"")))continue;
+    if((m=/^\s*Timeout #\d+ by ([A-Z]{2,4})\b/i.exec(t)))k=side(m[1].toUpperCase());
+    else if(/\(Timeout #\d+\.\)/.test(t)&&(m=/((?:[A-Z][a-z]+\s){0,2}(?:[A-Z][a-z]+|49ers)) challenged/.exec(t)))k=byName(m[1]);
+    if(k)used[k]++;
+  }
+  return {max:max,away:Math.max(0,max-used.away),home:Math.max(0,max-used.home)};
+}

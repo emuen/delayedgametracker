@@ -44,6 +44,7 @@ img,svg,canvas{max-width:100%}
 .tm .ab{font:800 17px/1 var(--display);letter-spacing:.06em;min-width:88px;text-align:center;box-sizing:border-box;padding:5px 8px;border-radius:var(--rs);background:var(--tc,var(--line));color:var(--tci,var(--fg))}
 .tm .pts{font:900 56px/1 var(--display);font-variant-numeric:tabular-nums;width:88px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);background:var(--plate);color:var(--plate-ink);border:var(--plate-border,none)}
 .tm::after{content:"BALL";display:none;position:absolute;bottom:0;left:50%;transform:translateX(-50%);font:800 12px/1 var(--display);letter-spacing:.14em;padding:4px 9px;box-shadow:0 0 0 2px var(--bg);border-radius:var(--rs);background:var(--accent);color:var(--accent-ink)}
+.tm .tol{display:flex;gap:4px;height:5px;visibility:hidden}.tm .tol.on{visibility:visible}.tm .tol i{width:16px;height:5px;border-radius:3px;background:var(--fg)}.tm .tol i.used{background:var(--line)}
 .score.known .tm::after{display:block;visibility:hidden}
 .score.known .tm.pos::after{visibility:visible}
 .mid{text-align:center;min-width:0;padding-top:26px}
@@ -343,9 +344,9 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
   <div class="nav"><a href="#" id="back">‹ All games</a><button class="chip" id="openSettings">Delay 45s · Settings</button></div>
   <div class="simbar" id="simbar" hidden></div>
   <div class="score" id="scoreRow">
-    <div class="tm" id="awayBox"><span class="ab" id="awayAb">AWAY</span><span class="pts" id="awayPts">–</span></div>
+    <div class="tm" id="awayBox"><span class="ab" id="awayAb">AWAY</span><span class="tol" id="awayTol" aria-label="Timeouts left"></span><span class="pts" id="awayPts">–</span></div>
     <div class="mid"><div id="mid">Loading<small>&nbsp;</small></div><div class="sit" id="sit"></div></div>
-    <div class="tm" id="homeBox"><span class="ab" id="homeAb">HOME</span><span class="pts" id="homePts">–</span></div>
+    <div class="tm" id="homeBox"><span class="ab" id="homeAb">HOME</span><span class="tol" id="homeTol" aria-label="Timeouts left"></span><span class="pts" id="homePts">–</span></div>
   </div>
   <div class="statusrow" id="statusrow">
     <span class="status" id="status">Connecting to the live feed…</span>
@@ -438,7 +439,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 <script src="chart2d.js?v=17"></script>
 <script src="core.js?v=4"></script>
 <script src="feed.js?v=8"></script>
-<script src="render.js?v=5"></script>
+<script src="render.js?v=6"></script>
 <script src="chartspec.js?v=5"></script>
 <script src="stats.js?v=2"></script>
 <script src="games.js?v=16"></script>
