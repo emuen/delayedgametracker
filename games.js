@@ -143,12 +143,13 @@ function gameRow(e){
   }
   var meta;
   var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
-  if(st==="in")meta='<span class="livechip">'+esc(!dl.sync&&dl.c?dl.c:"LIVE")+'</span>';
+  /* Live: quarter above clock ("Q2" / "3:45"), so the chip is no wider than "Final" or a kickoff time. */
+  if(st==="in"){var lc=!dl.sync&&dl.c?String(dl.c):"LIVE", sp=lc.lastIndexOf(" ");meta='<span class="livechip">'+(sp>0?esc(lc.slice(0,sp))+'<br>'+esc(lc.slice(sp+1)):esc(lc))+'</span>'}
   else if(st==="post")meta='<b>Final</b>';
   else{
     var d=new Date(e.date), det=((((c.status||{}).type)||{}).shortDetail)||"";
     var special=/postponed|canceled|cancelled|delayed|suspended/i.test(det);
-    meta='<b>'+(special?esc(det):tbd?"TBD":esc(d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hourCycle:"h23"})))+'</b>';
+    meta='<b>'+(special?esc(det):tbd?"TBD":esc(d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hourCycle:"h23"})))+'</b>'+(fav&&!tbd&&!special&&!isNaN(d)?'<small>'+esc(d.toLocaleDateString(undefined,{weekday:"short",day:"numeric"}))+'</small>':'');
   }
   var playable=a&&h&&a.team&&h.team&&a.team.abbreviation&&h.team.abbreviation&&!/tbd/i.test(a.team.abbreviation+h.team.abbreviation);
   var inner='<div class="teams">'+tr(a,as.css,aw,h,dl.a)+tr(h,hs.css,hw,a,dl.h)+'</div><div class="gmeta">'+meta+'</div>';
@@ -182,9 +183,8 @@ function renderList(){
   });
   var html=[];
   if(mine.length){
-    /* "Your game" sits outside the day headings, so the heading carries the day (your local date). */
-    var md=new Date(mine[0].date), mday=evComp(mine[0]).timeValid===false||isNaN(md)?"":'<span class="dd">'+esc(md.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"}))+'</span>';
-    html.push('<h2 class="day live">Your game'+mday+'</h2>'+mine.map(function(e){return gameRow(e)}).join(""));
+    /* "Your game" sits outside the day headings; before kickoff its card shows the day under the time. */
+    html.push('<h2 class="day live">Your game</h2>'+mine.map(function(e){return gameRow(e)}).join(""));
   }
   if(live.length)html.push('<h2 class="day live">Live now</h2>'+live.map(function(e){return gameRow(e)}).join(""));
   days.forEach(function(k){

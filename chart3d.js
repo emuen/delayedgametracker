@@ -549,7 +549,7 @@
     if (spec.dimFrom > 0 || hasFocus) {
       var grey = new THREE.Color(0x8d968f).convertSRGBToLinear(), dim = 0.85;
       B.rows.forEach(function (row, k) {
-        if (hasFocus ? k === spec.focus : k >= spec.dimFrom) return;
+        if (hasFocus ? K.inFocus(spec, k) : k >= spec.dimFrom) return;
         row.mats.concat(row.ghost ? row.ghost.mats : []).forEach(function (m) {
           m.transparent = true; m.opacity = (hasFocus ? 0.3 : 1 - 0.5 * dim) * (row.ghost && row.ghost.mats.indexOf(m) >= 0 ? 0.4 : 1);
           m.color.lerp(grey, (hasFocus ? 0.6 : 0.35) * dim); m.emissive.multiplyScalar(1 - 0.6 * dim); m.needsUpdate = true;

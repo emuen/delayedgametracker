@@ -101,6 +101,10 @@ function renderDrives(j,T,V,L){
   var list=[], lastQ=null;
   html.reverse().forEach(function(x){if(x.q!==lastQ&&x.q){list.push('<h4 class="qhead">'+esc(qLabel(x.q))+'</h4>');lastQ=x.q}list.push(x.h)});
   box.innerHTML=(L?fieldChart(L):"")+list.join("");
+  var cardEl=box.querySelector(".dcard");
+  if(cardEl&&S.spec3d)DriveCard.bind(cardEl,S.spec3d,{onBusy:function(on,card){
+    if(on){if(S.live)endLive();S.replay=card}
+    else{if(S.replay===card)S.replay=null;S.keys.drives=null;render()}}});
 }
 
 /* Drive chart in the style of the newer NFL Game Center: the field seen at an angle,
