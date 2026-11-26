@@ -415,6 +415,16 @@ function latestDrive(j,T,V){
     var plainPlay=!/penalty|intercept|fumble|kick|punt|safety|field goal|extra point|two.?point|timeout|end of|end period/i.test(pty)&&!/\bPENALTY\b|\bFUMBLES\b|\bINTERCEPTED\b|\bLaterals?\b/i.test(ptx);
     if(offTD)e=100;
     else if(plainPlay&&typeof p.statYardage==="number"&&Math.abs(e-(s+p.statYardage))>5)e=s+p.statYardage;
+    /* A foul added on after a play that counts (e.g. roughing the passer after a completion): the play
+       up to the enforcement spot, then the walk-off as its own flag row, so the yards aren't all the play's. */
+    if(!nul&&!offTD&&!isOffsetting(ptx)&&!/\bINTERCEPTED\b|\bFUMBLES\b|\bLaterals?\b/.test(ptx)){
+      var am=new RegExp("^(.*?)\\.?\\s*PENALTY on [A-Z]{2,4}(?:-[^,]+)?,\\s*[^,]+,\\s*\\d+ yards?, enforced at ("+SPOT_+")").exec(ptx), asp=am?parseSpot(am[2],A):null;
+      if(am&&asp!=null&&Math.abs(asp-s)>=0.5&&Math.abs(e-asp)>=0.5&&(am[3]=(/\bfor (-?\d+) yards?/.exec(am[1])||[])[1])!=null&&(asp-s)*(+am[3])>0&&Math.abs(asp-s)<=Math.abs(+am[3])+1){
+        rows.push({s:s,e:asp,kind:"play",score:"",text:am[1].replace(/[\s.]*$/,"."),p:p});
+        rows.push({s:asp,e:e,kind:"play",forceKind:"pen",addOn:true,score:p.scoringPlay?scoreLabel(p):"",text:ptx,p:p});
+        return;
+      }
+    }
     var row={s:s,e:e,kind:"play",score:p.scoringPlay&&!nul?scoreLabel(p):"",text:ptx,p:p};
     /* Laterals: where each hand-off happened (the end of the leg before it). */
     if(!nul&&/\bLateral to\b/.test(ptx)){var lg=legsOf(bare(ptx).replace(/^\(.*?\)\s*/,""),A),lats=[];lg.forEach(function(x,i){if(x.lat&&i>0&&lg[i-1].at!=null)lats.push(lg[i-1].at)});if(lats.length)row.lats=lats}

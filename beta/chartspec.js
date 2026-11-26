@@ -44,7 +44,7 @@ function fieldChart3D(L,specOnly){
     if(row.fg)fgRow(row,r,t,ty);
     else if(r.blocked){row.blocked=true;row.fe=+F(r.e).toFixed(2);row.type="kick"}
     /* A foul with no play: the play that happened before the flag (replay draws it, then the walk-off). */
-    if((k==="pen"||k==="off")&&r.kind==="play"&&!r.place){var bf=ct.split(/\.?\s?PENALTY on|\.?\s?Penalty on/)[0], bfx=bf.replace(/\s*\([^)]*\)/g,"");
+    if((k==="pen"||k==="off")&&r.kind==="play"&&!r.place&&!r.addOn){var bf=ct.split(/\.?\s?PENALTY on|\.?\s?Penalty on/)[0], bfx=bf.replace(/\s*\([^)]*\)/g,"");
       var kicker=teamIdOf((r.p||{}).start)===L.off;
       if((m=/\b(?:punts|kicks)(?: onside)? (\d+) yards?/.exec(bfx))&&/\b(?:punts|kicks)\b/.test(bfx))row.prePlay={type:"kick",len:(kicker||/\bpunts\b/.test(bfx)?1:-1)*(+m[1])};
       else if((m=new RegExp("INTERCEPTED by \\S+ at ("+SPX+")").exec(bfx))){var ia2=parseSpot(m[1],L.A), rr=new RegExp("\\.\\s+\\S+ (?:(?:to|pushed ob at|ran ob at) "+SPX+" )?for (-?\\d+) yards?").exec(bfx.slice(m.index));
@@ -315,7 +315,8 @@ function fieldChart3D(L,specOnly){
     var row=rows[i]; if(!row)return;
     row.los=row.fs; row.ltg=null;
     var st=(r.p||{}).start||{};
-    if(r.kind==="play"&&!r.place&&st.down>0&&+st.distance&&r.s+(+st.distance)<100)row.ltg=+F(r.s+(+st.distance)).toFixed(2);
+    if(r.addOn&&i>0)row.ltg=rows[i-1].ltg;
+    else if(r.kind==="play"&&!r.place&&st.down>0&&+st.distance&&r.s+(+st.distance)<100)row.ltg=+F(r.s+(+st.distance)).toFixed(2);
     /* A kick (or a lost fumble) that has another row after it: its own result text stops before what follows. */
     var nx=L.rows[i+1], more=nx&&nx.p===r.p, ct0=cleanText(ftext(r.p&&r.p.text));
     var partOnly=!more?"":r.blocked?ct0.replace(/,?\s*recovered by .*$/i,"").replace(/\.\s+\S+ (?:to|for) .*$/,"."):r.kind==="kick"?(ct0.match(/^.*?\.(?=\s|$)/)||[""])[0]:r.fumble?ct0.split(/\.?\s+FUMBLES\b/)[0]+".":"";
