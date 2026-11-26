@@ -236,26 +236,26 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .day.live{color:var(--fg)}
 .day .dd{color:var(--muted);margin-left:-2px}
 .day .dd::before{content:"· "}
-.game{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;color:inherit;text-decoration:none;min-height:64px}
+.game{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:7px 12px;margin-bottom:8px;color:inherit;text-decoration:none;min-height:64px}
 .game:active{background:var(--bg)}
 .game.fav{border:2px solid var(--fg);padding:9px 11px;opacity:1}
 .tr .star{color:var(--fg);margin-left:4px}
-.teams{display:grid;gap:5px;min-width:0}
+.teams{display:grid;gap:4px;min-width:0}
 .tr{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;min-width:0}
 .tr .badge{font-size:16px;padding:4px 6px;min-width:3.1em;text-align:center}
-.tr .logo{width:3.1em;height:36px;display:flex;align-items:center;justify-content:center}
+.tr .logo{width:3.1em;height:30px;display:flex;align-items:center;justify-content:center}
 .tr .logo picture{display:contents}
-.tr .logo img{width:36px;height:36px;object-fit:contain;display:block}
+.tr .logo img{width:28px;height:28px;object-fit:contain;display:block}
 .tr .nm{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tr .nm small{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px;font-variant-numeric:tabular-nums}
-.tr .sc{font:900 24px/1 var(--display);font-variant-numeric:tabular-nums;min-width:42px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--rs);background:var(--plate);color:var(--plate-ink);border:var(--plate-border,none);opacity:.55}
+.tr .sc{font:900 23px/1 var(--display);font-variant-numeric:tabular-nums;min-width:42px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:var(--rs);background:var(--plate);color:var(--plate-ink);border:var(--plate-border,none);opacity:.55}
 .tr .sc:empty{display:none}
 .tr.win .nm{color:var(--fg);font-weight:700}
 .tr.win .sc{opacity:1}
 .gmeta{text-align:right;display:grid;gap:2px;justify-items:end;width:46px}
 .gmeta b{font:700 17px var(--display);font-variant-numeric:tabular-nums}
 .gmeta small{font-size:12px;color:var(--muted);max-width:7.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.livechip{font:800 15px/1.05 var(--display);letter-spacing:.03em;font-variant-numeric:tabular-nums;text-align:center;color:var(--accent-ink);background:var(--accent);border-radius:var(--rs);padding:3px 5px}
+.livechip{font:800 15px/1.05 var(--display);letter-spacing:.03em;font-variant-numeric:tabular-nums;text-align:center;color:var(--fg);background:none;border:1.5px solid var(--fg);border-radius:var(--rs);padding:2px 4px}
 .nav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
 .nav a{color:var(--fg);font-weight:600;text-decoration:none;min-height:44px;display:inline-flex;align-items:center;padding-right:8px}
 .nav .chip{color:var(--fg)}
@@ -453,7 +453,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 <script src="chartspec.js?v=8"></script>
 <script src="drivecard.js?v=3"></script>
 <script src="stats.js?v=2"></script>
-<script src="games.js?v=17"></script>
+<script src="games.js?v=18"></script>
 <script src="live.js?v=3"></script>
 <script src="alerts.js?v=19"></script>
 <script src="main.js?v=9"></script>
