@@ -73,15 +73,27 @@ function recordOf(t,opp,st,hide){
   return n.join("-");
 }
 var NAMES={ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",BUF:"Buffalo Bills",CAR:"Carolina Panthers",CHI:"Chicago Bears",CIN:"Cincinnati Bengals",CLE:"Cleveland Browns",DAL:"Dallas Cowboys",DEN:"Denver Broncos",DET:"Detroit Lions",GB:"Green Bay Packers",HOU:"Houston Texans",IND:"Indianapolis Colts",JAX:"Jacksonville Jaguars",KC:"Kansas City Chiefs",LV:"Las Vegas Raiders",LAC:"Los Angeles Chargers",LAR:"Los Angeles Rams",MIA:"Miami Dolphins",MIN:"Minnesota Vikings",NE:"New England Patriots",NO:"New Orleans Saints",NYG:"New York Giants",NYJ:"New York Jets",PHI:"Philadelphia Eagles",PIT:"Pittsburgh Steelers",SF:"San Francisco 49ers",SEA:"Seattle Seahawks",TB:"Tampa Bay Buccaneers",TEN:"Tennessee Titans",WSH:"Washington Commanders"};
-(function(){var f=$("fav");f.innerHTML='<option value="">None</option>'+Object.keys(NAMES).sort(function(a,b){return NAMES[a].localeCompare(NAMES[b])}).map(function(k){return '<option value="'+k+'">'+NAMES[k]+'</option>'}).join("");f.value=S.fav;
-  f.onchange=function(){S.fav=f.value;save("db_fav",S.fav);favChip();if(S.view==="list")renderList()}})();
 (function(){var l=$("linger");l.value=String(S.linger);if(!l.value){l.value="1"}l.onchange=function(){S.linger=+l.value||1;save("db_linger",S.linger)}})();
 (function(){var l=$("lead");l.value=String(S.lead);if(!l.value){l.value="5"}l.onchange=function(){S.lead=+l.value||5;save("db_lead",S.lead)}})();
 (function(){var d=$("dongMode");d.value=S.dongMode;if(!d.value)d.value="sound";d.onchange=function(){S.dongMode=d.value;save("db_dong",S.dongMode);if(S.dongMode==="off"||S.dongMode==="ticker"){DG.queue=[];DG.pending=[];DG.flash={}}dockRender(true)}})();
 (function(){var b=$("sounds");b.setAttribute("aria-checked",S.sounds?"true":"false");b.onclick=function(){S.sounds=!S.sounds;save("db_sounds",S.sounds);b.setAttribute("aria-checked",S.sounds?"true":"false")}})();
-function favChip(){if(!$("favChip"))return;$("favChip").textContent=S.fav?"★ "+(NAMES[S.fav]||S.fav).split(" ").pop():"★ Pick favourite"}
-favChip();
-if($("favChip"))$("favChip").onclick=function(){sheet(true);setTimeout(function(){$("fav").focus()},50)};
+/* Your teams: any number; their games are pinned on top of the game list. Stored on this phone. */
+function isFavAb(ab){return S.favs.indexOf(ab)>=0}
+function favSum(){var el=$("favSum");if(el)el.textContent=S.favs.length?S.favs.map(function(k){return (NAMES[k]||k).split(" ").pop()}).join(", "):"None picked"}
+function favsDraw(){
+  $("favList").innerHTML=DIVS.map(function(d){
+    return '<div class="sect tdiv"><h3>'+esc(d[0])+'</h3><div class="tgrid">'+d[1].map(function(ab){
+      var on=isFavAb(ab), c=teamStyle({team:{abbreviation:ab}}).rgb;
+      return '<button class="tchip'+(on?" fav":"")+'" data-t="'+ab+'" aria-pressed="'+on+'" aria-label="'+esc(NAMES[ab])+'"><span class="ln"><i style="--tc:'+(c?"rgb("+c.join(",")+")":"var(--line)")+'"></i>'+ab+'</span><small>'+(on?"★ Yours":"")+'</small></button>';
+    }).join("")+'</div></div>';
+  }).join("");
+  favSum();
+}
+function favsOpen(open){$("favSheet").hidden=!open;if(open){favsDraw();$("favDone").focus()}else{favSum();$("openFavs").focus();if(S.view==="list")renderList()}}
+$("openFavs").onclick=function(){favsOpen(true)};
+$("favDone").onclick=function(){favsOpen(false)};
+$("favList").addEventListener("click",function(e){var b=e.target.closest(".tchip");if(!b)return;var ab=b.getAttribute("data-t"),i=S.favs.indexOf(ab);if(i>=0)S.favs.splice(i,1);else S.favs.push(ab);save("db_favs",S.favs);favsDraw();var nb=document.querySelector('#favList .tchip[data-t="'+ab+'"]');if(nb)nb.focus()});
+favSum();
 /* With "Show scores" on, live scores are shown at your delay: each scoreboard load is kept with the
    time it arrived, and the list shows the newest one that is at least your delay old. Until one is
    that old, live scores stay hidden. Games with a "No spoilers" team never show a score here. */
@@ -133,7 +145,7 @@ function teamMark(tm,ab,sty){
 }
 function gameRow(e){
   var dl=lsView(e), st=dl.st, c=evComp(e), a=evTeam(e,"away"), h=evTeam(e,"home");
-  function isFav(t){return !!(S.fav&&t&&t.team&&t.team.abbreviation===S.fav)}
+  function isFav(t){return !!(t&&t.team&&isFavAb(t.team.abbreviation))}
   var fav=isFav(a)||isFav(h), nos=a&&h&&a.team&&h.team&&gamePref(a.team.abbreviation,h.team.abbreviation)==="x";
   var hs=teamStyle(h), as=teamStyle(a,hs.rgb), show=LS.scores&&st!=="pre"&&!dl.sync&&!nos;
   var aw=show&&dl.a>dl.h, hw=show&&dl.h>dl.a;
@@ -174,7 +186,7 @@ function renderList(){
   var live=[], done=[], days=[], byDay={}, mine=[];
   ev.forEach(function(e){
     var st=lsView(e).st;
-    if(S.fav&&["away","home"].some(function(ha){var t=evTeam(e,ha);return t&&t.team&&t.team.abbreviation===S.fav}))return mine.push(e);
+    if(["away","home"].some(function(ha){var t=evTeam(e,ha);return t&&t.team&&isFavAb(t.team.abbreviation)}))return mine.push(e);
     if(st==="in")return live.push(e);
     if(st==="post")return done.push(e);
     var tbd=evComp(e).timeValid===false, k=tbd?"zz":new Date(e.date).toDateString();
@@ -184,7 +196,7 @@ function renderList(){
   var html=[];
   if(mine.length){
     /* "Your game" sits outside the day headings; before kickoff its card shows the day under the time. */
-    html.push('<h2 class="day live">Your game</h2>'+mine.map(function(e){return gameRow(e)}).join(""));
+    html.push('<h2 class="day live">Your game'+(mine.length>1?"s":"")+'</h2>'+mine.map(function(e){return gameRow(e)}).join(""));
   }
   if(live.length)html.push('<h2 class="day live">Live now</h2>'+live.map(function(e){return gameRow(e)}).join(""));
   days.forEach(function(k){
@@ -291,12 +303,12 @@ $("m30").onclick=function(){setDelay(S.delay-30)};
 $("m5").onclick=function(){setDelay(S.delay-5)};
 $("p5").onclick=function(){setDelay(S.delay+5)};
 $("p30").onclick=function(){setDelay(S.delay+30)};
-function sheet(open){$("sheet").hidden=!open;$("scrim").hidden=!open;if(!open)$("teamSheet").hidden=true;if(open){teamSum();$("sheetDone").focus()}else if(S.view==="list")renderList()}
+function sheet(open){$("sheet").hidden=!open;$("scrim").hidden=!open;if(!open){$("teamSheet").hidden=true;$("favSheet").hidden=true}if(open){teamSum();$("sheetDone").focus()}else if(S.view==="list")renderList()}
 $("openSettings").onclick=function(){sheet(true)};
 $("openSettings2").onclick=function(){sheet(true)};
 $("sheetDone").onclick=function(){sheet(false)};
-$("scrim").onclick=function(){if(!$("weekSheet").hidden)weeksOpen(false);else if(!$("teamSheet").hidden)teamsOpen(false);else sheet(false)};
-document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;if(!$("weekSheet").hidden)weeksOpen(false);else if(!$("teamSheet").hidden)teamsOpen(false);else if(!$("sheet").hidden)sheet(false)});
+$("scrim").onclick=function(){if(!$("weekSheet").hidden)weeksOpen(false);else if(!$("teamSheet").hidden)teamsOpen(false);else if(!$("favSheet").hidden)favsOpen(false);else sheet(false)};
+document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;if(!$("weekSheet").hidden)weeksOpen(false);else if(!$("teamSheet").hidden)teamsOpen(false);else if(!$("favSheet").hidden)favsOpen(false);else if(!$("sheet").hidden)sheet(false)});
 /* Teams: tap a team to go Follow → Not interested → No spoilers → Follow. Stored on this phone. */
 var TPLABEL={f:"Follow",n:"Not interested",x:"No spoilers"};
 function teamSum(){
