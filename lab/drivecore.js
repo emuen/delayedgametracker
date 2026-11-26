@@ -318,6 +318,33 @@
       o.restore();
     }
   }
+  /* Player sigils (lab): a mark of his own worked out from the player's id, the same in every game.
+     "px" (default): a mirrored 5x5 pixel shape; "rune" (?mark=rune): strokes on a 3x3 dot grid. */
+  var MARK = /[?&]mark=rune\b/.test(location.search) ? "rune" : "px", SIG = {};
+  function hsh(s) { var h = 2166136261; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function sigilOf(id) {
+    if (SIG[id]) return SIG[id];
+    var h = hsh(id), h2 = hsh(id + "#"), out = { px: [], ru: [], dot: 0 };
+    var on = 0;
+    for (var y = 0; y < 5; y++) for (var x = 0; x < 3; x++) if ((h >>> (y * 3 + x)) & 1) { on++; var a = x === 2 && (h >>> (16 + y)) & 1; out.px.push([x, y, a]); if (x < 2) out.px.push([4 - x, y, a]); }
+    if (on < 4) out.px.push([2, 2, 1], [2, 1, 0]);
+    var E = [];
+    for (var r = 0; r < 3; r++) { E.push([0, r, 1, r]); if (r < 2) E.push([0, r, 0, r + 1], [1, r, 1, r + 1], [0, r, 1, r + 1], [1, r, 0, r + 1]); }
+    E.forEach(function (e, i) { if ((h2 >>> i) & 1) { out.ru.push(e); if (e[0] < 1 || e[2] < 1) out.ru.push([2 - e[0], e[1], 2 - e[2], e[3]]); } });
+    if (out.ru.length < 3) out.ru.push([1, 0, 1, 2], [0, 1, 2, 1]);
+    out.dot = (h2 >>> 13) % 3;
+    return (SIG[id] = out);
+  }
+  /* Draw a sigil tile of size s at x, y (top-left). */
+  function drawSigil(o, id, x, y, s, bg, acc) {
+    var g = sigilOf(id), u = s / 25;
+    o.fillStyle = bg; o.beginPath(); if (o.roundRect) o.roundRect(x, y, s, s, 5 * u); else o.rect(x, y, s, s); o.fill();
+    if (MARK === "rune") {
+      o.save(); o.strokeStyle = "#fff"; o.lineWidth = 2.4 * u; o.lineCap = "round";
+      g.ru.forEach(function (e) { o.beginPath(); o.moveTo(x + (6.5 + 6 * e[0]) * u, y + (6.5 + 6 * e[1]) * u); o.lineTo(x + (6.5 + 6 * e[2]) * u, y + (6.5 + 6 * e[3]) * u); o.stroke(); });
+      o.fillStyle = acc; o.beginPath(); o.arc(x + 12.5 * u, y + (6.5 + 6 * g.dot) * u, 1.9 * u, 0, 7); o.fill(); o.restore();
+    } else g.px.forEach(function (c) { o.fillStyle = c[2] ? acc : "#fff"; o.fillRect(x + (2.5 + 4 * c[0]) * u, y + (2.5 + 4 * c[1]) * u, 4 * u + 0.4, 4 * u + 0.4); });
+  }
   function drawOverlay(o, W, H, B, labels, callout, at, fx) {
     function scr(p) { return B.scr(p, W, H); }
     var u = W / 360;
@@ -371,7 +398,8 @@
       return out;
     }
     var FBD = "800 " + Math.round(11 * u) + "px " + DISPLAY, bpx = 3.2 * u, bgap = 3 * u;
-    function pw(p) { if (p[1] === "badge") { o.font = FBD; return Math.max(o.measureText(p[0]).width + bpx * 2, 15 * u) + bgap; } o.font = p[1]; return o.measureText(p[0]).width; }
+    var SIGS = 15 * u;
+    function pw(p) { if (p[1] === "badge") return SIGS + bgap; o.font = p[1]; return o.measureText(p[0]).width; }
     function widthOf(line) { return pieces(line).reduce(function (w, p) { return w + pw(p); }, 0); }
     var w2 = Math.max(widthOf(c.l1), widthOf(c.l2));
     var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u;
@@ -392,10 +420,9 @@
       o.save(); if (w > avail) { o.translate(x, y); o.scale(avail / w, 1); o.translate(-x, -y); }
       pieces(line).forEach(function (p) {
         if (p[1] === "badge") {
-          var b = p[3], bw0 = pw(p) - bgap, bh0 = 12.5 * u;
-          o.fillStyle = b.bg; o.beginPath(); if (o.roundRect) o.roundRect(x, y - bh0 / 2 - 0.5 * u, bw0, bh0, 2.5 * u); else o.rect(x, y - bh0 / 2 - 0.5 * u, bw0, bh0); o.fill();
-          o.font = FBD; o.fillStyle = b.ink; o.textAlign = "center"; o.fillText(p[0], x + bw0 / 2, y + 0.3 * u); o.textAlign = "left";
-          x += bw0 + bgap; return;
+          var b = p[3];
+          drawSigil(o, b.id, x, y - SIGS / 2 - 0.8 * u, SIGS, b.bg, b.acc || "#fff");
+          x += SIGS + bgap; return;
         }
         o.font = p[1]; o.fillStyle = p[2] || TEXT; o.fillText(p[0], x, y); x += o.measureText(p[0]).width; });
       o.restore();
