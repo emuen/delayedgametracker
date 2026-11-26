@@ -203,7 +203,7 @@ function driveState(d,vis,all,cur){
   vis.forEach(function(p){if(isNonPlay(p)||isNullified(ftext(p.text)))return;var e=endOf(p,(d.team||{}).abbreviation);if(e)endLabel=e});
   var ended=espnDone||!!endLabel;
   var espnRes=[d.displayResult,d.result].filter(function(r){return r&&!/^\s*(unknown|none|n\/a|-+)\s*$/i.test(r)})[0];
-  var label=resultLabel(espnDone?(espnRes||endLabel||"Drive over"):endLabel);
+  var label=resultLabel(espnDone?(espnRes||endLabel||"Unknown"):endLabel);
   var scored=espnDone&&d.isScore!=null?!!d.isScore:/^(Touchdown|Field goal)$/.test(label||"");
   return {ended:ended,label:label,scored:scored};
 }
