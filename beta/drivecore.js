@@ -360,14 +360,19 @@
       while (rest) {
         var best = null;
         (c.hls || []).forEach(function (h) { var i = rest.indexOf(h.t); if (i >= 0 && (!best || i < best.i)) best = { i: i, h: h }; });
+        /* A player's name: his number plate first (team colour), then the name. */
+        (c.badges || []).forEach(function (b) { var i = rest.indexOf(b.t); if (i >= 0 && (!best || i < best.i)) best = { i: i, b: b }; });
         if (!best) { out.push([rest, FB]); break; }
         if (best.i) out.push([rest.slice(0, best.i), FB]);
+        if (best.b) { out.push([best.b.num, "badge", null, best.b]); out.push([best.b.t, FB]); rest = rest.slice(best.i + best.b.t.length); continue; }
         out.push([best.h.t, FH, HLC[best.h.k]]);
         rest = rest.slice(best.i + best.h.t.length);
       }
       return out;
     }
-    function widthOf(line) { return pieces(line).reduce(function (w, p) { o.font = p[1]; return w + o.measureText(p[0]).width; }, 0); }
+    var FBD = "800 " + Math.round(11 * u) + "px " + DISPLAY, bpx = 3.2 * u, bgap = 3 * u;
+    function pw(p) { if (p[1] === "badge") { o.font = FBD; return Math.max(o.measureText(p[0]).width + bpx * 2, 15 * u) + bgap; } o.font = p[1]; return o.measureText(p[0]).width; }
+    function widthOf(line) { return pieces(line).reduce(function (w, p) { return w + pw(p); }, 0); }
     var w2 = Math.max(widthOf(c.l1), widthOf(c.l2));
     var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u;
     o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 8 * u; o.shadowOffsetY = 2 * u;
@@ -385,7 +390,14 @@
       var x = bx + pad, avail = bw - pad * 2, w = widthOf(line);
       /* A line that would overflow the box is squeezed to fit (no-op when it fits). */
       o.save(); if (w > avail) { o.translate(x, y); o.scale(avail / w, 1); o.translate(-x, -y); }
-      pieces(line).forEach(function (p) { o.font = p[1]; o.fillStyle = p[2] || TEXT; o.fillText(p[0], x, y); x += o.measureText(p[0]).width; });
+      pieces(line).forEach(function (p) {
+        if (p[1] === "badge") {
+          var b = p[3], bw0 = pw(p) - bgap, bh0 = 12.5 * u;
+          o.fillStyle = b.bg; o.beginPath(); if (o.roundRect) o.roundRect(x, y - bh0 / 2 - 0.5 * u, bw0, bh0, 2.5 * u); else o.rect(x, y - bh0 / 2 - 0.5 * u, bw0, bh0); o.fill();
+          o.font = FBD; o.fillStyle = b.ink; o.textAlign = "center"; o.fillText(p[0], x + bw0 / 2, y + 0.3 * u); o.textAlign = "left";
+          x += bw0 + bgap; return;
+        }
+        o.font = p[1]; o.fillStyle = p[2] || TEXT; o.fillText(p[0], x, y); x += o.measureText(p[0]).width; });
       o.restore();
     }
     drawLine(c.l1, by + pad + lh * 1.5 - 2 * u);
@@ -446,7 +458,7 @@
   /* What the overlay shows at time t: labels, info box text, chips and banner.
      label(k) -> the row's score label or null; chipAt(k, seg) -> point for the row's result chip. */
   function overlayState(t, cur, g, s, outro, segs, spec, label, chipAt) {
-    function resultOf(k) { var c = (spec.rows[k] || {}).callout || {}; return { l1: c.l1 || "", l2: c.l2 || "", hls: c.hls || [] }; }
+    function resultOf(k) { var c = (spec.rows[k] || {}).callout || {}; return { l1: c.l1 || "", l2: c.l2 || "", hls: c.hls || [], badges: c.badges }; }
     var labels = [], fx = { chips: [], banner: null }, co = null, chipRows = {};
     if (g && !outro) {
       /* Result chip at the end of the play; fades as the next play is spotted. */
@@ -489,9 +501,9 @@
       if (t < g.snap && !g.cont) {
         /* Pre-snap: the new situation on top, the previous result still readable in grey. */
         var pr = cur > 0 ? resultOf(cur - 1) : { l1: "", l2: "" };
-        co = { head: head, l1: pr.l1, l2: pr.l2, hls: [], muted: true, note: s.tmo ? "after " + s.tmo : "" };
-      } else if (t < g.end) co = { head: head, l1: (c.pre || {}).l1 || "", l2: (c.pre || {}).l2 || "", hls: [], note: c.preNote || "" };
-      else co = { head: head, l1: c.l1, l2: c.l2, hls: c.hls, note: c.note || "" };
+        co = { head: head, l1: pr.l1, l2: pr.l2, hls: [], badges: pr.badges, muted: true, note: s.tmo ? "after " + s.tmo : "" };
+      } else if (t < g.end) co = { head: head, l1: (c.pre || {}).l1 || "", l2: (c.pre || {}).l2 || "", hls: [], badges: c.badges, note: c.preNote || "" };
+      else co = { head: head, l1: c.l1, l2: c.l2, hls: c.hls, badges: c.badges, note: c.note || "" };
     } else if (outro && spec.callout) co = spec.callout;   /* matches the still image that replaces the replay */
     return { labels: labels, co: co, fx: fx };
   }
