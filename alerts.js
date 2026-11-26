@@ -53,6 +53,8 @@ function sbGame(e){
   if(sit&&G.state==="in"){
     var lp=sit.lastPlay||{}, lty=((lp.type||{}).text||"");
     G.pos=sit.possession!=null?String(typeof sit.possession==="object"?sit.possession.id:sit.possession):null;
+    /* ESPN keeps possession on the scoring team through the try and the kickoff: show no dot then. */
+    if(lp.scoringPlay||/touchdown|field goal good|safety|extra point|two-point|conversion|end of|end period|halftime/i.test(lty))G.pos=null;
     G.rz=!!sit.isRedZone; G.dd=sit.shortDownDistanceText||sit.downDistanceText||"";
     G.to=/interception/i.test(lty)?"INT":/fumble recovery \(opponent\)|opp fumble|fumble return/i.test(lty)?"FUM":"";
   }
@@ -92,7 +94,7 @@ function simGame(e,ent,cur){
   var rp=null; for(var q=k;q>=0;q--){if(!isNonPlay(ps[q])){rp=ps[q];break}}
   if(rp&&!done){
     var en=rp.end||{};
-    G.pos=teamIdOf(en)||teamIdOf(rp.start);
+    G.pos=/end of|end period|end quarter/i.test(ty)?null:ballAfter(rp);
     G.rz=!rp.scoringPlay&&en.down>0&&en.yardsToEndzone!=null&&en.yardsToEndzone<=20;
     G.dd=en.shortDownDistanceText||en.downDistanceText||"";
     if(rp.isTurnover)G.to=/intercept/i.test(((rp.type||{}).text||"")+" "+(rp.text||""))?"INT":"FUM";
@@ -237,8 +239,8 @@ function chipHTML(G,D,now){
   var sync=D.sync&&G.state!=="pre"&&!G.early, fl=DG.flash[G.id]&&DG.flash[G.id].until>now?DG.flash[G.id]:null;
   var a=G.a, h=G.h, show=G.state!=="pre"&&!sync&&a.score!=null&&h.score!=null;
   function side(t,sc,other,s){
-    var po=G.state==="in"&&!sync&&G.pos&&G.pos===t.id;
-    return '<i style="--tc:'+chipCol(t)+'"></i><em'+(po?' class="po"':'')+'>'+esc(t.ab)+'</em>'+
+    var po=G.state==="in"&&!sync&&G.pos&&G.pos===t.id&&!/HALFTIME|END_PERIOD/.test(G.name||"");
+    return '<i style="--tc:'+chipCol(t)+'"></i><em'+(po?' class="po"':'')+'>'+esc(t.ab)+'<s class="bl" aria-hidden="true"></s></em>'+
       (show?'<b class="'+(sc>=other?"up":"")+(fl&&fl.side===s?" sc":"")+'">'+sc+'</b>':sync?'<b>–</b>':'');
   }
   var l2, lbl;

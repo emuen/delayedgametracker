@@ -65,7 +65,7 @@ function delayedState(j){
   var cut=Date.now()-S.delay*1000-lagEst()*1000, best=null;
   allPlays(j).forEach(function(p){var w=Date.parse(p.wallclock);if(!isNaN(w)&&w<=cut&&p.homeScore!=null)best=p});
   if(!best)return null;
-  return {a:+best.awayScore||0,h:+best.homeScore||0,period:+((best.period||{}).number)||0,clock:((best.clock||{}).displayValue)||"",pos:teamIdOf(best.end||best.start)};
+  return {a:+best.awayScore||0,h:+best.homeScore||0,period:+((best.period||{}).number)||0,clock:((best.clock||{}).displayValue)||"",pos:ballAfter(best)};
 }
 /* Usable for 3 min after it was read; asked again after 1 min. */
 function earlyOf(id){var E=EARLY[id];return E&&!E.loading&&Date.now()-E.t<180000?E:null}
@@ -125,6 +125,14 @@ function dropNoise(t){
 }
 var NOYARD=/timeout|end of|two-minute|kickoff|punt|extra point|field goal|coin toss|end period|official/i;
 /* Timeouts, quarter breaks and warnings: listed, but not plays. */
+/* Team with the ball after a play, for the ticker's yellow dot. None after a score (through the try and
+   until the kickoff is caught) or at the end of a quarter, half or game, so it never points at the wrong team. */
+function ballAfter(p){
+  if(!p)return null;
+  var ty=((p.type||{}).text||"");
+  if(p.scoringPlay||/touchdown|field goal good|safety|extra point|two-point|2pt|conversion|end of|end period|end quarter|end game|halftime/i.test(ty))return null;
+  return teamIdOf(p.end)||teamIdOf(p.start);
+}
 function isNonPlay(p){var ty=((p.type||{}).text||""),t=p.text||"";return /timeout|end of|end period|end quarter|end game|two-minute|coin toss/i.test(ty)||/^\s*(official\s+)?timeout\b|^\s*end (of )?(quarter|half|game)|^\s*two-minute warning/i.test(t)}
 function isOfficialTO(p){return /official timeout|tv timeout/i.test(((p.type||{}).text||"")+" "+(p.text||""))}
 /* What ends a drive: score, punt, turnover, missed FG, safety. */
@@ -407,6 +415,16 @@ function latestDrive(j,T,V){
     var plainPlay=!/penalty|intercept|fumble|kick|punt|safety|field goal|extra point|two.?point|timeout|end of|end period/i.test(pty)&&!/\bPENALTY\b|\bFUMBLES\b|\bINTERCEPTED\b|\bLaterals?\b/i.test(ptx);
     if(offTD)e=100;
     else if(plainPlay&&typeof p.statYardage==="number"&&Math.abs(e-(s+p.statYardage))>5)e=s+p.statYardage;
+    /* A foul added on after a play that counts (e.g. roughing the passer after a completion): the play
+       up to the enforcement spot, then the walk-off as its own flag row, so the yards aren't all the play's. */
+    if(!nul&&!offTD&&!isOffsetting(ptx)&&!/\bINTERCEPTED\b|\bFUMBLES\b|\bLaterals?\b/.test(ptx)){
+      var am=new RegExp("^(.*?)\\.?\\s*PENALTY on [A-Z]{2,4}(?:-[^,]+)?,\\s*[^,]+,\\s*\\d+ yards?, enforced at ("+SPOT_+")").exec(ptx), asp=am?parseSpot(am[2],A):null;
+      if(am&&asp!=null&&Math.abs(asp-s)>=0.5&&Math.abs(e-asp)>=0.5&&(am[3]=(/\bfor (-?\d+) yards?/.exec(am[1])||[])[1])!=null&&(asp-s)*(+am[3])>0&&Math.abs(asp-s)<=Math.abs(+am[3])+1){
+        rows.push({s:s,e:asp,kind:"play",score:"",text:am[1].replace(/[\s.]*$/,"."),p:p});
+        rows.push({s:asp,e:e,kind:"play",forceKind:"pen",addOn:true,score:p.scoringPlay?scoreLabel(p):"",text:ptx,p:p});
+        return;
+      }
+    }
     var row={s:s,e:e,kind:"play",score:p.scoringPlay&&!nul?scoreLabel(p):"",text:ptx,p:p};
     /* Laterals: where each hand-off happened (the end of the leg before it). */
     if(!nul&&/\bLateral to\b/.test(ptx)){var lg=legsOf(bare(ptx).replace(/^\(.*?\)\s*/,""),A),lats=[];lg.forEach(function(x,i){if(x.lat&&i>0&&lg[i-1].at!=null)lats.push(lg[i-1].at)});if(lats.length)row.lats=lats}
