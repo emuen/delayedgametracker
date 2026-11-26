@@ -143,7 +143,8 @@ function gameRow(e){
   }
   var meta;
   var tbd=c.timeValid===false||/tbd/i.test((((c.status||{}).type)||{}).detail||"");
-  if(st==="in")meta='<span class="livechip">'+esc(!dl.sync&&dl.c?dl.c:"LIVE")+'</span>';
+  /* Live: quarter above clock ("Q2" / "3:45"), so the chip is no wider than "Final" or a kickoff time. */
+  if(st==="in"){var lc=!dl.sync&&dl.c?String(dl.c):"LIVE", sp=lc.lastIndexOf(" ");meta='<span class="livechip">'+(sp>0?esc(lc.slice(0,sp))+'<br>'+esc(lc.slice(sp+1)):esc(lc))+'</span>'}
   else if(st==="post")meta='<b>Final</b>';
   else{
     var d=new Date(e.date), det=((((c.status||{}).type)||{}).shortDetail)||"";
