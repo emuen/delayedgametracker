@@ -136,7 +136,7 @@ function ballAfter(p){
 function isNonPlay(p){var ty=((p.type||{}).text||""),t=p.text||"";return /timeout|end of|end period|end quarter|end game|two-minute|coin toss/i.test(ty)||/^\s*(official\s+)?timeout\b|^\s*end (of )?(quarter|half|game)|^\s*two-minute warning/i.test(t)}
 function isOfficialTO(p){return /official timeout|tv timeout/i.test(((p.type||{}).text||"")+" "+(p.text||""))}
 /* What ends a drive: score, punt, turnover, missed FG, safety. */
-function endOf(p){
+function endOf(p,offAb){
   var ty=((p.type||{}).text||"").toLowerCase(), t=ftext(p.text);
   if(/touchdown/.test(ty)||(p.scoringPlay&&/touchdown/i.test(t))){
     if(/interception/.test(ty)||(/intercepted/i.test(t)&&!/passing|rushing/.test(ty)))return "Pick-six";
@@ -157,10 +157,30 @@ function endOf(p){
   if(st.down===4&&a&&b&&a!==b)return "Downs";
   /* Live, ESPN often still has the offence on the end spot of a failed 4th down for a while: decide from
      the play itself (4th down, short of the line to gain, no score, no accepted penalty, not a kick). */
-  if(st.down===4&&!p.scoringPlay&&!/kneels|spiked/i.test(t)&&!(/PENALTY/.test(t)&&!/declined/i.test(t))&&!/kick|punt|field goal|timeout|end of|two-minute/.test(ty)){
-    var dist=+st.distance||0, gain=/\bincomplete\b/i.test(t)?0:(typeof p.statYardage==="number"?p.statYardage:null);
+  if(st.down===4&&!p.scoringPlay&&!/kneels|spiked/i.test(t)&&penaltyKeepsResult(t,offAb)&&!/kick|punt|field goal|timeout|end of|two-minute/.test(ty)){
+    var dist=+st.distance||0, gain=/\bincomplete\b/i.test(t)?0:(typeof p.statYardage==="number"?p.statYardage:textGain(t));
     if(dist>0&&gain!=null&&gain<dist)return "Downs";
   }
+  return null;
+}
+/* A penalty on a 4th-down play still leaves a turnover on downs when every accepted foul is either by
+   the offence (the defence just declines it) or a dead-ball foul after the play (taunting, unsportsmanlike). */
+function penaltyKeepsResult(t,offAb){
+  if(!/PENALTY/.test(t))return true;
+  if(/\bno play\b/i.test(t))return false;
+  var fouls=String(t).split(/PENALTY on /).slice(1);
+  return fouls.every(function(f){
+    if(/declined|offsetting/i.test(f.split(/\.\s/)[0]))return true;
+    var team=aliasCodes((f.match(/^([A-Z]{2,3})-/)||[])[1]||"");
+    if(offAb&&team&&team===aliasCodes(offAb))return true;
+    return /^[^,]*,\s*(Taunting|Unsportsmanlike Conduct)\b/i.test(f);
+  });
+}
+/* Yards gained, read from the play text when the feed has no number yet ("for 2 yards", "for no gain", "for -3 yards"). */
+function textGain(t){
+  if(/\bfor no gain\b/i.test(t))return 0;
+  var m=String(t).match(/\bfor (-?\d+) yards?\b/i); if(m)return +m[1];
+  if(/\bsacked\b/i.test(t)){var s=String(t).match(/\bfor (?:a )?loss of (\d+) yards?\b/i);if(s)return -s[1]}
   return null;
 }
 /* One table for drive results, whether the label comes from ESPN or from the page itself. */
@@ -180,9 +200,10 @@ function driveState(d,vis,all,cur){
   var isCur=cur&&d.id===cur.id&&S.state!=="post";
   var espnDone=vis.length===all.length&&!isCur, endLabel=null;
   /* The deciding play is the last one that ends a drive; plays wiped out by a penalty don't count. */
-  vis.forEach(function(p){if(isNonPlay(p)||isNullified(ftext(p.text)))return;var e=endOf(p);if(e)endLabel=e});
+  vis.forEach(function(p){if(isNonPlay(p)||isNullified(ftext(p.text)))return;var e=endOf(p,(d.team||{}).abbreviation);if(e)endLabel=e});
   var ended=espnDone||!!endLabel;
-  var label=resultLabel(espnDone?(d.displayResult||d.result||endLabel||"Done"):endLabel);
+  var espnRes=[d.displayResult,d.result].filter(function(r){return r&&!/^\s*(unknown|none|n\/a|-+)\s*$/i.test(r)})[0];
+  var label=resultLabel(espnDone?(espnRes||endLabel||"Drive over"):endLabel);
   var scored=espnDone&&d.isScore!=null?!!d.isScore:/^(Touchdown|Field goal)$/.test(label||"");
   return {ended:ended,label:label,scored:scored};
 }

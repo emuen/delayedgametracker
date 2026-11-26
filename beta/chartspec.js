@@ -81,7 +81,7 @@ function fieldChart3D(L,specOnly){
     for(var q=gi;q<=gj;q++)if(L.rows[q].poss)poss=L.rows[q].poss;
     if(lastR.to)poss="INTERCEPTED";
     else if(!poss&&lastR.kind==="to")poss="FUMBLE";
-    if(!poss&&lastL.kind==="play"&&lastL.p&&!isNullified(tx)&&!lastR.fg&&endOf(lastL.p)==="Downs")poss="TURNOVER ON DOWNS";
+    if(!poss&&lastL.kind==="play"&&lastL.p&&!isNullified(tx)&&!lastR.fg&&endOf(lastL.p,L.offAb)==="Downs")poss="TURNOVER ON DOWNS";
     if(poss)lastR.poss=poss;
     if(lastR.td){
       var tn=/ATTEMPT SUCCEEDS|\b2-pt good/.test(tx)?"2-pt good":/TWO-POINT CONVERSION ATTEMPT|\b2-pt failed/.test(tx)?"2-pt failed":/extra point is (?:No Good|Blocked)|\bPAT missed/i.test(tx)?"PAT missed":"";
