@@ -5,8 +5,10 @@
    Players.ready(cb)            load once (lazy), then cb()
    Players.byId(espnId)         the player with this ESPN athlete id, or null
    Players.find(name, teams)    by "D.Achane" / "De'Von Achane", limited to a team code or list (["MIA","NYJ"]); null if unknown or ambiguous
+   Players.warm(teams)          preload the active players' headshots for team codes (["LAR","SEA"]), once per team, a few at a time
+   Players.preload(names,teams) preload just these players' headshots (the faces a score is about to show)
    Players.face(p, opts)        HTML for a framed headshot with the jersey number on a plate at the bottom.
-                                opts: {size: px (default 56), num: override, bg/ink: plate colours (team colours)} */
+                                opts: {size: px (default 44, the size that is preloaded), num: override, bg/ink: plate colours (team colours)} */
 var Players=(function(){
   var SRC=/\/(beta|lab)\/[^\/]*$/.test(location.pathname)?"../players.json":"players.json";   /* one shared file in the site root */
   var IMG="https://static.www.nfl.com/image/", D=null, byName={}, waiting=[], loading=false;
@@ -41,10 +43,27 @@ var Players=(function(){
   var SIL='<svg class="pf-sil" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7.5"/><path d="M5 40c1.5-9 7.5-13.5 15-13.5S33.5 31 35 40z"/></svg>';
   function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
   function face(p,o){
-    o=o||{}; var px=o.size||56, num=o.num!=null?o.num:(p&&p.num)||"", u=url(p,px);
+    o=o||{}; var px=o.size||SIZE, num=o.num!=null?o.num:(p&&p.num)||"", u=url(p,px);
     var img=u?'<img src="'+esc(u)+'" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.add(\'pf-none\');this.remove()">':"";
     return '<span class="pf'+(u?"":" pf-none")+'" style="--pf:'+px+'px" title="'+esc(p?p.name+(p.pos?" · "+p.pos:""):"")+'">'+SIL+img+
       (num!==""?'<b class="pf-num" style="'+(o.bg?"background:"+esc(o.bg)+";":"")+(o.ink?"color:"+esc(o.ink):"")+'">'+esc(num)+'</b>':"")+'</span>';
   }
-  return {ready:ready,byId:byId,find:find,face:face,url:url};
+  /* Preloading: the browser keeps each fetched image in its cache, so a face shows at once later.
+     Same URL as face() at the default size, or the cache wouldn't match. */
+  var SIZE=44, warmed={}, queue=[], busy=0, seen={};
+  function pump(){
+    while(busy<4&&queue.length){var u=queue.shift(),im=new Image();busy++;
+      im.onload=im.onerror=function(){busy--;setTimeout(pump,50)};im.src=u}
+  }
+  function want(p){var u=url(p,SIZE);if(u&&!seen[u]){seen[u]=1;queue.push(u)}}
+  function warm(teams){
+    teams=[].concat(teams||[]).filter(function(t){return t&&!warmed[t]}); if(!teams.length)return;
+    teams.forEach(function(t){warmed[t]=1});
+    ready(function(){Object.keys(D).forEach(function(id){var p=D[id];if(teams.indexOf(p.team)>=0&&(!p.st||p.st==="ACT"))want(p)});pump()});
+  }
+  function preload(names,teams){
+    ready(function(){var front=[];[].concat(names||[]).forEach(function(n){var p=find(n,teams),u=url(p,SIZE);if(u){seen[u]=1;front.push(u)}});
+      queue=front.concat(queue.filter(function(u){return front.indexOf(u)<0}));pump()});   /* these jump the queue */
+  }
+  return {ready:ready,byId:byId,find:find,face:face,url:url,warm:warm,preload:preload};
 })();

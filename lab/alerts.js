@@ -482,6 +482,8 @@ function scoreShow(items){
   var now=Date.now(), any=false;
   items.forEach(function(it){
     if(!it.gid||gamePrefOf(it.j)!=="f")return; any=true;
+    if(window.Players){var S2=it._story||(it._story=scoreStory(it)),T=teamsOf(it.j);   /* faces for the chip's replay, before it's tapped */
+      Players.preload(S2.stars.map(function(x){return x.n}),[T.away,T.home].filter(Boolean).map(function(t){return t.ab}))}
     var b=itemInfo(it); DG.flash[it.gid]={until:now+10000,kind:b.kind,side:b.side,detail:b.detail}; DG.scrollTo=it.gid;
   });
   if(!any)return; dongChime(); DG.dockHtml=""; dockRender();

@@ -37,6 +37,7 @@ def main():
             "team": TEAM.get(x.get("team"), x.get("team") or ""),
             "pos": x.get("position") or "",
             "num": x.get("jersey_number") or "",
+            "st": x.get("status") or "",                                   # ACT = on the active roster
         }
         if img:
             p["img"] = img[len(IMG):] if img.startswith(IMG) else img
