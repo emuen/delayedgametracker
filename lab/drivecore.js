@@ -400,7 +400,9 @@
        With cards the box has room for 3 text lines and long lines wrap instead of being squeezed. */
     var seenId = {}, PL = window.Players ? (c.badges || []).filter(function (b) { if (!b.id || seenId[b.id] || ((c.l1 || "") + " " + (c.l2 || "")).indexOf(b.t) < 0) return false;   /* only names on screen now: no spoilers */ seenId[b.id] = 1; return true; }).slice(0, 3) : [];
     var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u, cs = 0, cg = 5 * u;
-    if (PL.length) { bh = pad * 2 + lh * 4 - 4 * u; cs = Math.min(bh - 6 * u, PL.length === 3 ? 44 * u : 52 * u); bw -= PL.length * cs + (PL.length - 1) * cg + 6 * u; }
+    /* The box keeps one size on every play: room for 2 cards on the right is always reserved; a 3rd player shares that room. */
+    var CARDS = !!window.Players, area = 2 * 52 * u + cg;
+    if (CARDS) { bh = pad * 2 + lh * 4 - 4 * u; cs = PL.length <= 2 ? 52 * u : (area - 2 * cg) / 3; bw -= area + 6 * u; }
     o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 8 * u; o.shadowOffsetY = 2 * u;
     o.fillStyle = DKM ? "#2a3039" : "#fff"; o.beginPath();
     if (o.roundRect) o.roundRect(bx, by, bw, bh, 5 * u); else o.rect(bx, by, bw, bh);
@@ -426,7 +428,7 @@
         o.font = p[1]; o.fillStyle = p[2] || TEXT; o.fillText(p[0], x, y); x += o.measureText(p[0]).width; });
       o.restore();
     }
-    if (!PL.length) {
+    if (!CARDS) {
       drawLine(c.l1, by + pad + lh * 1.5 - 2 * u);
       if (c.l2) drawLine(c.l2, by + pad + lh * 2.5 - 2 * u);
     } else {
