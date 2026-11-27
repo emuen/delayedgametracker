@@ -70,6 +70,7 @@ ESPN is the raw source, but the page is responsible for labelling every play and
 ## Player photos ("Card" design, live 27 Nov 2026)
 - Info box: number plates only. To its right, Card photos of the players named in the text on screen (never ahead of it), in naming order: team-colour frame, number on a tab over the bottom edge, silhouette when there's no photo. The box keeps one size on every play, always leaving room for 2 cards; a 3rd shares that room.
 - The ticker's top contributors show the same Card faces (`Players.face`).
+- Kept on the phone (Cache Storage `db-players-v1`): the roster file is fresh for 4 h, then re-checked in the background (old copy kept if that fails); photos are kept until their link changes (unused links are pruned on each roster refresh). A refresh fetches nothing. The chart's picture cache includes `Players.ver()`, so a photo arriving after the still picture was drawn gives a fresh picture.
 - Photos are the NFL's own headshot URLs (static.www.nfl.com allows CORS); nothing is stored in the repo. A new image size is slow the first time anyone asks (~0.8 s), so keep the one size.
 
 ## The owner's standing rules
