@@ -57,6 +57,7 @@ Rules:
 | alerts.js | Other games: dock (ticker) at the user's delay, holding alerts while a play is under way (`mainHot`), score lines (a scoring chip shows "TD · J.Gibbs, 12 yds" for 10 s and scrolls into view; tap a chip for the scoring-drive replay with outcome and top contributors via `scoreStory` underneath), sounds (dong chime, doink, Colts sack-shout easter egg, live only) |
 | drivecard.js | The drive card: summary line, still picture, Replay/Stop, stepping (buttons, swipe, lane tap) |
 | main.js | Drive list taps, tabs, keep-screen-on, startup |
+| players.js | Player photos (`Players`): `players.json` (nflverse rosters, refreshed daily by `.github/workflows/players.yml` → `scripts/players.py`, keyed by ESPN id), `find`/`byId`, preloading (`warm` on entering a game: skill players, K, defence, OL, P/LS; `preload` for a scoring chip's faces), `imgOf` for the chart (CORS) and `face()` HTML. One image size (160 px) everywhere. |
 
 Bump the `?v=` number in index.html for every JS file you change.
 
@@ -65,6 +66,11 @@ The drive chart with its summary line, info box and controls is one component, u
 
 ## Data: the page owns correct labels
 ESPN is the raw source, but the page is responsible for labelling every play and drive correctly, so it may correct or decide things ahead of ESPN when the plays themselves show the answer (owner's call, 26 Nov 2026). Current corrections, all in feed.js: failed 4th downs decided from the play before ESPN updates (`endOf`, with `penaltyKeepsResult` and `textGain`); the page's own drive result wins over ESPN's "Unknown" (`driveState`); play end spots that disagree with the yards gained are redrawn from the yards, and offensive touchdowns end at the goal line (`latestDrive`). Rules: correct only from evidence in ESPN's own data (play text, downs, yards), never from guesses; when nothing can be decided, show what ESPN says, "Unknown" included; add each new correction to this list.
+
+## Player photos ("Card" design, live 27 Nov 2026)
+- Info box: number plates only. To its right, Card photos of the players named in the text on screen (never ahead of it), in naming order: team-colour frame, number on a tab over the bottom edge, silhouette when there's no photo. The box keeps one size on every play, always leaving room for 2 cards; a 3rd shares that room.
+- The ticker's top contributors show the same Card faces (`Players.face`).
+- Photos are the NFL's own headshot URLs (static.www.nfl.com allows CORS); nothing is stored in the repo. A new image size is slow the first time anyone asks (~0.8 s), so keep the one size.
 
 ## The owner's standing rules
 - The main game is the most important thing on screen. Never spoil anything ahead of the delay, other games included.

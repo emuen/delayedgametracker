@@ -19,6 +19,8 @@ function render(){
     return;
   }
   var j=S.sum, T=teamsOf(j), V=visibleIds(j), lastP=V.plays[V.last]; S.V=V;
+  if(window.Players){Players.warm([T.away&&T.away.ab,T.home&&T.home.ab]);
+    if(!S.pfHook){S.pfHook=1;Players.onChange(function(){if(S.view==="game"&&!S.replay&&!S.live){S.keys.drives=null;render()}})}}   /* redraw the still picture when photos arrive */   /* headshots of both teams, ready before they're needed */
   var allShown=V.plays.length>0&&V.last===V.plays.length-1;
   var L=latestDrive(j,T,V);
   $("awayAb").textContent=T.away?T.away.ab:"AWAY"; $("homeAb").textContent=T.home?T.home.ab:"HOME";

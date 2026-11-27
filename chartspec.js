@@ -348,22 +348,22 @@ function fieldChart3D(L,specOnly){
 /* Player badges: each player's jersey number on a plate in his team's colour, so the same player is
    easy to spot again. Numbers come from the game's box score, with the team roster as a fallback.
    Only names already in the shown play text get a badge, so nothing runs ahead of the delay. */
-var ROSTER={};   /* team id -> {key: jersey} from the team roster (fetched once per session) */
+var ROSTER={};   /* team id -> {key: {j: jersey, id: player id}} from the team roster (fetched once per session) */
 function nameKey(n){return String(n||"").toLowerCase().replace(/[^a-z]/g,"")}
 function rosterLoad(id){
   if(!id||ROSTER[id])return; ROSTER[id]={};
   getJSON(API+"/teams/"+id+"/roster").then(function(x){
-    var m={}, add=function(a){if(a&&a.jersey&&(a.shortName||a.displayName)){var k=nameKey(a.shortName||a.displayName);m[k]=m[k]&&m[k]!==a.jersey?"?":a.jersey}};
+    var m={}, add=function(a){if(a&&a.jersey&&(a.shortName||a.displayName)){var k=nameKey(a.shortName||a.displayName);m[k]=m[k]&&m[k].id!==String(a.id)?"?":{j:a.jersey,id:String(a.id||"")}}};
     (x.athletes||[]).forEach(function(g){if(g&&g.items)g.items.forEach(add);else add(g)});
     ROSTER[id]=m; if(S.view==="game"){S.keys.drives=null;render()}
   }).catch(function(){});
 }
 /* key -> [{team, jersey}] for both teams of a game. */
 function playersOf(j,T){
-  var out={}, put=function(team,k,jersey){if(!k||!jersey)return;var l=out[k]=out[k]||[];if(!l.some(function(x){return x.team===team&&x.jersey===jersey}))l.push({team:team,jersey:String(jersey)})};
+  var out={}, put=function(team,k,jersey,id){if(!k||!jersey)return;var l=out[k]=out[k]||[];if(!l.some(function(x){return x.team===team&&x.jersey===String(jersey)}))l.push({team:team,jersey:String(jersey),id:String(id||"")})};
   ((j&&j.boxscore||{}).players||[]).forEach(function(tb){var tid=String((tb.team||{}).id||"");
-    (tb.statistics||[]).forEach(function(st){(st.athletes||[]).forEach(function(a){var at=a.athlete||{};put(tid,nameKey(at.shortName||at.displayName),at.jersey)})})});
-  [T.away,T.home].forEach(function(t){if(!t)return;rosterLoad(t.id);var m=ROSTER[t.id]||{};Object.keys(m).forEach(function(k){if(m[k]!=="?"&&!out[k])put(t.id,k,m[k])})});
+    (tb.statistics||[]).forEach(function(st){(st.athletes||[]).forEach(function(a){var at=a.athlete||{};put(tid,nameKey(at.shortName||at.displayName),at.jersey,at.id)})})});
+  [T.away,T.home].forEach(function(t){if(!t)return;rosterLoad(t.id);var m=ROSTER[t.id]||{};Object.keys(m).forEach(function(k){if(m[k]!=="?"&&!out[k])put(t.id,k,m[k].j,m[k].id)})});
   return out;
 }
 /* The badges for the names in some lines of text ("M.Stafford", "A.St. Brown"). */
@@ -371,6 +371,6 @@ function badgesFor(lines,P,TC){
   var re=/\b[A-Z][a-z]?\.(?:St\. )?[A-Z][A-Za-z'\-]+/g, seen={}, out=[];
   lines.forEach(function(l){var m;re.lastIndex=0;while((m=re.exec(l||""))){var t=m[0];if(seen[t])continue;seen[t]=1;
     var c=P[nameKey(t)];if(!c||c.length!==1)continue;   /* unknown or ambiguous: no badge */
-    var tc=TC[c[0].team]||{};out.push({t:t,num:c[0].jersey,bg:tc.bg||"#1b1b1b",ink:tc.ink||"#fff"})}});
+    var tc=TC[c[0].team]||{};out.push({t:t,num:c[0].jersey,id:c[0].id,bg:tc.bg||"#1b1b1b",ink:tc.ink||"#fff"})}});
   return out;
 }

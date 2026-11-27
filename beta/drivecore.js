@@ -318,6 +318,29 @@
       o.restore();
     }
   }
+  /* Player cards (lab): the "Card" design with the player's photo: team-colour frame, rounded corners,
+     the jersey number on a team-colour tab over the bottom edge. Photo from Players (players.js); silhouette if none. */
+  function drawCard(o, b, x, y, s, u, frameBg) {
+    var bw = Math.max(1.6 * u, s * 0.05), r = s * 0.18, img = window.Players && window.Players.imgOf(b.id);
+    function rr(x0, y0, w0, h0, r0) { o.beginPath(); if (o.roundRect) o.roundRect(x0, y0, w0, h0, r0); else o.rect(x0, y0, w0, h0); }
+    o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 6 * u; o.shadowOffsetY = 1.5 * u;
+    o.fillStyle = b.bg; rr(x, y, s, s, r); o.fill(); o.restore();
+    var ix = x + bw, iy = y + bw, is = s - 2 * bw;
+    o.save(); rr(ix, iy, is, is, Math.max(0, r - bw)); o.clip();
+    o.fillStyle = frameBg; o.fillRect(ix, iy, is, is);
+    if (img && img.complete && img.naturalWidth) o.drawImage(img, ix, iy + is * 0.04, is, is);
+    else { o.fillStyle = "rgba(128,128,128,0.45)"; o.beginPath(); o.arc(ix + is / 2, iy + is * 0.4, is * 0.19, 0, 7); o.fill();
+      o.beginPath(); o.ellipse(ix + is / 2, iy + is * 1.02, is * 0.36, is * 0.34, 0, Math.PI, 0); o.fill(); }
+    o.restore();
+    if (!b.num) return;
+    var ph = Math.max(10 * u, s * 0.28), pf = (ph - 2.5 * u) * 0.95;
+    o.font = "800 " + Math.round(pf) + "px " + DISPLAY;
+    var tw = Math.max(ph * 1.5, o.measureText(b.num).width + ph * 0.7), tx = x + (s - tw) / 2, ty = y + s - ph / 2;
+    o.fillStyle = "#ffffff"; rr(tx - 1.2 * u, ty - 1.2 * u, tw + 2.4 * u, ph + 2.4 * u, ph * 0.28 + 1.2 * u); o.fill();
+    o.fillStyle = b.bg; rr(tx, ty, tw, ph, ph * 0.28); o.fill();
+    o.fillStyle = b.ink || "#fff"; o.textAlign = "center"; o.textBaseline = "middle"; o.fillText(b.num, tx + tw / 2, ty + ph / 2 + 0.4 * u);
+    o.textAlign = "left";
+  }
   function drawOverlay(o, W, H, B, labels, callout, at, fx) {
     function scr(p) { return B.scr(p, W, H); }
     var u = W / 360;
@@ -373,8 +396,13 @@
     var FBD = "800 " + Math.round(11 * u) + "px " + DISPLAY, bpx = 3.2 * u, bgap = 3 * u;
     function pw(p) { if (p[1] === "badge") { o.font = FBD; return Math.max(o.measureText(p[0]).width + bpx * 2, 15 * u) + bgap; } o.font = p[1]; return o.measureText(p[0]).width; }
     function widthOf(line) { return pieces(line).reduce(function (w, p) { return w + pw(p); }, 0); }
-    var w2 = Math.max(widthOf(c.l1), widthOf(c.l2));
-    var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u;
+    /* The players in the play (lab): up to 3 cards to the right of the box, in the order they're named.
+       With cards the box has room for 3 text lines and long lines wrap instead of being squeezed. */
+    var seenId = {}, PL = window.Players ? (c.badges || []).filter(function (b) { if (!b.id || seenId[b.id] || ((c.l1 || "") + " " + (c.l2 || "")).indexOf(b.t) < 0) return false;   /* only names on screen now: no spoilers */ seenId[b.id] = 1; return true; }).slice(0, 3) : [];
+    var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u, cs = 0, cg = 5 * u;
+    /* The box keeps one size on every play: room for 2 cards on the right is always reserved; a 3rd player shares that room. */
+    var CARDS = !!window.Players, area = 2 * 52 * u + cg;
+    if (CARDS) { bh = pad * 2 + lh * 4 - 4 * u; cs = PL.length <= 2 ? 52 * u : (area - 2 * cg) / 3; bw -= area + 6 * u; }
     o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 8 * u; o.shadowOffsetY = 2 * u;
     o.fillStyle = DKM ? "#2a3039" : "#fff"; o.beginPath();
     if (o.roundRect) o.roundRect(bx, by, bw, bh, 5 * u); else o.rect(bx, by, bw, bh);
@@ -394,14 +422,30 @@
         if (p[1] === "badge") {
           var b = p[3], bw0 = pw(p) - bgap, bh0 = 12.5 * u;
           o.fillStyle = b.bg; o.beginPath(); if (o.roundRect) o.roundRect(x, y - bh0 / 2 - 0.5 * u, bw0, bh0, 2.5 * u); else o.rect(x, y - bh0 / 2 - 0.5 * u, bw0, bh0); o.fill();
-          o.font = FBD; o.fillStyle = b.ink; o.textAlign = "center"; o.fillText(p[0], x + bw0 / 2, y + 0.3 * u); o.textAlign = "left";
+          o.font = FBD; o.fillStyle = b.ink || "#fff"; o.textAlign = "center"; o.fillText(p[0], x + bw0 / 2, y + 0.3 * u); o.textAlign = "left";
           x += bw0 + bgap; return;
         }
         o.font = p[1]; o.fillStyle = p[2] || TEXT; o.fillText(p[0], x, y); x += o.measureText(p[0]).width; });
       o.restore();
     }
-    drawLine(c.l1, by + pad + lh * 1.5 - 2 * u);
-    if (c.l2) drawLine(c.l2, by + pad + lh * 2.5 - 2 * u);
+    if (!CARDS) {
+      drawLine(c.l1, by + pad + lh * 1.5 - 2 * u);
+      if (c.l2) drawLine(c.l2, by + pad + lh * 2.5 - 2 * u);
+    } else {
+      /* Wrap by words onto 3 lines; a player's name ("A.St. Brown") never splits from his number. */
+      var avail = bw - pad * 2, rows = [];
+      [c.l1, c.l2].forEach(function (l) {
+        if (!l) return; var prot = l;
+        (c.badges || []).forEach(function (b) { prot = prot.split(b.t).join(b.t.replace(/ /g, "\u0001")); });
+        var cur = "";
+        prot.split(" ").forEach(function (wd) { wd = wd.replace(/\u0001/g, " "); var t = cur ? cur + " " + wd : wd; if (cur && widthOf(t) > avail) { rows.push(cur); cur = wd; } else cur = t; });
+        if (cur) rows.push(cur);
+      });
+      if (rows.length > 3) rows = rows.slice(0, 2).concat([rows.slice(2).join(" ")]);
+      rows.forEach(function (l, i) { drawLine(l, by + pad + lh * (1.5 + i) - 2 * u); });
+      var cx = bx + bw + 6 * u;
+      PL.forEach(function (b) { drawCard(o, b, cx, by, cs, u, DKM ? "#1e232a" : "#f3f2ee"); cx += cs + cg; });
+    }
   }
 
 
