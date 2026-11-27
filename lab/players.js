@@ -5,7 +5,7 @@
    Players.ready(cb)            load once (lazy), then cb()
    Players.byId(espnId)         the player with this ESPN athlete id, or null
    Players.find(name, teams)    by "D.Achane" / "De'Von Achane", limited to a team code or list (["MIA","NYJ"]); null if unknown or ambiguous
-   Players.warm(teams)          preload the active players' headshots for team codes (["LAR","SEA"]), once per team, a few at a time
+   Players.warm(teams)          preload the active players' headshots (skill players first) for team codes (["LAR","SEA"]), once per team, a few at a time
    Players.preload(names,teams) preload just these players' headshots (the faces a score is about to show)
    Players.face(p, opts)        HTML for a framed headshot with the jersey number on a plate at the bottom.
                                 opts: {size: px (default 44, the size that is preloaded), num: override, bg/ink: plate colours (team colours)} */
@@ -56,10 +56,16 @@ var Players=(function(){
       im.onload=im.onerror=function(){busy--;setTimeout(pump,50)};im.src=u}
   }
   function want(p){var u=url(p,SIZE);if(u&&!seen[u]){seen[u]=1;queue.push(u)}}
+  /* Preload order: skill players, kickers, defence, offensive line, then punters and long snappers. */
+  var RANK={QB:0,RB:0,WR:0,TE:0,FB:0,K:1,DL:2,LB:2,DB:2,OL:3,P:4,LS:4};
+  function rank(p){var r=RANK[p.pos];return r==null?5:r}
   function warm(teams){
     teams=[].concat(teams||[]).filter(function(t){return t&&!warmed[t]}); if(!teams.length)return;
     teams.forEach(function(t){warmed[t]=1});
-    ready(function(){Object.keys(D).forEach(function(id){var p=D[id];if(teams.indexOf(p.team)>=0&&(!p.st||p.st==="ACT"))want(p)});pump()});
+    ready(function(){
+      Object.keys(D).map(function(id){return D[id]}).filter(function(p){return teams.indexOf(p.team)>=0&&(!p.st||p.st==="ACT")})
+        .sort(function(a,b){return rank(a)-rank(b)}).forEach(want);   /* both teams together, most likely to be named first */
+      pump()});
   }
   function preload(names,teams){
     ready(function(){var front=[];[].concat(names||[]).forEach(function(n){var p=find(n,teams),u=url(p,SIZE);if(u){seen[u]=1;front.push(u)}});
