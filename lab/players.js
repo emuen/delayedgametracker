@@ -17,17 +17,40 @@ var Players=(function(){
   function key(n){return String(n||"").toLowerCase().replace(/\b(jr|sr|ii|iii|iv)\b\.?/g,"").replace(/[^a-z]/g,"")}
   function shortOf(full){var w=String(full||"").replace(/\s+(Jr|Sr|II|III|IV)\.?$/,"").split(/\s+/);return w.length>1?w[0][0]+"."+w.slice(1).join(" "):full}
   function index(){
+    byName={};
     Object.keys(D).forEach(function(id){var p=D[id];p.id=id;
       [p.short,shortOf(p.name),p.name].forEach(function(n){var k=p.team+"|"+key(n);if(!n)return;
         var l=byName[k]=byName[k]||[];if(l.indexOf(p)<0)l.push(p)})});
   }
+  /* Kept on the phone (Cache Storage, survives refresh and restarts): the roster file counts as fresh for 4 hours,
+     then it is re-checked in the background and the saved copy stays if that fails. Photos are kept for good,
+     keyed by their link; a changed headshot comes with a new link, and links no longer used are cleared out. */
+  var STORE="db-players-v1", FRESH=4*3600e3, CS=null;
+  function store(){if(!CS)CS=(window.caches&&window.isSecureContext?caches.open(STORE):Promise.reject()).catch(function(){return null});return CS}
+  function flush(){var w=waiting;waiting=[];w.forEach(function(f){try{f()}catch(e){console.log(e)}})}
+  function use(x){if(!x||!x.players)return false;D=x.players;index();changed();flush();return true}
   function ready(cb){
     if(D){cb&&cb();return}
     if(cb)waiting.push(cb);
     if(loading)return; loading=true;
-    fetch(SRC,{cache:"default"}).then(function(r){return r.ok?r.json():null}).then(function(x){
-      D=(x&&x.players)||{}; index();
-    }).catch(function(){D={}}).then(function(){changed();var w=waiting;waiting=[];w.forEach(function(f){try{f()}catch(e){console.log(e)}})});
+    store().then(function(c){
+      return (c?c.match("players.json"):Promise.resolve(null)).then(function(hit){
+        if(!hit)return refresh(c);
+        var age=Date.now()-(+hit.headers.get("x-saved")||0);
+        return hit.json().then(function(x){use(x);if(age>FRESH)refresh(c)}).catch(function(){return refresh(c)});
+      });
+    }).catch(function(){}).then(function(){if(!D){D={};flush()}});
+  }
+  function refresh(c){
+    return fetch(SRC,{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){
+      var x=JSON.parse(t);
+      if(c){c.put("players.json",new Response(t,{headers:{"content-type":"application/json","x-saved":String(Date.now())}}));prune(c,x.players)}
+      use(x);
+    }).catch(function(){});   /* offline or server trouble: keep what we have */
+  }
+  function prune(c,P){
+    var keep={}; Object.keys(P||{}).forEach(function(id){var u=url(P[id]);if(u)keep[u]=1});
+    c.keys().then(function(ks){ks.forEach(function(rq){if(/^https:\/\/static\.www\.nfl\.com\//.test(rq.url)&&!keep[rq.url])c.delete(rq)})});
   }
   function byId(id){return D&&id!=null?D[String(id)]||null:null}
   function find(name,teams){
@@ -47,18 +70,29 @@ var Players=(function(){
   var IMGS={}, subs=[], tmr=0;
   function changed(){clearTimeout(tmr);tmr=setTimeout(function(){subs.forEach(function(f){try{f()}catch(e){console.log(e)}})},250)}
   function onChange(f){subs.push(f)}
+  /* One Image per photo, fed from the phone's store when it has it (a local copy, so the chart can draw it),
+     else fetched once (CORS) and saved. */
   function imgFor(u,ping){
-    var im=IMGS[u]; if(im){if(ping&&!im.complete)im._ping=1;return im}
-    im=IMGS[u]=new Image(); im.crossOrigin="anonymous"; im.decoding="async";   /* CORS so the chart canvas can draw it */
-    im._ping=ping; im.onload=function(){if(im._ping)changed()}; im.src=u; return im;   /* redraw only for photos a picture is waiting on */
+    var im=IMGS[u]; if(im){if(ping&&!im.naturalWidth)im._ping=1;return im}
+    im=IMGS[u]=new Image(); im.decoding="async"; im._ping=ping;
+    im.onload=function(){if(im._ping)changed()};   /* redraw only for photos a picture is waiting on */
+    store().then(function(c){
+      return (c?c.match(u):Promise.resolve(null)).then(function(hit){
+        if(hit)return hit.blob();
+        return fetch(u,{mode:"cors"}).then(function(r){if(!r.ok)throw 0;if(c)c.put(u,r.clone());return r.blob()});
+      });
+    }).then(function(b){im._local=URL.createObjectURL(b);im.src=im._local})
+      .catch(function(){im.crossOrigin="anonymous";im.src=u});   /* no store or fetch trouble: plain load (silhouette if it fails) */
+    return im;
   }
   function imgOf(id){var u=url(byId(id));return u?imgFor(u,true):null
   }
   var SIL='<svg class="pf-sil" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7.5"/><path d="M5 40c1.5-9 7.5-13.5 15-13.5S33.5 31 35 40z"/></svg>';
   function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
   function face(p,o){
-    o=o||{}; var px=o.size||44, num=o.num!=null?o.num:(p&&p.num)||"", u=url(p);
-    var img=u?'<img src="'+esc(u)+'" alt="" crossorigin="anonymous" decoding="async" onerror="this.closest(\'.pf\').classList.add(\'pf-none\');this.remove()">':"";
+    o=o||{}; var px=o.size||44, num=o.num!=null?o.num:(p&&p.num)||"", u=url(p), im=u&&IMGS[u];
+    if(u&&!im)imgFor(u,false);   /* gets it into the store for next time */
+    var img=u?'<img src="'+esc(im&&im._local||u)+'" alt=""'+(im&&im._local?'':' crossorigin="anonymous"')+' decoding="async" onerror="this.closest(\'.pf\').classList.add(\'pf-none\');this.remove()">':"";
     var tc=(o.bg?"--tc:"+esc(o.bg)+";":"")+(o.ink?"--tci:"+esc(o.ink)+";":"");
     return '<span class="pf'+(u?"":" pf-none")+'" style="--pf:'+px+'px;'+tc+'" title="'+esc(p?p.name+(p.pos?" · "+p.pos:""):"")+'"><span class="pf-in">'+SIL+img+'</span>'+
       (num!==""?'<b class="pf-num">'+esc(num)+'</b>':"")+'</span>';
