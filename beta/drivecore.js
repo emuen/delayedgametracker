@@ -402,7 +402,7 @@
     var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u, cs = 0, cg = 5 * u;
     /* The box keeps one size on every play: room for 2 cards on the right is always reserved; a 3rd player shares that room. */
     var CARDS = !!window.Players, area = 2 * 52 * u + cg;
-    if (CARDS) { bh = pad * 2 + lh * 4 - 4 * u; cs = PL.length <= 2 ? 52 * u : (area - 2 * cg) / 3; bw -= area + 6 * u; }
+    if (CARDS) { bh = pad * 2 + lh * 4 - 4 * u; cs = PL.length <= 2 ? 52 * u : 46 * u;   /* 3 players: bigger cards that overlap */ bw -= area + 6 * u; }
     o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 8 * u; o.shadowOffsetY = 2 * u;
     o.fillStyle = DKM ? "#2a3039" : "#fff"; o.beginPath();
     if (o.roundRect) o.roundRect(bx, by, bw, bh, 5 * u); else o.rect(bx, by, bw, bh);
@@ -444,7 +444,9 @@
       if (rows.length > 3) rows = rows.slice(0, 2).concat([rows.slice(2).join(" ")]);
       rows.forEach(function (l, i) { drawLine(l, by + pad + lh * (1.5 + i) - 2 * u); });
       var cx = bx + bw + 6 * u;
-      PL.forEach(function (b) { drawCard(o, b, cx, by, cs, u, DKM ? "#1e232a" : "#f3f2ee"); cx += cs + cg; });
+      var step = PL.length <= 2 ? cs + cg : (area - cs) / (PL.length - 1);
+      /* Drawn last to first, so the first player named sits on top when they overlap. */
+      for (var k = PL.length - 1; k >= 0; k--) drawCard(o, PL[k], cx + k * step, by, cs, u, DKM ? "#1e232a" : "#f3f2ee");
     }
   }
 
