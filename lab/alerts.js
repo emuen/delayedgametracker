@@ -491,7 +491,15 @@ function storyHTML(it){
   var S2=it._story||(it._story=scoreStory(it));
   /* The header already has the drive recap; repeat the outcome only when it says something new (pick-six, return TD, safety). */
   var oc=/^(Touchdown|Field goal) ·/.test(S2.outcome)?"":'<p>'+esc(S2.outcome)+'</p>';
-  return oc+(S2.stars.length?'<ul>'+S2.stars.map(function(x){return '<li><b>'+esc(x.n)+'</b> · '+esc(x.s)+'</li>'}).join("")+'</ul>':'');
+  if(!S2.stars.length)return oc;
+  /* Each contributor gets his headshot framed with his number (silhouette if unknown); loads players.json on first use. */
+  var T=teamsOf(it.j), TC=teamColors(it.j,T), abs=[T.away,T.home].filter(Boolean).map(function(t){return t.ab});
+  var idOf={}; [T.away,T.home].forEach(function(t){if(t)idOf[t.ab]=t.id});
+  if(!window.Players)return oc+'<ul>'+S2.stars.map(function(x){return '<li><b>'+esc(x.n)+'</b> · '+esc(x.s)+'</li>'}).join("")+'</ul>';
+  Players.ready(function(){if(DG.cur===it&&!$("dvStory").hidden&&!$("dvStory").querySelector(".pf"))$("dvStory").innerHTML=storyHTML(it)});
+  return oc+'<ul class="stars">'+S2.stars.map(function(x){
+    var pl=Players.find(x.n,abs), tc=pl?TC[idOf[pl.team]]||{}:{};
+    return '<li>'+Players.face(pl,{size:44,bg:tc.bg,ink:tc.ink})+'<span><b>'+esc(x.n)+'</b>'+(pl&&pl.pos?' <i>'+esc(pl.pos)+'</i>':'')+'<br>'+esc(x.s)+'</span></li>'}).join("")+'</ul>';
 }
 /* The strip with your own game is no longer shown here. */
 function bugUpdate(){$("dvBug").hidden=true}

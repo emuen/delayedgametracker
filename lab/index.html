@@ -292,6 +292,14 @@ body.hasdock{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .tk.flash small{max-width:62vw;overflow:hidden;text-overflow:ellipsis}
 .dvstory{padding:8px max(14px,env(safe-area-inset-left,0px)) 0;font-size:14px;line-height:1.45;display:grid;gap:4px}
 .dvstory p{margin:0;font-weight:600}.dvstory ul{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.dvstory ul.stars{gap:8px}.dvstory ul.stars li{display:flex;align-items:center;gap:10px;min-height:44px}
+.dvstory ul.stars i{font-style:normal;color:var(--muted);font-size:12px;letter-spacing:.04em}
+/* Player face (players.js): headshot in a frame, jersey number on a plate at the bottom. */
+.pf{--pf:56px;position:relative;flex:none;width:var(--pf);height:calc(var(--pf) + 8px);border-radius:var(--rs);background:var(--bg);border:1px solid var(--line);overflow:hidden;display:inline-block}
+.pf img{position:absolute;inset:0 0 8px 0;width:100%;height:var(--pf);object-fit:cover;background:var(--bg)}
+.pf-sil{position:absolute;left:12%;top:8%;width:76%;height:76%;fill:var(--muted);opacity:.35}
+.pf:not(.pf-none) .pf-sil{visibility:hidden}
+.pf-num{position:absolute;left:0;right:0;bottom:0;height:16px;line-height:16px;text-align:center;font:700 13px/16px var(--display);letter-spacing:.02em;background:var(--plate,#1b1b1b);color:var(--plate-ink);border-top:var(--plate-border,0)}
 /* Teams sheet: Follow / Not interested / No spoilers, grouped by division */
 .sheet.top2{z-index:22}
 .tlegend{display:grid;gap:2px;font-size:12px;color:var(--muted);margin:0}
@@ -455,7 +463,8 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 <script src="stats.js?v=2"></script>
 <script src="games.js?v=16"></script>
 <script src="live.js?v=3"></script>
-<script src="alerts.js?v=19"></script>
+<script src="players.js?v=1"></script>
+<script src="alerts.js?v=19b"></script>
 <script src="main.js?v=9"></script>
 </body>
 </html>

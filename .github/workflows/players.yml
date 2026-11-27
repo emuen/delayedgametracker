@@ -1,0 +1,25 @@
+name: Update player rosters
+on:
+  schedule:
+    - cron: "41 9 * * *"   # once a day (nflverse refreshes rosters daily)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [scripts/players.py, .github/workflows/players.yml]
+permissions:
+  contents: write
+concurrency: players
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/players.py
+      - name: Save if changed
+        run: |
+          git add players.json
+          if git diff --cached --quiet; then echo "No change"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update player rosters"
+          git pull --rebase -q && git push
