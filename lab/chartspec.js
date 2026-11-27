@@ -7,7 +7,7 @@ function fieldChart3D(L,specOnly){
   function tm(t){var c=t&&TC[t.id];return {name:t?(t.nm||t.ab):"",bg:c?c.bg:"#1f5a29",ink:c?c.ink:"#fff"}}
   var offInk=(TC[L.off]||{}).ink||"#fff", defInk=(defT&&TC[defT.id]||{}).ink||"#fff", RED="#c62828", FLAGC="#ffd23f";
   var SPX="(?:[A-Z]{2,4} -?\\d+|50)";
-  var rows=[], n=L.rows.length, PLAYERS=playersOf(L.j,T); BJ=L.j; ACC={};
+  var rows=[], n=L.rows.length, PLAYERS=playersOf(L.j,T);
   L.rows.forEach(function(r,i){
     var k=playKind(r), t=r.text||"", ty=((r.p||{}).type||{}).text||"", t0=t.split(/TWO-POINT CONVERSION/i)[0];
     var col=k==="pen"?FLAGC:k==="kick"?"#f2f2f2":(k==="ret"&&r.byOff===false)?defCol:offCol, ink=col===defCol?defInk:offInk;
@@ -367,19 +367,10 @@ function playersOf(j,T){
   return out;
 }
 /* The badges for the names in some lines of text ("M.Stafford", "A.St. Brown"). */
-/* The team's second colour for the sigil's accent cells, when it stands out from the tile and from white. */
-function teamAccent(j,id,bg){
-  var c=(hdrComp(j).competitors||[]).filter(function(x){return String((x.team||{}).id)===String(id)})[0], t=(c&&c.team)||{}, fb=COLORS[t.abbreviation]||[];
-  var b=hexRgb(bg)||(String(bg).match(/\d+/g)||[]).slice(0,3).map(Number), W=[255,255,255];
-  var opts=[t.alternateColor,fb[1],t.color,fb[0]].map(hexRgb).filter(Boolean);
-  for(var i=0;i<opts.length;i++)if(b.length===3&&contrast(opts[i],b)>=1.6&&contrast(opts[i],W)>=1.25)return "rgb("+opts[i].join(",")+")";
-  return "#ffffff";
-}
-var ACC={}, BJ=null;
 function badgesFor(lines,P,TC){
   var re=/\b[A-Z][a-z]?\.(?:St\. )?[A-Z][A-Za-z'\-]+/g, seen={}, out=[];
   lines.forEach(function(l){var m;re.lastIndex=0;while((m=re.exec(l||""))){var t=m[0];if(seen[t])continue;seen[t]=1;
     var c=P[nameKey(t)];if(!c||c.length!==1)continue;   /* unknown or ambiguous: no badge */
-    var tc=TC[c[0].team]||{}, bg=tc.bg||"#1b1b1b";out.push({t:t,num:c[0].jersey,id:c[0].id,bg:bg,acc:ACC[c[0].team]||(ACC[c[0].team]=teamAccent(BJ,c[0].team,bg))})}});
+    var tc=TC[c[0].team]||{}, bg=tc.bg||"#1b1b1b";out.push({t:t,num:c[0].jersey,id:c[0].id,bg:bg,ink:tc.ink||"#fff"})}});
   return out;
 }

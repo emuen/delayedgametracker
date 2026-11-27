@@ -318,32 +318,28 @@
       o.restore();
     }
   }
-  /* Player sigils (lab): a mark of his own worked out from the player's id, the same in every game.
-     "px" (default): a mirrored 5x5 pixel shape; "rune" (?mark=rune): strokes on a 3x3 dot grid. */
-  var MARK = /[?&]mark=rune\b/.test(location.search) ? "rune" : "px", SIG = {};
-  function hsh(s) { var h = 2166136261; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
-  function sigilOf(id) {
-    if (SIG[id]) return SIG[id];
-    var h = hsh(id), h2 = hsh(id + "#"), out = { px: [], ru: [], dot: 0 };
-    var on = 0;
-    for (var y = 0; y < 5; y++) for (var x = 0; x < 3; x++) if ((h >>> (y * 3 + x)) & 1) { on++; var a = x === 2 && (h >>> (16 + y)) & 1; out.px.push([x, y, a]); if (x < 2) out.px.push([4 - x, y, a]); }
-    if (on < 4) out.px.push([2, 2, 1], [2, 1, 0]);
-    var E = [];
-    for (var r = 0; r < 3; r++) { E.push([0, r, 1, r]); if (r < 2) E.push([0, r, 0, r + 1], [1, r, 1, r + 1], [0, r, 1, r + 1], [1, r, 0, r + 1]); }
-    E.forEach(function (e, i) { if ((h2 >>> i) & 1) { out.ru.push(e); if (e[0] < 1 || e[2] < 1) out.ru.push([2 - e[0], e[1], 2 - e[2], e[3]]); } });
-    if (out.ru.length < 3) out.ru.push([1, 0, 1, 2], [0, 1, 2, 1]);
-    out.dot = (h2 >>> 13) % 3;
-    return (SIG[id] = out);
-  }
-  /* Draw a sigil tile of size s at x, y (top-left). */
-  function drawSigil(o, id, x, y, s, bg, acc) {
-    var g = sigilOf(id), u = s / 25;
-    o.fillStyle = bg; o.beginPath(); if (o.roundRect) o.roundRect(x, y, s, s, 5 * u); else o.rect(x, y, s, s); o.fill();
-    if (MARK === "rune") {
-      o.save(); o.strokeStyle = "#fff"; o.lineWidth = 2.4 * u; o.lineCap = "round";
-      g.ru.forEach(function (e) { o.beginPath(); o.moveTo(x + (6.5 + 6 * e[0]) * u, y + (6.5 + 6 * e[1]) * u); o.lineTo(x + (6.5 + 6 * e[2]) * u, y + (6.5 + 6 * e[3]) * u); o.stroke(); });
-      o.fillStyle = acc; o.beginPath(); o.arc(x + 12.5 * u, y + (6.5 + 6 * g.dot) * u, 1.9 * u, 0, 7); o.fill(); o.restore();
-    } else g.px.forEach(function (c) { o.fillStyle = c[2] ? acc : "#fff"; o.fillRect(x + (2.5 + 4 * c[0]) * u, y + (2.5 + 4 * c[1]) * u, 4 * u + 0.4, 4 * u + 0.4); });
+  /* Player cards (lab): the "Card" design with the player's photo: team-colour frame, rounded corners,
+     the jersey number on a team-colour tab over the bottom edge. Photo from Players (players.js); silhouette if none. */
+  function drawCard(o, b, x, y, s, u, frameBg) {
+    var bw = Math.max(1.6 * u, s * 0.05), r = s * 0.18, img = window.Players && window.Players.imgOf(b.id);
+    function rr(x0, y0, w0, h0, r0) { o.beginPath(); if (o.roundRect) o.roundRect(x0, y0, w0, h0, r0); else o.rect(x0, y0, w0, h0); }
+    o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 6 * u; o.shadowOffsetY = 1.5 * u;
+    o.fillStyle = b.bg; rr(x, y, s, s, r); o.fill(); o.restore();
+    var ix = x + bw, iy = y + bw, is = s - 2 * bw;
+    o.save(); rr(ix, iy, is, is, Math.max(0, r - bw)); o.clip();
+    o.fillStyle = frameBg; o.fillRect(ix, iy, is, is);
+    if (img && img.complete && img.naturalWidth) o.drawImage(img, ix, iy + is * 0.04, is, is);
+    else { o.fillStyle = "rgba(128,128,128,0.45)"; o.beginPath(); o.arc(ix + is / 2, iy + is * 0.4, is * 0.19, 0, 7); o.fill();
+      o.beginPath(); o.ellipse(ix + is / 2, iy + is * 1.02, is * 0.36, is * 0.34, 0, Math.PI, 0); o.fill(); }
+    o.restore();
+    if (!b.num) return;
+    var ph = Math.max(10 * u, s * 0.28), pf = (ph - 2.5 * u) * 0.95;
+    o.font = "800 " + Math.round(pf) + "px " + DISPLAY;
+    var tw = Math.max(ph * 1.5, o.measureText(b.num).width + ph * 0.7), tx = x + (s - tw) / 2, ty = y + s - ph / 2;
+    o.fillStyle = "#ffffff"; rr(tx - 1.2 * u, ty - 1.2 * u, tw + 2.4 * u, ph + 2.4 * u, ph * 0.28 + 1.2 * u); o.fill();
+    o.fillStyle = b.bg; rr(tx, ty, tw, ph, ph * 0.28); o.fill();
+    o.fillStyle = b.ink || "#fff"; o.textAlign = "center"; o.textBaseline = "middle"; o.fillText(b.num, tx + tw / 2, ty + ph / 2 + 0.4 * u);
+    o.textAlign = "left";
   }
   function drawOverlay(o, W, H, B, labels, callout, at, fx) {
     function scr(p) { return B.scr(p, W, H); }
@@ -398,11 +394,13 @@
       return out;
     }
     var FBD = "800 " + Math.round(11 * u) + "px " + DISPLAY, bpx = 3.2 * u, bgap = 3 * u;
-    var SIGS = 15 * u;
-    function pw(p) { if (p[1] === "badge") return SIGS + bgap; o.font = p[1]; return o.measureText(p[0]).width; }
+    function pw(p) { if (p[1] === "badge") { o.font = FBD; return Math.max(o.measureText(p[0]).width + bpx * 2, 15 * u) + bgap; } o.font = p[1]; return o.measureText(p[0]).width; }
     function widthOf(line) { return pieces(line).reduce(function (w, p) { return w + pw(p); }, 0); }
-    var w2 = Math.max(widthOf(c.l1), widthOf(c.l2));
-    var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u;
+    /* The players in the play (lab): up to 3 cards to the right of the box, in the order they're named.
+       With cards the box has room for 3 text lines and long lines wrap instead of being squeezed. */
+    var seenId = {}, PL = window.Players ? (c.badges || []).filter(function (b) { if (!b.id || seenId[b.id] || ((c.l1 || "") + " " + (c.l2 || "")).indexOf(b.t) < 0) return false;   /* only names on screen now: no spoilers */ seenId[b.id] = 1; return true; }).slice(0, 3) : [];
+    var bw = W - 12 * u, bh = pad * 2 + lh * 3 - 4 * u, bx = 6 * u, by = 6 * u, cs = 0, cg = 5 * u;
+    if (PL.length) { bh = pad * 2 + lh * 4 - 4 * u; cs = Math.min(bh - 6 * u, PL.length === 3 ? 44 * u : 52 * u); bw -= PL.length * cs + (PL.length - 1) * cg + 6 * u; }
     o.save(); o.shadowColor = "rgba(0,0,0,0.25)"; o.shadowBlur = 8 * u; o.shadowOffsetY = 2 * u;
     o.fillStyle = DKM ? "#2a3039" : "#fff"; o.beginPath();
     if (o.roundRect) o.roundRect(bx, by, bw, bh, 5 * u); else o.rect(bx, by, bw, bh);
@@ -420,15 +418,32 @@
       o.save(); if (w > avail) { o.translate(x, y); o.scale(avail / w, 1); o.translate(-x, -y); }
       pieces(line).forEach(function (p) {
         if (p[1] === "badge") {
-          var b = p[3];
-          drawSigil(o, b.id, x, y - SIGS / 2 - 0.8 * u, SIGS, b.bg, b.acc || "#fff");
-          x += SIGS + bgap; return;
+          var b = p[3], bw0 = pw(p) - bgap, bh0 = 12.5 * u;
+          o.fillStyle = b.bg; o.beginPath(); if (o.roundRect) o.roundRect(x, y - bh0 / 2 - 0.5 * u, bw0, bh0, 2.5 * u); else o.rect(x, y - bh0 / 2 - 0.5 * u, bw0, bh0); o.fill();
+          o.font = FBD; o.fillStyle = b.ink || "#fff"; o.textAlign = "center"; o.fillText(p[0], x + bw0 / 2, y + 0.3 * u); o.textAlign = "left";
+          x += bw0 + bgap; return;
         }
         o.font = p[1]; o.fillStyle = p[2] || TEXT; o.fillText(p[0], x, y); x += o.measureText(p[0]).width; });
       o.restore();
     }
-    drawLine(c.l1, by + pad + lh * 1.5 - 2 * u);
-    if (c.l2) drawLine(c.l2, by + pad + lh * 2.5 - 2 * u);
+    if (!PL.length) {
+      drawLine(c.l1, by + pad + lh * 1.5 - 2 * u);
+      if (c.l2) drawLine(c.l2, by + pad + lh * 2.5 - 2 * u);
+    } else {
+      /* Wrap by words onto 3 lines; a player's name ("A.St. Brown") never splits from his number. */
+      var avail = bw - pad * 2, rows = [];
+      [c.l1, c.l2].forEach(function (l) {
+        if (!l) return; var prot = l;
+        (c.badges || []).forEach(function (b) { prot = prot.split(b.t).join(b.t.replace(/ /g, "\u0001")); });
+        var cur = "";
+        prot.split(" ").forEach(function (wd) { wd = wd.replace(/\u0001/g, " "); var t = cur ? cur + " " + wd : wd; if (cur && widthOf(t) > avail) { rows.push(cur); cur = wd; } else cur = t; });
+        if (cur) rows.push(cur);
+      });
+      if (rows.length > 3) rows = rows.slice(0, 2).concat([rows.slice(2).join(" ")]);
+      rows.forEach(function (l, i) { drawLine(l, by + pad + lh * (1.5 + i) - 2 * u); });
+      var cx = bx + bw + 6 * u;
+      PL.forEach(function (b) { drawCard(o, b, cx, by, cs, u, DKM ? "#1e232a" : "#f3f2ee"); cx += cs + cg; });
+    }
   }
 
 
