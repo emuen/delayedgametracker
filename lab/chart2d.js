@@ -371,7 +371,7 @@
   }
 
   function render(spec) {
-    var key = JSON.stringify(spec);
+    var key = JSON.stringify(spec) + (window.Players ? "|pf" + window.Players.ver() : "");   /* a photo that arrives later makes a new picture */
     if (cache[key]) return cache[key];
     var W = Math.round(spec.width), H = Math.round(spec.height), B = build(spec, W, H), out = cvs(W, H), x = out.getContext("2d");
     /* Newest play nearest; each earlier play one lane further. */

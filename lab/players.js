@@ -28,7 +28,7 @@ var Players=(function(){
   var STORE="db-players-v1", FRESH=4*3600e3, CS=null;
   function store(){if(!CS)CS=(window.caches&&window.isSecureContext?caches.open(STORE):Promise.reject()).catch(function(){return null});return CS}
   function flush(){var w=waiting;waiting=[];w.forEach(function(f){try{f()}catch(e){console.log(e)}})}
-  function use(x){if(!x||!x.players)return false;D=x.players;index();changed();flush();return true}
+  function use(x){if(!x||!x.players)return false;D=x.players;index();VER++;changed();flush();return true}
   function ready(cb){
     if(D){cb&&cb();return}
     if(cb)waiting.push(cb);
@@ -67,7 +67,7 @@ var Players=(function(){
     /* Ask the image server for a small, face-centred square (2x for sharp phone screens). */
     return u.replace("/f_auto,q_auto/","/c_fill,g_face,w_"+px*2+",h_"+px*2+"/f_auto,q_auto/");
   }
-  var IMGS={}, subs=[], tmr=0;
+  var IMGS={}, subs=[], tmr=0, VER=0;
   function changed(){clearTimeout(tmr);tmr=setTimeout(function(){subs.forEach(function(f){try{f()}catch(e){console.log(e)}})},250)}
   function onChange(f){subs.push(f)}
   /* One Image per photo, fed from the phone's store when it has it (a local copy, so the chart can draw it),
@@ -75,7 +75,7 @@ var Players=(function(){
   function imgFor(u,ping){
     var im=IMGS[u]; if(im){if(ping&&!im.naturalWidth)im._ping=1;return im}
     im=IMGS[u]=new Image(); im.decoding="async"; im._ping=ping;
-    im.onload=function(){if(im._ping)changed()};   /* redraw only for photos a picture is waiting on */
+    im.onload=function(){if(im._ping){VER++;changed()}};   /* redraw only for photos a picture is waiting on */
     store().then(function(c){
       return (c?c.match(u):Promise.resolve(null)).then(function(hit){
         if(hit)return hit.blob();
@@ -121,5 +121,5 @@ var Players=(function(){
     ready(function(){var front=[];[].concat(names||[]).forEach(function(n){var p=find(n,teams),u=url(p);if(u){seen[u]=1;front.push(u)}});
       queue=front.concat(queue.filter(function(u){return front.indexOf(u)<0}));pump()});   /* these jump the queue */
   }
-  return {ready:ready,byId:byId,find:find,face:face,url:url,warm:warm,preload:preload,imgOf:imgOf,onChange:onChange};
+  return {ready:ready,byId:byId,find:find,face:face,url:url,warm:warm,preload:preload,imgOf:imgOf,onChange:onChange,ver:function(){return VER}};
 })();

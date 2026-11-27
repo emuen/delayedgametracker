@@ -524,7 +524,7 @@
   }
 
   function render(spec) {
-    var key = JSON.stringify(spec);
+    var key = JSON.stringify(spec) + (window.Players ? "|pf" + window.Players.ver() : "");   /* a photo that arrives later makes a new picture */
     if (cache[key]) return cache[key];
     var W = Math.round(spec.width), H = Math.round(spec.height), r = renderer();
     r.setPixelRatio(1); r.setSize(W, H, false);
